@@ -10,20 +10,33 @@ import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
 import { cn } from "@/lib/utils";
 
+const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15", "bg-muted-foreground/30"];
+
 export function TotalsBlock({ r }: { r: PRequest }) {
+  const db = useDB();
   const t = totals(r);
+  const sup = supplierBreakdown(r, db);
   return (
-    <div className="space-y-1.5">
+    <div>
       <p className="text-xs text-muted-foreground">Request total</p>
-      <Money v={t.total} className="block text-2xl font-medium tracking-tight" />
-      <dl className="space-y-1 pt-2 text-xs">
-        {[["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]].map(([k, v]) => (
-          <div key={k as string} className="flex justify-between text-muted-foreground">
-            <dt>{k}</dt>
-            <dd><Money v={v as number} /></dd>
+      <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
+      <p className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"} · {sup.length} supplier{sup.length === 1 ? "" : "s"}</p>
+      {sup.length > 0 && t.total > 0 && (
+        <>
+          <div className="mt-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+            {sup.map((s, i) => <div key={s.vendorId} className={cn("h-full transition-all duration-500", SHADES[i % SHADES.length])} style={{ width: `${(s.amount / t.total) * 100}%` }} title={s.name} />)}
           </div>
-        ))}
-      </dl>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {sup.map((s, i) => (
+              <li key={s.vendorId} className="flex items-center gap-2">
+                <span className={cn("size-2.5 rounded-[3px]", SHADES[i % SHADES.length])} />
+                <span className="flex-1 truncate">{s.name}</span>
+                <Money v={s.amount} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
@@ -67,26 +80,29 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
     });
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">Budget</span>
+        {b ? (
+          <span className={cn("num text-xs font-medium", b.over ? "text-destructive" : "text-success")}>{b.over ? `Over by ${money(-b.remaining)}` : `${money(b.remaining)} left after`}</span>
+        ) : <SourceMark s={r.sources.budget} />}
+      </div>
       {editable ? (
-        <div>
-          <div className="mb-1 flex justify-between"><span className="text-xs text-muted-foreground">Budget</span><SourceMark s={r.sources.budget} /></div>
-          <select id="budget-select-anchor" className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
-            <option value="">Select a budget…</option>
-            {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
-          </select>
-        </div>
+        <select id="budget-select-anchor" className="pd-input h-10 rounded-lg" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
+          <option value="">Select a budget…</option>
+          {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
+        </select>
       ) : (
-        <p className="text-sm font-medium">{b?.budget.name ?? "No budget selected"}</p>
+        <p className="rounded-lg border border-border px-3 py-2 text-sm">{b?.budget.name ?? "No budget selected"}</p>
       )}
       {b && (
         <>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div><p className="text-muted-foreground">Available</p><Money v={Math.max(0, b.available)} className="text-sm" /></div>
-            <div><p className="text-muted-foreground">This request</p><Money v={b.request} className="text-sm" /></div>
-            <div><p className="text-muted-foreground">Total</p><Money v={b.budget.total} className="text-sm" /></div>
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-subtle">
+            <div className="h-full bg-muted-foreground/30 transition-all duration-500" style={{ width: `${Math.min(100, ((b.budget.total - b.available) / b.budget.total) * 100)}%` }} />
+            <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: `${Math.max(1, Math.min(100, (b.request / b.budget.total) * 100))}%` }} />
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-subtle">
-            <div className={cn("h-full", b.over ? "bg-destructive" : "bg-success")} style={{ width: `${Math.min(100, ((b.budget.total - b.available + b.request) / b.budget.total) * 100)}%` }} />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span><Money v={Math.max(0, b.available)} /> available</span>
+            <span><Money v={b.budget.total} /> total</span>
           </div>
           {b.over ? (
             <div className="rounded-md bg-danger-soft p-3 text-xs">
@@ -374,11 +390,10 @@ function MiniSuppliers({ r }: { r: PRequest }) {
 export function SummaryRail({ r, editable, onCheckAction, extra }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode }) {
   return (
     <div className="space-y-4">
-      <Section title="Total & budget">
+      <div className="pd-panel rounded-xl p-4">
         <TotalsBlock r={r} />
-        <MiniSuppliers r={r} />
         <div className="mt-4 border-t border-border pt-4"><BudgetBlock r={r} editable={editable} /></div>
-      </Section>
+      </div>
       <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>
       {extra}
       <Section title={editable ? "Approval route preview" : "Approval route"}>
