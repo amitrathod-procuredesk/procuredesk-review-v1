@@ -84,6 +84,10 @@ export interface LineItem {
   notes?: string;
   catalogId?: string;
   source?: "ai" | "quote" | "manual";
+  itemType?: string;
+  itemClass?: string;
+  projectCode?: string;
+  webLink?: string;
 }
 
 export type Status =
