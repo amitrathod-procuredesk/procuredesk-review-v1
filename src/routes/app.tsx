@@ -1,12 +1,14 @@
-import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
-import { ClipboardCheck, FileText, Home, LogOut, Settings2, RotateCcw } from "lucide-react";
+import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
+import { AlarmClock, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AiGlyph, UserAvatar } from "@/components/pd/bits";
+import { UserAvatar } from "@/components/pd/bits";
 import { GlobalAssistant } from "@/components/pd/GlobalAssistant";
 import { isPendingFor } from "@/lib/pd/engine";
 import { logout, mutate, resetDemo, useDB, useHydrated, useMe } from "@/lib/pd/store";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
@@ -27,6 +29,7 @@ function AppShell() {
   const nav = useNavigate();
   const params = useParams({ strict: false }) as { id?: string };
   const [assistant, setAssistant] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     if (hydrated && !me) nav({ to: "/" });
@@ -52,51 +55,47 @@ function AppShell() {
 
   const pendingCount = db.requests.filter((r) => isPendingFor(r, me.id)).length;
   const ctx = params.id ? db.requests.find((r) => r.id === params.id) : undefined;
-  const items = [
-    { to: "/app", label: me.role === "admin" ? "Dashboard" : me.role === "approver" ? "Inbox" : "Home", icon: Home, exact: true },
+  const mobileItems = [
+    { to: "/app", label: "Home", icon: Home, exact: true },
     { to: "/app/requests", label: "Requests", icon: FileText },
-    ...(me.role !== "requestor" ? [{ to: "/app/approvals", label: "Approvals", icon: ClipboardCheck, badge: pendingCount }] : []),
+    ...(me.role !== "requestor" ? [{ to: "/app/approvals", label: "Approvals", icon: ClipboardCheck }] : []),
     ...(me.role === "admin" ? [{ to: "/app/admin", label: "Admin", icon: Settings2 }] : []),
   ] as const;
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex h-12 items-center gap-2 px-4 text-sm font-semibold">
-          <span className="inline-flex size-6 items-center justify-center rounded-md bg-primary text-[11px] text-primary-foreground">PD</span>
-          <span className="truncate">{db.org.name}</span>
-        </div>
-        <nav className="flex-1 space-y-0.5 px-2 py-2">
-          {items.map((it) => (
-            <Link key={it.to} to={it.to} className="nav-item" activeOptions={{ exact: "exact" in it && it.exact }}>
-              <it.icon className="size-4 text-muted-foreground" />
-              {it.label}
-              {"badge" in it && it.badge ? <span className="num ml-auto rounded-sm bg-primary px-1.5 text-[10px] text-primary-foreground">{it.badge}</span> : null}
-            </Link>
-          ))}
-          <button onClick={() => setAssistant(true)} className="nav-item mt-3 w-full">
-            <AiGlyph className="size-4" /> Ask ProcureDesk
-            <kbd className="ml-auto text-[10px] text-muted-foreground">⌘K</kbd>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 bg-surface px-4 sm:px-6">
+        <Link to="/app" className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
+          <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
+          <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
+        </Link>
+        <div className="flex justify-center">
+          <button onClick={() => setAssistant(true)} className="hidden h-9 w-full max-w-[304px] items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-muted-foreground transition-colors hover:border-primary/40 sm:flex">
+            <Search className="size-4" /> <span className="flex-1 text-left">Search for anything</span>
+            <kbd className="rounded border border-border px-1 text-[10px]">⌘K</kbd>
           </button>
-        </nav>
-        <UserMenu />
-      </aside>
+        </div>
+        <div className="flex items-center gap-3 sm:gap-6">
+          <button onClick={() => setAssistant(true)} aria-label="Search" className="sm:hidden"><Search className="size-4 text-muted-foreground" /></button>
+          <Link to={me.role === "requestor" ? "/app/requests" : "/app/approvals"} className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[13px] font-medium transition-colors hover:border-primary/40">
+            <AlarmClock className="size-4 text-primary" /> <span className="hidden sm:inline">My Tasks</span>
+            {pendingCount > 0 && <span className="num inline-flex size-[18px] items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{pendingCount}</span>}
+          </Link>
+          <UserMenu compact />
+        </div>
+      </header>
 
-      <div className="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
-        <header className="flex h-12 items-center justify-between border-b border-border px-4 md:hidden">
-          <span className="text-sm font-semibold">ProcureDesk</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setAssistant(true)} aria-label="Ask ProcureDesk"><AiGlyph /></button>
-            <UserMenu compact />
-          </div>
-        </header>
-        <main className="min-w-0 flex-1">
-          <Outlet />
-        </main>
+      <div className="flex min-h-0 flex-1">
+        <SideNav collapsed={collapsed} setCollapsed={setCollapsed} pendingCount={pendingCount} role={me.role} onChat={() => setAssistant(true)} />
+        <div className="flex min-w-0 flex-1 flex-col border-l border-border pb-16 md:pb-0">
+          <main className="min-w-0 flex-1">
+            <Outlet />
+          </main>
+        </div>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex h-14 border-t border-border bg-surface md:hidden">
-        {items.map((it) => (
+        {mobileItems.map((it) => (
           <Link key={it.to} to={it.to} activeOptions={{ exact: "exact" in it && it.exact }} className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground data-[status=active]:text-primary">
             <it.icon className="size-4" />
             {it.label}
@@ -105,6 +104,87 @@ function AppShell() {
       </nav>
       <GlobalAssistant open={assistant} onOpenChange={setAssistant} ctx={ctx} />
     </div>
+  );
+}
+
+type NavLeaf = { label: string; to?: string; exact?: boolean; badge?: number };
+type NavGroup = { label: string; icon: LucideIcon; to?: string; exact?: boolean; children?: NavLeaf[] };
+
+function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { collapsed: boolean; setCollapsed: (v: boolean) => void; pendingCount: number; role: string; onChat: () => void }) {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const soon = (n: string) => toast(`${n} is coming soon`, { description: "This area isn't part of the demo yet." });
+  const groups: NavGroup[] = [
+    { label: "Home", icon: Home, to: "/app", exact: true },
+    {
+      label: "Purchase", icon: ShoppingBasket, children: [
+        { label: "Request", to: "/app/requests" },
+        { label: "Orders" },
+        ...(role !== "requestor" ? [{ label: "Approvals", to: "/app/approvals", badge: pendingCount }] : []),
+        { label: "Receipts" }, { label: "Catalogs" }, { label: "Supplier quotes" },
+      ],
+    },
+    { label: "Pay", icon: CreditCard, children: [{ label: "Invoices" }, { label: "Payments" }] },
+    { label: "Budgets", icon: PieChart, children: [{ label: "Overview" }, { label: "Forecasts" }] },
+    { label: "Insights", icon: Lightbulb, children: [{ label: "Spend" }, { label: "Reports" }] },
+    { label: "Expenses", icon: CircleDollarSign },
+    { label: "Contracts", icon: FileText },
+    { label: "Inventory", icon: Briefcase },
+    { label: "Sell", icon: HeartHandshake, children: [{ label: "Customers" }, { label: "Invoices" }] },
+    { label: "Cards", icon: WalletCards, children: [{ label: "My cards" }, { label: "Transactions" }] },
+    ...(role === "admin" ? [{ label: "Admin", icon: Settings2, to: "/app/admin" }] : []),
+  ];
+  const groupActive = (g: NavGroup) => (g.to ? (g.exact ? path === g.to : path.startsWith(g.to)) : !!g.children?.some((c) => c.to && path.startsWith(c.to)));
+  const [open, setOpen] = useState<string[]>(() => groups.filter(groupActive).map((g) => g.label).concat("Purchase"));
+  const toggle = (l: string) => setOpen((o) => (o.includes(l) ? o.filter((x) => x !== l) : [...o, l]));
+  const row = "flex h-10 w-full items-center gap-2.5 rounded-lg px-2 text-[14px] text-foreground transition-colors hover:bg-sidebar-accent";
+
+  return (
+    <aside className={cn("sticky top-[60px] hidden h-[calc(100vh-60px)] shrink-0 flex-col bg-sidebar transition-[width] duration-200 md:flex", collapsed ? "w-[64px]" : "w-[250px]")}>
+      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-[15px] top-2 z-10 flex size-[30px] items-center justify-center rounded-full border border-border bg-surface text-muted-foreground shadow-sm transition-colors hover:text-foreground">
+        {collapsed ? <PanelLeftOpen className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
+      </button>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3.5 pb-4 pt-6">
+        {groups.map((g) => {
+          const act = groupActive(g);
+          const isOpen = open.includes(g.label) && !collapsed;
+          const icon = <g.icon className={cn("size-4 shrink-0", act ? "text-primary" : "text-foreground/80")} />;
+          if (g.to)
+            return (
+              <Link key={g.label} to={g.to} activeOptions={{ exact: g.exact }} title={g.label} className={cn(row, act && "text-primary", collapsed && "justify-center")}>
+                {icon}{!collapsed && <span className="truncate">{g.label}</span>}
+              </Link>
+            );
+          if (!g.children)
+            return <button key={g.label} title={g.label} onClick={() => soon(g.label)} className={cn(row, collapsed && "justify-center")}>{icon}{!collapsed && <span className="truncate">{g.label}</span>}</button>;
+          return (
+            <div key={g.label}>
+              <button title={g.label} onClick={() => (collapsed ? (setCollapsed(false), setOpen((o) => [...new Set([...o, g.label])])) : toggle(g.label))} className={cn(row, act && "text-primary", collapsed && "justify-center")}>
+                {icon}
+                {!collapsed && <><span className="flex-1 truncate text-left">{g.label}</span><ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} /></>}
+              </button>
+              {isOpen && (
+                <div className="animate-in fade-in slide-in-from-top-1 mb-1 ml-[11px] mt-1 space-y-1 border-l border-border pl-[11px]">
+                  {g.children.map((c) =>
+                    c.to ? (
+                      <Link key={c.label} to={c.to} className="flex h-9 items-center rounded-lg px-3 text-[14px] text-foreground transition-colors hover:bg-sidebar-accent data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium">
+                        <span className="flex-1 truncate">{c.label}</span>
+                        {c.badge ? <span className="num rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{c.badge}</span> : null}
+                      </Link>
+                    ) : (
+                      <button key={c.label} onClick={() => soon(c.label)} className="flex h-9 w-full items-center rounded-lg px-3 text-left text-[14px] text-foreground transition-colors hover:bg-sidebar-accent">{c.label}</button>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+      <div className="space-y-1 px-3.5 pb-5">
+        <button onClick={onChat} title="Chat to us" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquare className="size-4 shrink-0" />{!collapsed && "Chat to us"}</button>
+        <button onClick={() => toast.success("Thanks! Feedback noted.")} title="Send feedback" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquarePlus className="size-4 shrink-0" />{!collapsed && "Send feedback"}</button>
+      </div>
+    </aside>
   );
 }
 
