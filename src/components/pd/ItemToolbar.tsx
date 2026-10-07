@@ -47,6 +47,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
   const [hi, setHi] = useState(0);
   const [manual, setManual] = useState<string | null>(null);
   const [punch, setPunch] = useState(false);
+  useEffect(() => { const h = () => setPunch(true); window.addEventListener("pd:punchout", h); return () => window.removeEventListener("pd:punchout", h); }, []);
   const box = useRef<HTMLDivElement>(null);
   const results = useMemo(() => match(db, q), [db, q]);
   const showList = focus && q.trim().length > 0;

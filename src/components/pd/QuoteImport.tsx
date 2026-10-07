@@ -1,5 +1,5 @@
 import { FileUp, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
   const me = useMe();
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  useEffect(() => { const h = () => setOpen(true); window.addEventListener("pd:import", h); return () => window.removeEventListener("pd:import", h); }, []);
   const [phase, setPhase] = useState<"idle" | "uploading" | "processing" | "review" | "error">("idle");
   const [file, setFile] = useState<File | null>(null);
   const [ex, setEx] = useState<Extracted | null>(null);

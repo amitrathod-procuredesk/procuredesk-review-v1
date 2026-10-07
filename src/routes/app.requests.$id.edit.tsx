@@ -84,7 +84,7 @@ function EditRequest() {
             </div>
           )}
 
-          <Section title="What you're buying" action={<span className="text-xs text-muted-foreground">Total <Money v={totals(r).total} className="text-foreground" /></span>}>
+          <Section title="What you're buying">
             <LineItems r={r} editable />
           </Section>
 
