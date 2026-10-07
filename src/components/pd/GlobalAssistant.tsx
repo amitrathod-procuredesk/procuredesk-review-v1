@@ -17,7 +17,7 @@ export function AssistantThread({ ctx, suggestions, compact }: { ctx?: PRequest;
   const [q, setQ] = useState("");
   const [thinking, setThinking] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [turns, thinking]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [turns, thinking]);
 
   const ask = (text: string) => {
     if (!text.trim() || !me) return;

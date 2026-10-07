@@ -40,7 +40,7 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [r.ai.messages.length, stepIdx, busy]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [r.ai.messages.length, stepIdx, busy]);
 
   const last = r.ai.messages[r.ai.messages.length - 1];
 
