@@ -15,7 +15,7 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
   const [text, setText] = useState("");
   const [steps, setSteps] = useState<string[]>([]);
   const [stepIdx, setStepIdx] = useState(0);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(!!initialPrompt);
   const [history, setHistory] = useState(false);
   const busy = steps.length > 0;
   const started = useRef(false);
@@ -52,19 +52,23 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
   const lastUser = [...msgs].reverse().find((m) => m.role === "user");
   const isDone = lastAi?.kind === "done" && !r.ai.pending;
 
-  if (!open)
-    return (
-      <button
-        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="pd-float fixed bottom-5 left-1/2 z-40 inline-flex h-10 -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-surface px-4 text-sm font-medium animate-in fade-in slide-in-from-bottom-2 hover:-translate-y-0.5 hover:-translate-x-1/2 transition-transform lg:left-[calc(50%-160px)]"
-      >
-        <span className="pd-ai-diamond" /> Ask copilot
-        {r.ai.pending && <span className="size-1.5 rounded-full bg-primary ai-thinking-dot" />}
-      </button>
-    );
+  const triggerBtn = (
+    <button
+      onClick={() => { setOpen((o) => !o); setTimeout(() => inputRef.current?.focus(), 50); }}
+      aria-expanded={open}
+      className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium transition-colors hover:bg-subtle data-[open=true]:border-primary/40 data-[open=true]:bg-primary/5"
+      data-open={open}
+    >
+      <span className="pd-ai-diamond" /> Ask AI
+      {r.ai.pending && <span className="size-1.5 rounded-full bg-primary ai-thinking-dot" />}
+    </button>
+  );
+  if (!open) return <div className="relative">{triggerBtn}</div>;
 
   return (
-    <div className="pd-float fixed bottom-5 left-1/2 z-40 w-[min(680px,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-border bg-surface animate-in fade-in slide-in-from-bottom-4 duration-300 lg:left-[calc(50%-160px)]">
+    <div className="relative">
+    {triggerBtn}
+    <div className="pd-float fixed inset-x-3 top-14 z-50 rounded-2xl border border-border bg-surface animate-in fade-in slide-in-from-top-2 duration-200 sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[min(560px,calc(100vw-2rem))]">
       <div className="flex items-center justify-end gap-1 px-3 pt-2">
         {msgs.length > 1 && (
           <button className="mr-auto pl-3 text-[11px] text-muted-foreground hover:text-foreground" onClick={() => setHistory((h) => !h)}>
@@ -160,6 +164,7 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
