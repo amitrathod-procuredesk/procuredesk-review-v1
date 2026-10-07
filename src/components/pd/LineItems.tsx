@@ -7,6 +7,7 @@ import { lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemToolbar } from "./ItemToolbar";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,8 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
   const db = useDB();
   const me = useMe();
   const [open, setOpen] = useState<string | null>(null);
+  const [edit, setEdit] = useState<string | null>(null);
+  const editing = r.items.find((i) => i.id === edit);
   const [sel, setSel] = useState<string[]>([]);
   const [multi, setMulti] = useState(false);
 
@@ -31,7 +34,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
   const add = () => {
     const n = blank();
     updateRequest(r.id, (x) => { x.items.push(n); log(x, "Line item added", "edit", me?.id); });
-    setOpen(n.id);
+    setEdit(n.id);
   };
   const dup = (ids: string[]) => updateRequest(r.id, (x) => { ids.forEach((id) => { const l = x.items.find((i) => i.id === id); if (l) x.items.push({ ...l, id: uid("li") }); }); log(x, `${ids.length} line item(s) duplicated`, "edit", me?.id); });
   const del = (ids: string[]) => { updateRequest(r.id, (x) => { x.items = x.items.filter((i) => !ids.includes(i.id)); log(x, `${ids.length} line item(s) deleted`, "edit", me?.id); }); setSel([]); };
@@ -77,9 +80,9 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
               const isOpen = open === l.id;
               return (
                 <Fragment key={l.id}>
-                  <tr className={cn("group transition-colors", isOpen && "bg-subtle/60")}>
+                  <tr className={cn("group transition-colors", editable && "cursor-pointer", isOpen && "bg-subtle/60", edit === l.id && "bg-accent/60")} onClick={(e) => { if (!editable || (e.target as HTMLElement).closest("input,select,button,a,textarea")) return; setEdit(l.id); }}>
                     {editable && <td className="pd-stick-l left-0"><input type="checkbox" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
-                    <td><button aria-label="Expand line" onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-0.5 text-muted-foreground transition-transform hover:bg-subtle">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
+                    <td><button aria-label={isOpen ? "Hide details" : "Show details"} title="Show details" onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-0.5 text-muted-foreground transition-transform hover:bg-subtle">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
                     <td className="num text-xs text-muted-foreground">{i + 1}</td>
                     <td>
                       {editable ? (
@@ -116,7 +119,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                         <DropdownMenu>
                           <DropdownMenuTrigger aria-label="Line actions" className="rounded p-1 text-muted-foreground hover:bg-subtle"><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setOpen(l.id)}><Pencil /> Edit details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEdit(l.id)}><Pencil /> Edit details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => dup([l.id])}><Copy /> Duplicate</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => del([l.id])}><Trash2 /> Delete</DropdownMenuItem>
                           </DropdownMenuContent>
@@ -127,7 +130,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                   {isOpen && (
                     <tr className="bg-subtle/40 hover:bg-subtle/40">
                       <td colSpan={11} className="h-auto py-3">
-                        <LineDetail l={l} editable={editable} onPatch={(p) => patch(l.id, p)} />
+                        <div className="animate-in fade-in slide-in-from-top-1"><LineDetail l={l} editable={false} onPatch={() => {}} /></div>
                       </td>
                     </tr>
                   )}
@@ -146,7 +149,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
               <span><span className="text-sm font-medium">{l.description || "Untitled item"}</span><br /><span className="text-xs text-muted-foreground">{l.qty} × {money(l.unitPrice)} · {vendorName(l.vendorId) || "No supplier"}</span></span>
               <Money v={lineTotal(l)} className="text-sm" />
             </button>
-            {open === l.id && <div className="mt-3"><LineDetail l={l} editable={editable} onPatch={(p) => patch(l.id, p)} /></div>}
+            {open === l.id && <div className="mt-3"><LineDetail l={l} editable={false} onPatch={() => {}} />{editable && <Button size="sm" variant="outline" className="mt-3" onClick={() => setEdit(l.id)}><Pencil /> Edit item</Button>}</div>}
           </li>
         ))}
       </ul>
@@ -157,6 +160,38 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
           <span className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"}</span>
         </div>
       )}
+      <Sheet open={!!editing} onOpenChange={(o) => !o && setEdit(null)}>
+        <SheetContent className="flex w-full flex-col gap-0 sm:max-w-lg">
+          {editing && (
+            <>
+              <SheetHeader className="border-b border-border">
+                <SheetTitle>Edit line {r.items.indexOf(editing) + 1}</SheetTitle>
+                <p className="text-xs text-muted-foreground">Changes save automatically and update totals, budget and approvals.</p>
+              </SheetHeader>
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                <label className="block"><span className="pd-label">Description</span><input className="pd-input h-9" value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></label>
+                <div className="grid grid-cols-3 gap-3">
+                  <label className="col-span-3 block sm:col-span-1"><span className="pd-label">Supplier</span>
+                    <select className="pd-input h-9" value={editing.vendorId} onChange={(e) => patch(editing.id, { vendorId: e.target.value })}>
+                      <option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="block"><span className="pd-label">Quantity</span><input type="number" min={0} className="pd-input num h-9" value={editing.qty} onChange={(e) => patch(editing.id, { qty: Math.max(0, Number(e.target.value)) })} /></label>
+                  <label className="block"><span className="pd-label">Unit price</span><input type="number" min={0} step="0.01" className="pd-input num h-9" value={editing.unitPrice} onChange={(e) => patch(editing.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></label>
+                </div>
+                <div className="lg:[&_.grid]:grid-cols-2"><LineDetail l={editing} editable onPatch={(p) => patch(editing.id, p)} /></div>
+              </div>
+              <SheetFooter className="flex-row items-center justify-between border-t border-border">
+                <span className="text-sm text-muted-foreground">Line total <Money v={lineTotal(editing)} className="ml-1 font-semibold text-foreground" /></span>
+                <div className="flex gap-2">
+                  <Button variant="ghost" className="text-destructive" onClick={() => { del([editing.id]); setEdit(null); }}><Trash2 /> Delete</Button>
+                  <Button onClick={() => setEdit(null)}>Done</Button>
+                </div>
+              </SheetFooter>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
       <MultiEdit open={multi} onOpenChange={setMulti} r={r} ids={sel} />
     </div>
   );
