@@ -21,6 +21,14 @@ export function TotalsBlock({ r }: { r: PRequest }) {
       <p className="text-xs text-muted-foreground">Request total</p>
       <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
       <p className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"} · {sup.length} supplier{sup.length === 1 ? "" : "s"}</p>
+      <dl className="mt-3 space-y-1 border-y border-border py-2.5 text-xs">
+        {([["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]] as const).map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between">
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd><Money v={v} className={cn("num", v === 0 && k !== "Subtotal" && "text-muted-foreground")} /></dd>
+          </div>
+        ))}
+      </dl>
       {sup.length > 0 && t.total > 0 && (
         <>
           <div className="mt-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
