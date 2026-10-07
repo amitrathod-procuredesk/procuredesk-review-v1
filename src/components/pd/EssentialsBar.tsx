@@ -73,7 +73,7 @@ export function EssentialsBar({ r, set }: { r: PRequest; set: SetFn }) {
   const db = useDB();
   const dept = db.departments.find((d) => d.id === r.departmentId);
   const contact = db.users.find((u) => u.id === r.requesterId);
-  const ai = (k: string) => r.sources[k] === "ai";
+  const ai = (k: string) => r.sources[k] === "suggested";
   const fmtDate = r.requiredBy ? new Date(r.requiredBy + "T00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : undefined;
 
   return (
