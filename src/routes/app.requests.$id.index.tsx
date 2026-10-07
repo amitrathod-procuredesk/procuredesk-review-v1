@@ -156,14 +156,6 @@ function Detail() {
         </DialogContent>
       </Dialog>
 
-      {mine && (
-        <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
-          <Button variant="outline" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
-          <Button variant="outline" className="flex-1" onClick={() => setAction("changes")}>Changes</Button>
-          <Button className="flex-1" onClick={quickApprove}>Approve</Button>
-        </div>
-      )}
-
       <Dialog open={!!action} onOpenChange={(o) => !o && setAction(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>{{ approve: "Approve request", reject: "Reject request", changes: "Request changes", delegate: "Delegate approval" }[action ?? "approve"]}</DialogTitle></DialogHeader>
