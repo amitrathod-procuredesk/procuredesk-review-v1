@@ -72,8 +72,8 @@ export function ItemToolbar({ r }: { r: PRequest }) {
 
   return (
     <>
-      <div className="mb-3 flex flex-col gap-2 @container sm:flex-row sm:flex-wrap">
-        <div ref={box} className="relative min-w-0 flex-1 basis-64">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <div ref={box} className="relative min-w-0 flex-1 basis-[260px]">
           <div className={cn("flex h-10 items-center gap-2 rounded-lg border bg-surface px-3 transition-all", focus ? "border-primary ring-4 ring-primary/10" : "border-input hover:border-muted-foreground/40")}>
             <Search className={cn("size-4 transition-colors", focus ? "text-primary" : "text-muted-foreground")} />
             <input
