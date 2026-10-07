@@ -47,6 +47,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
   const [hi, setHi] = useState(0);
   const [manual, setManual] = useState<string | null>(null);
   const [punch, setPunch] = useState(false);
+  useEffect(() => { const h = () => setPunch(true); window.addEventListener("pd:punchout", h); return () => window.removeEventListener("pd:punchout", h); }, []);
   const box = useRef<HTMLDivElement>(null);
   const results = useMemo(() => match(db, q), [db, q]);
   const showList = focus && q.trim().length > 0;
@@ -122,8 +123,8 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="h-10" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
-          <span className="[&_button]:h-10"><QuoteImport r={r} label="Import" /></span>
+          <Button size="sm" variant="outline" className="h-10 px-3.5 text-sm" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
+          <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
       <ManualItemSheet r={r} initial={manual} onClose={() => { setManual(null); setQ(""); }} />
