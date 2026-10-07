@@ -140,7 +140,7 @@
     @apply h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none hover:border-input focus:border-ring focus:bg-surface;
   }
   .pd-panel {
-    @apply rounded-lg border border-border bg-surface;
+    @apply rounded-xl border border-border/50 bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)];
   }
   .pd-section-title {
     @apply text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground;

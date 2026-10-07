@@ -64,11 +64,11 @@ export function CheckIcon({ level }: { level: CheckT["level"] }) {
 export function Section({ title, action, children, className }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={cn("pd-panel", className)}>
-      <header className="flex h-10 items-center justify-between border-b border-border px-4">
+      <header className="flex items-center justify-between px-5 pt-4">
         <h2 className="pd-section-title">{title}</h2>
         {action}
       </header>
-      <div className="p-4">{children}</div>
+      <div className="px-5 pb-5 pt-3">{children}</div>
     </section>
   );
 }

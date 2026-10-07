@@ -60,7 +60,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
       l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
     ].filter(Boolean);
     return (
-      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]", sel.includes(l.id) && "border-primary/40 bg-primary/[0.03]", edit === l.id && "border-primary/50 ring-1 ring-primary/20")}>
+      <li key={l.id} className={cn("group relative rounded-lg border border-transparent transition-colors hover:bg-subtle/60", sel.includes(l.id) && "bg-primary/[0.04]", edit === l.id && "bg-primary/[0.05]")}>
         <div className={cn("flex items-start gap-3 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
           {editable && <input type="checkbox" className="mt-0.5 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
@@ -169,7 +169,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
 
       {view === "list" ? (
         <div>
-          <ul className="space-y-1.5">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>
+          <ul className="divide-y divide-border/60">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>
           {!q && more(visibleItems.length, "_list")}
         </div>
       ) : (
@@ -179,7 +179,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
             if (!items.length) return null;
             const isCol = collapsed.includes(g.id) && !q;
             return (
-              <section key={g.id} className="rounded-lg border border-border bg-subtle/30">
+              <section key={g.id} className="rounded-lg bg-subtle/40">
                 <button onClick={() => setCollapsed((c) => (c.includes(g.id) ? c.filter((x) => x !== g.id) : [...c, g.id]))} aria-expanded={!isCol} className="flex w-full items-center gap-2 px-3 py-2 text-left">
                   <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", isCol && "-rotate-90")} />
                   <span className="text-[13px] font-semibold">{g.name || "No supplier"}</span>
@@ -188,7 +188,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
-                    <ul className="space-y-1.5">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>
+                    <ul className="divide-y divide-border/60">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>
                     {!q && more(items.length, g.id)}
                   </div>
                 )}
