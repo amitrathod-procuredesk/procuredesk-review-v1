@@ -8,8 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
 import { LineItems } from "@/components/pd/LineItems";
-import { Attachments, ChecksBlock, Comments, DuplicateList, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
-import { budgetStatus, canSubmit, computeRoute, findDuplicates, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
+import { Attachments, ChecksBlock, Comments, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
+import { budgetStatus, canSubmit, computeRoute, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
@@ -82,7 +82,6 @@ function EditRequest() {
               <p className="mt-1 text-xs text-muted-foreground">Update the request and resubmit — the approval route will restart.</p>
             </div>
           )}
-          <div id="dup"><DuplicateList r={r} /></div>
 
           <Section title="What you're buying" action={<span className="text-xs text-muted-foreground">Total <Money v={totals(r).total} className="text-foreground" /></span>}>
             <LineItems r={r} editable />
@@ -110,12 +109,11 @@ function EditRequest() {
 
           <MoreDetails r={r} set={set} />
 
-          <div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div>
           <Section title="Comments"><Comments r={r} /></Section>
         </div>
 
         <aside id="rail-budget" className="border-t border-border bg-subtle/50 p-4 lg:border-t-0 lg:border-l">
-          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable onCheckAction={onCheck} /></div>
+          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable onCheckAction={onCheck} extra={<div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div>} /></div>
         </aside>
       </div>
 
@@ -176,8 +174,6 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
   const b = budgetStatus(r, db);
   const sup = supplierBreakdown(r, db);
   const dept = db.departments.find((d) => d.id === r.departmentId);
-  const dups = findDuplicates(r, db);
-  const blockedByDup = dups.length > 0 && !r.duplicateAcknowledged;
   const route = computeRoute(r, db);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -211,11 +207,10 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
             </div>
           </div>
         </div>
-        {blockedByDup && <DuplicateList r={r} />}
         {!ok && <p className="text-sm text-destructive">Resolve the items marked in red before submitting. {b?.over && "For budget issues, choose another budget or request an exception."}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); toast.success("Saved as draft"); }}>Save as draft</Button>
-          <Button disabled={!ok || blockedByDup} onClick={onSubmit}>Send for approval · {money(totals(r).total)}</Button>
+          <Button disabled={!ok} onClick={onSubmit}>Send for approval · {money(totals(r).total)}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
