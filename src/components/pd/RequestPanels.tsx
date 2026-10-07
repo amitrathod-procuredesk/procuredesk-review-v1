@@ -355,13 +355,32 @@ export function ActivityLog({ r }: { r: PRequest }) {
   );
 }
 
-export function SummaryRail({ r, editable, onCheckAction }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void }) {
+function MiniSuppliers({ r }: { r: PRequest }) {
+  const db = useDB();
+  const sup = supplierBreakdown(r, db);
+  if (!sup.length) return null;
+  return (
+    <ul className="mt-3 space-y-1 text-xs">
+      {sup.map((s) => (
+        <li key={s.vendorId} className="flex justify-between gap-2 text-muted-foreground">
+          <span className="truncate">{s.name} · {s.lines}</span>
+          <span className="num text-foreground">{money(s.amount)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function SummaryRail({ r, editable, onCheckAction, extra }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <Section title="Total"><TotalsBlock r={r} /></Section>
-      <Section title="Budget"><BudgetBlock r={r} editable={editable} /></Section>
+      <Section title="Total & budget">
+        <TotalsBlock r={r} />
+        <MiniSuppliers r={r} />
+        <div className="mt-4 border-t border-border pt-4"><BudgetBlock r={r} editable={editable} /></div>
+      </Section>
       <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>
-      <Section title="Suppliers"><SupplierBlock r={r} /></Section>
+      {extra}
       <Section title={editable ? "Approval route preview" : "Approval route"}>
         <RouteTimeline r={r} preview={editable} />
       </Section>

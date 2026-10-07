@@ -82,7 +82,6 @@ function EditRequest() {
               <p className="mt-1 text-xs text-muted-foreground">Update the request and resubmit — the approval route will restart.</p>
             </div>
           )}
-          <div id="dup"><DuplicateList r={r} /></div>
 
           <Section title="What you're buying" action={<span className="text-xs text-muted-foreground">Total <Money v={totals(r).total} className="text-foreground" /></span>}>
             <LineItems r={r} editable />
@@ -110,12 +109,11 @@ function EditRequest() {
 
           <MoreDetails r={r} set={set} />
 
-          <div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div>
           <Section title="Comments"><Comments r={r} /></Section>
         </div>
 
         <aside id="rail-budget" className="border-t border-border bg-subtle/50 p-4 lg:border-t-0 lg:border-l">
-          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable onCheckAction={onCheck} /></div>
+          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable onCheckAction={onCheck} extra={<div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div>} /></div>
         </aside>
       </div>
 
@@ -211,7 +209,6 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
             </div>
           </div>
         </div>
-        {blockedByDup && <DuplicateList r={r} />}
         {!ok && <p className="text-sm text-destructive">Resolve the items marked in red before submitting. {b?.over && "For budget issues, choose another budget or request an exception."}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); toast.success("Saved as draft"); }}>Save as draft</Button>
