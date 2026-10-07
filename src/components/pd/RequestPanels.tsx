@@ -264,7 +264,7 @@ export function Attachments({ r, editable }: { r: PRequest; editable?: boolean }
       setUploading((u) => [...u, f.name]);
       setTimeout(() => {
         updateRequest(r.id, (x) => {
-          x.attachments.push({ id: uid("att"), name: f.name, size: f.size, kind, uploadedAt: new Date().toISOString() });
+          x.attachments.push({ id: uid("att"), name: f.name, size: f.size, kind: kindOf(f.name), uploadedAt: new Date().toISOString() });
           log(x, `Attachment added: ${f.name}`, "edit", me?.id);
         });
         setUploading((u) => u.filter((n) => n !== f.name));
