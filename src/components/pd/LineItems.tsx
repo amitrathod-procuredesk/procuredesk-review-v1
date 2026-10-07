@@ -138,7 +138,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
         </div>
       )}
 
-      <div className="mb-2 flex items-center gap-2">
+      {r.items.length > 0 && <div className="mb-2 flex items-center gap-2">
         {editable && r.items.length > 0 && (
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" aria-label="Select all" checked={allSel} onChange={() => setSel(allSel ? [] : r.items.map((i) => i.id))} /> Select all
@@ -155,10 +155,16 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
             <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={cn("rounded px-2.5 py-1 font-medium transition-colors", view === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{l}</button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {r.items.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">No items yet. Search the catalog above, punch out to a supplier, import a quote, or ask AI.</div>
+        <div className="animate-in fade-in flex flex-col items-center px-4 py-8 text-center">
+          <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-accent text-primary"><Package className="size-5" strokeWidth={1.75} /></div>
+          <p className="text-sm font-semibold text-foreground">Start by adding line items</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Search above{editable && <>, <button className="text-primary hover:underline" onClick={() => window.dispatchEvent(new Event("pd:punchout"))}>select a punch-out supplier</button>, or <button className="text-primary hover:underline" onClick={() => window.dispatchEvent(new Event("pd:import"))}>import a file</button></>}
+          </p>
+        </div>
       )}
 
       {view === "list" ? (
@@ -193,7 +199,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
       )}
       {q && visibleItems.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No items match “{filter}”.</p>}
 
-      {editable && (
+      {editable && r.items.length > 0 && (
         <div className="mt-2 flex items-center justify-between">
           <Button size="sm" variant="ghost" onClick={add}><Plus /> Add item</Button>
           <span className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"}</span>
