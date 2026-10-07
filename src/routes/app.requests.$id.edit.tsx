@@ -67,6 +67,7 @@ function EditRequest() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /> <span className="flex items-center gap-1"><Check className="size-3" /> Saved {smartTime(r.updatedAt)}</span></p>
         </div>
         <div className="flex items-center gap-2">
+          <Copilot r={r} initialPrompt={prompt} />
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
           <Button size="sm" onClick={() => setReview(true)}>Review & submit</Button>
         </div>
@@ -117,7 +118,6 @@ function EditRequest() {
         </aside>
       </div>
 
-      <Copilot r={r} initialPrompt={prompt} />
       <ReviewDialog r={r} open={review} onOpenChange={setReview} onSubmit={() => { submitRequest(r.id, me.id); setReview(false); setSubmitted(true); }} />
     </div>
   );
