@@ -194,8 +194,9 @@ function UserMenu({ compact }: { compact?: boolean }) {
   const nav = useNavigate();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={compact ? "" : "flex items-center gap-2 border-t border-sidebar-border px-4 py-3 text-left hover:bg-sidebar-accent"}>
+      <DropdownMenuTrigger className={compact ? "flex items-center gap-1.5 rounded-full bg-subtle py-1 pl-1 pr-2 transition-colors hover:bg-sidebar-accent" : "flex items-center gap-2 border-t border-sidebar-border px-4 py-3 text-left hover:bg-sidebar-accent"}>
         <UserAvatar user={me} />
+        {compact && <ChevronDown className="size-3.5 text-muted-foreground" />}
         {!compact && (
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">{me.name}</span>
