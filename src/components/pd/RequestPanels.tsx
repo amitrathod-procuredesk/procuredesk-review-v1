@@ -200,7 +200,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
           return (
             <li key={s.id} className="relative pb-4 pl-9 last:pb-0">
               {!last && <span className={cn("absolute left-[11px] top-6 bottom-0 w-px", done ? "bg-success/50" : "bg-border")} />}
-              <span className={cn("absolute left-0 top-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium", done ? "border-success bg-success text-success-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
+              <span className={cn("absolute left-0 top-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium", done ? "border-success bg-success text-primary-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
                 {done ? <Check className="size-3" /> : i + 1}
               </span>
               <div className="flex min-h-6 flex-wrap items-center gap-2">
