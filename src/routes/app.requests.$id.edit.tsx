@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
 import { LineItems } from "@/components/pd/LineItems";
-import { QuoteImport } from "@/components/pd/QuoteImport";
 import { Attachments, ChecksBlock, Comments, DuplicateList, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
 import { budgetStatus, canSubmit, computeRoute, findDuplicates, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
@@ -36,7 +35,6 @@ function EditRequest() {
   const r = db.requests.find((x) => x.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [review, setReview] = useState(false);
-  const [showAi, setShowAi] = useState(true);
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   if (r.requesterId !== me.id && me.role !== "admin")
@@ -69,21 +67,14 @@ function EditRequest() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /> <span className="flex items-center gap-1"><Check className="size-3" /> Saved {smartTime(r.updatedAt)}</span></p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="ghost" className="hidden xl:inline-flex" onClick={() => setShowAi((s) => !s)}>{showAi ? "Hide copilot" : "Show copilot"}</Button>
-          <QuoteImport r={r} />
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
           <Button size="sm" onClick={() => setReview(true)}>Review & submit</Button>
         </div>
       </header>
 
-      <div className={cn("grid flex-1 gap-0", showAi ? "xl:grid-cols-[360px_1fr_320px]" : "xl:grid-cols-[1fr_320px]", "lg:grid-cols-[1fr_320px]")}>
-        {showAi && (
-          <aside className="h-[440px] border-b border-border bg-surface lg:col-span-2 xl:sticky xl:top-[57px] xl:col-span-1 xl:h-[calc(100vh-57px)] xl:border-r xl:border-b-0">
-            <Copilot r={r} initialPrompt={prompt} />
-          </aside>
-        )}
+      <div className="grid flex-1 gap-0 lg:grid-cols-[1fr_320px]">
 
-        <div className="min-w-0 space-y-4 p-4 md:p-6">
+        <div className="min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64">
           {r.status === "changes" && r.decisionReason && (
             <div className="rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
               <p className="font-medium">Changes requested</p>
@@ -128,6 +119,7 @@ function EditRequest() {
         </aside>
       </div>
 
+      <Copilot r={r} initialPrompt={prompt} />
       <ReviewDialog r={r} open={review} onOpenChange={setReview} onSubmit={() => { submitRequest(r.id, me.id); setReview(false); setSubmitted(true); }} />
     </div>
   );
