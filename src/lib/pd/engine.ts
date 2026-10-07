@@ -195,9 +195,6 @@ export function runChecks(r: PRequest, db: DB): Check[] {
     else out.push({ id: "budget", level: "ok", title: "Within budget", detail: `${money(b.remaining)} remains in ${b.budget.name} after this request.` });
   }
 
-  const dups = findDuplicates(r, db);
-  if (dups.length && !r.duplicateAcknowledged)
-    out.push({ id: "dup", level: "warn", title: "Possible duplicate", detail: `${dups.length} similar request${dups.length > 1 ? "s" : ""} in the last ${db.policies.duplicateWindowDays} days.`, action: "duplicate" });
 
   return out;
 }

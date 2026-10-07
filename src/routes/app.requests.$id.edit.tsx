@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
 import { LineItems } from "@/components/pd/LineItems";
-import { Attachments, ChecksBlock, Comments, DuplicateList, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
+import { Attachments, ChecksBlock, Comments, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
 import { budgetStatus, canSubmit, computeRoute, findDuplicates, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
@@ -175,7 +175,6 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
   const sup = supplierBreakdown(r, db);
   const dept = db.departments.find((d) => d.id === r.departmentId);
   const dups = findDuplicates(r, db);
-  const blockedByDup = dups.length > 0 && !r.duplicateAcknowledged;
   const route = computeRoute(r, db);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,7 +211,7 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
         {!ok && <p className="text-sm text-destructive">Resolve the items marked in red before submitting. {b?.over && "For budget issues, choose another budget or request an exception."}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); toast.success("Saved as draft"); }}>Save as draft</Button>
-          <Button disabled={!ok || blockedByDup} onClick={onSubmit}>Send for approval · {money(totals(r).total)}</Button>
+          <Button disabled={!ok} onClick={onSubmit}>Send for approval · {money(totals(r).total)}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

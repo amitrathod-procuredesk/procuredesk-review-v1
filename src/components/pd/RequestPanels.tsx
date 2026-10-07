@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Check, Clock, FileUp, Paperclip, Users, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -371,7 +371,7 @@ function MiniSuppliers({ r }: { r: PRequest }) {
   );
 }
 
-export function SummaryRail({ r, editable, onCheckAction, extra }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: React.ReactNode }) {
+export function SummaryRail({ r, editable, onCheckAction, extra }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode }) {
   return (
     <div className="space-y-4">
       <Section title="Total & budget">
