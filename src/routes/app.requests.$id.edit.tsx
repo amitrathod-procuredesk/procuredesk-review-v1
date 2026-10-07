@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Switch } from "@/components/ui/switch";
 import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
+import { EssentialsBar } from "@/components/pd/EssentialsBar";
 import { LineItems } from "@/components/pd/LineItems";
 import { Attachments, ChecksBlock, Comments, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
 import { budgetStatus, canSubmit, computeRoute, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
@@ -84,28 +85,12 @@ function EditRequest() {
             </div>
           )}
 
-          <Section title="What you're buying">
-            <LineItems r={r} editable />
+          <Section title="Essentials">
+            <EssentialsBar r={r} set={set} />
           </Section>
 
-          <Section title="Essentials">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Department" source={r.sources.department}>
-                <select className="pd-input" value={r.departmentId ?? ""} onChange={(e) => { const d = db.departments.find((x) => x.id === e.target.value); set({ departmentId: e.target.value || undefined, businessUnit: d?.businessUnit ?? r.businessUnit }, "department", `Department set to ${d?.name}`); }}>
-                  <option value="">Select…</option>
-                  {db.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Required by" source={r.sources.requiredBy}>
-                <input type="date" className="pd-input" value={r.requiredBy ?? ""} onChange={(e) => set({ requiredBy: e.target.value || undefined }, "requiredBy")} />
-              </Field>
-              <Field label="Project" source={r.sources.project}>
-                <select className="pd-input" value={r.project} onChange={(e) => set({ project: e.target.value }, "project")}>
-                  <option value="">None</option>
-                  {db.org.projects.map((p) => <option key={p}>{p}</option>)}
-                </select>
-              </Field>
-            </div>
+          <Section title="What you're buying">
+            <LineItems r={r} editable />
           </Section>
 
           <MoreDetails r={r} set={set} />
@@ -126,34 +111,17 @@ function EditRequest() {
 function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?: string, label?: string) => void }) {
   const db = useDB();
   const [open, setOpen] = useState(false);
-  const flags = [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(" · ");
   return (
     <section className="pd-panel">
       <button className="flex h-10 w-full items-center justify-between px-4 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className="pd-section-title">More details</span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          {!open && `${r.requestType} · ${r.shipTo} · ${r.paymentMethod}${flags ? ` · ${flags}` : ""}`}
+          {!open && "Notes, attention, quote # and website"}
           <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
         </span>
       </button>
       {open && (
         <div className="space-y-5 border-t border-border p-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Business unit"><select className="pd-input" value={r.businessUnit} onChange={(e) => set({ businessUnit: e.target.value })}>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</select></Field>
-            <Field label="Request type"><select className="pd-input" value={r.requestType} onChange={(e) => set({ requestType: e.target.value })}>{REQUEST_TYPES.map((b) => <option key={b}>{b}</option>)}</select></Field>
-            <Field label="Contact"><input className="pd-input" disabled value={`${db.users.find((u) => u.id === r.requesterId)?.name} (you)`} /></Field>
-            <Field label="Ship to"><select className="pd-input" value={r.shipTo} onChange={(e) => set({ shipTo: e.target.value })}>{db.org.shipTo.map((b) => <option key={b}>{b}</option>)}</select></Field>
-            <Field label="Payment method"><select className="pd-input" value={r.paymentMethod} onChange={(e) => set({ paymentMethod: e.target.value }, undefined, `Payment method set to ${e.target.value}`)}>{PAYMENT_METHODS.map((b) => <option key={b}>{b}</option>)}</select></Field>
-            <Field label="Shipment type"><select className="pd-input" value={r.shipmentType} onChange={(e) => set({ shipmentType: e.target.value })}>{SHIPMENT_TYPES.map((b) => <option key={b}>{b}</option>)}</select></Field>
-          </div>
-          <div className="flex flex-wrap gap-6">
-            {([["urgent", "Urgent", "Flag for expedited approval"], ["delayed", "Delayed release", "Hold PO until a release date"], ["blanket", "Blanket requisition", "Recurring purchases over a period"]] as const).map(([k, l, d]) => (
-              <label key={k} className="flex items-start gap-2.5">
-                <Switch checked={r[k]} onCheckedChange={(v) => set({ [k]: v } as Partial<PRequest>, undefined, `${l} ${v ? "enabled" : "disabled"}`)} />
-                <span><span className="block text-sm">{l}</span><span className="text-xs text-muted-foreground">{d}</span></span>
-              </label>
-            ))}
-          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Note to buyer"><textarea className="pd-input h-16 py-2" value={r.noteBuyer} onChange={(e) => set({ noteBuyer: e.target.value })} /></Field>
             <Field label="Note to supplier"><textarea className="pd-input h-16 py-2" value={r.noteSupplier} onChange={(e) => set({ noteSupplier: e.target.value })} /></Field>
