@@ -69,11 +69,11 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                 <span className="num mt-px shrink-0 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
                 <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.4]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
               </div>
-              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-6 text-[11.5px] text-muted-foreground">
-                {meta.map((m, k) => <span key={k} className="flex max-w-full items-center gap-1.5 truncate">{k > 0 && <span className="text-border">•</span>}{m}</span>)}
-                {l.catalogId && <span className="rounded bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">Catalog</span>}
-                {l.source === "ai" && <span className="rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
-                {l.source === "quote" && <span className="rounded bg-subtle px-1.5 py-px text-[10px] font-medium">Quote</span>}
+              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-6 text-[11.5px] text-muted-foreground">
+                <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
+                {l.catalogId && <span className="shrink-0 rounded bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">Catalog</span>}
+                {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
+                {l.source === "quote" && <span className="shrink-0 rounded bg-subtle px-1.5 py-px text-[10px] font-medium">Quote</span>}
               </div>
             </div>
             <div className="flex shrink-0 items-end justify-between gap-4 pl-6 sm:block sm:pl-0 sm:text-right">
