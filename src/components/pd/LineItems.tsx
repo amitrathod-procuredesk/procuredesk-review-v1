@@ -77,7 +77,18 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
               </div>
             </div>
             <div className="flex shrink-0 items-end justify-between gap-4 pl-6 sm:block sm:pl-0 sm:text-right">
-              <p className="num text-[11.5px] text-muted-foreground">{l.qty} {l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</p>
+              {editable ? (
+                <div className="num flex items-center gap-1.5 text-[11.5px] text-muted-foreground sm:justify-end">
+                  <div className="inline-flex h-6 items-center rounded-md border border-border bg-card transition-colors focus-within:border-primary/60 hover:border-primary/40">
+                    <button type="button" aria-label="Decrease quantity" disabled={l.qty <= 1} className="flex h-full w-5 items-center justify-center rounded-l-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground disabled:opacity-40" onClick={() => patch(l.id, { qty: Math.max(1, l.qty - 1) })}>−</button>
+                    <input type="number" min={1} aria-label={`Quantity for line ${i + 1}`} className="h-full w-9 border-x border-border bg-transparent text-center text-[12px] font-medium text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />
+                    <button type="button" aria-label="Increase quantity" className="flex h-full w-5 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" onClick={() => patch(l.id, { qty: l.qty + 1 })}>+</button>
+                  </div>
+                  <span>{l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</span>
+                </div>
+              ) : (
+                <p className="num text-[11.5px] text-muted-foreground">{l.qty} {l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</p>
+              )}
               <Money v={lineTotal(l)} className="text-sm font-semibold sm:mt-0.5 sm:block" />
             </div>
           </div>
