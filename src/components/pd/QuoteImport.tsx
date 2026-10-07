@@ -19,7 +19,7 @@ function parseCSV(text: string): Extracted["items"] {
   return rows.slice(1).filter((r) => r[d]).map((r) => ({ description: r[d], partNumber: pn >= 0 ? r[pn] : "", qty: Number(r[q]) || 1, unitPrice: Number((r[p] || "0").replace(/[$,]/g, "")) || 0, keep: true }));
 }
 
-export function QuoteImport({ r }: { r: PRequest }) {
+export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
   const me = useMe();
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -73,7 +73,7 @@ export function QuoteImport({ r }: { r: PRequest }) {
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)}><FileUp /> Import quote</Button>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}><FileUp /> {label ?? "Import quote"}</Button>
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setPhase("idle"); setEx(null); } }}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Import supplier quote</DialogTitle></DialogHeader>

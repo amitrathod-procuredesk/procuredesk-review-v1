@@ -7,6 +7,7 @@ import { lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
+import { ItemToolbar } from "./ItemToolbar";
 import { cn } from "@/lib/utils";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
@@ -39,8 +40,9 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
 
   return (
     <div id="line-items">
+      {editable && <ItemToolbar r={r} />}
       {editable && sel.length > 0 && (
-        <div className="mb-2 flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground">
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-accent animate-in fade-in slide-in-from-top-1 px-3 py-1.5 text-sm text-accent-foreground">
           <span className="font-medium">{sel.length} selected</span>
           <Button size="sm" variant="ghost" onClick={() => setMulti(true)}><Pencil /> Multi-edit</Button>
           <Button size="sm" variant="ghost" onClick={() => dup(sel)}><Copy /> Duplicate</Button>
@@ -50,34 +52,34 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
       )}
 
       {/* Desktop table */}
-      <div className="hidden max-h-[560px] overflow-auto rounded-md border border-border md:block">
-        <table className="pd-table">
+      <div className="pd-scroll hidden max-h-[560px] overflow-auto rounded-lg border border-border md:block">
+        <table className="pd-table pd-sticky-table min-w-[980px]">
           <thead className="sticky top-0 z-10">
             <tr>
-              {editable && <th className="w-8"><input type="checkbox" aria-label="Select all" checked={allSel} onChange={() => setSel(allSel ? [] : r.items.map((i) => i.id))} /></th>}
+              {editable && <th className="pd-stick-l w-8 left-0"><input type="checkbox" aria-label="Select all" checked={allSel} onChange={() => setSel(allSel ? [] : r.items.map((i) => i.id))} /></th>}
               <th className="w-8" />
               <th className="w-10">Line</th>
-              <th className="min-w-56">Description</th>
-              <th>Supplier</th>
-              <th>Account</th>
+              <th className="min-w-64">Description</th>
+              <th className="min-w-44">Supplier</th>
+              <th className="min-w-40">Account</th>
               <th className="w-16">UOM</th>
               <th className="w-20 text-right">Qty</th>
               <th className="w-28 text-right">Unit price</th>
               <th className="w-28 text-right">Total</th>
-              {editable && <th className="w-10" />}
+              {editable && <th className="pd-stick-r w-12 right-0"><span className="sr-only">Actions</span></th>}
             </tr>
           </thead>
           <tbody>
             {r.items.length === 0 && (
-              <tr><td colSpan={11} className="h-24 text-center text-sm text-muted-foreground">No items yet. Describe what you need to the assistant, import a quote, or add an item.</td></tr>
+              <tr><td colSpan={11} className="h-24 text-center text-sm text-muted-foreground">No items yet. Search the catalog above, punch out to a supplier, import a quote, or ask the copilot.</td></tr>
             )}
             {r.items.map((l, i) => {
               const isOpen = open === l.id;
               return (
                 <Fragment key={l.id}>
-                  <tr className={cn(isOpen && "bg-subtle/60")}>
-                    {editable && <td><input type="checkbox" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
-                    <td><button aria-label="Expand line" onClick={() => setOpen(isOpen ? null : l.id)} className="text-muted-foreground">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
+                  <tr className={cn("group transition-colors", isOpen && "bg-subtle/60")}>
+                    {editable && <td className="pd-stick-l left-0"><input type="checkbox" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
+                    <td><button aria-label="Expand line" onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-0.5 text-muted-foreground transition-transform hover:bg-subtle">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
                     <td className="num text-xs text-muted-foreground">{i + 1}</td>
                     <td>
                       {editable ? (
@@ -94,7 +96,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                     </td>
                     <td>
                       {editable ? (
-                        <select className={cn("pd-input-bare", !l.vendorId && "text-warning")} value={l.vendorId} onChange={(e) => patch(l.id, { vendorId: e.target.value })}>
+                        <select className={cn("pd-input-bare min-w-40", !l.vendorId && "text-warning")} value={l.vendorId} onChange={(e) => patch(l.id, { vendorId: e.target.value })}>
                           <option value="">Select supplier</option>
                           {db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
@@ -103,14 +105,14 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                     <td className="max-w-40 truncate text-xs text-muted-foreground">{l.account || "—"}</td>
                     <td className="text-xs">{l.uom}</td>
                     <td className="text-right">
-                      {editable ? <input type="number" min={0} className="pd-input-bare num text-right" value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(0, Number(e.target.value)) })} /> : <span className="num">{l.qty}</span>}
+                      {editable ? <input type="number" min={0} className="pd-input-bare num w-16 text-right" value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(0, Number(e.target.value)) })} /> : <span className="num">{l.qty}</span>}
                     </td>
                     <td className="text-right">
-                      {editable ? <input type="number" min={0} step="0.01" className="pd-input-bare num text-right" value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /> : <Money v={l.unitPrice} />}
+                      {editable ? <input type="number" min={0} step="0.01" className="pd-input-bare num w-24 text-right" value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /> : <Money v={l.unitPrice} />}
                     </td>
                     <td className="text-right font-medium"><Money v={lineTotal(l)} /></td>
                     {editable && (
-                      <td>
+                      <td className="pd-stick-r right-0">
                         <DropdownMenu>
                           <DropdownMenuTrigger aria-label="Line actions" className="rounded p-1 text-muted-foreground hover:bg-subtle"><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
