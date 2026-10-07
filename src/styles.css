@@ -248,3 +248,19 @@
 
 .pd-drawer-sec{margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
 .pd-drawer-sec:first-child{margin-top:0;padding-top:0;border-top:0}
+
+/* Native selects: custom chevron with consistent right inset (unlayered so utilities can't remove the padding) */
+select.pd-input,
+select.pd-input-bare {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px 14px;
+  cursor: pointer;
+}
