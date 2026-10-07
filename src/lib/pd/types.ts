@@ -88,6 +88,7 @@ export interface LineItem {
   itemClass?: string;
   projectCode?: string;
   webLink?: string;
+  imageUrl?: string;
 }
 
 export type Status =
