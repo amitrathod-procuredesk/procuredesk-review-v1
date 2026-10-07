@@ -64,7 +64,7 @@ function AppShell() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 bg-surface px-4 sm:px-6">
+      <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
         <Link to="/app" className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
           <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
           <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
@@ -140,10 +140,10 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
 
   return (
     <aside className={cn("sticky top-[60px] hidden h-[calc(100vh-60px)] shrink-0 flex-col bg-sidebar transition-[width] duration-200 md:flex", collapsed ? "w-[64px]" : "w-[250px]")}>
-      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-[15px] top-2 z-10 flex size-[30px] items-center justify-center rounded-full border border-border bg-surface text-muted-foreground shadow-sm transition-colors hover:text-foreground">
-        {collapsed ? <PanelLeftOpen className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
+      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-[15px] top-4 z-40 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-foreground/70 shadow-md transition-colors hover:border-primary/40 hover:text-primary">
+        {collapsed ? <PanelLeftOpen className="size-4" strokeWidth={1.75} /> : <PanelLeftClose className="size-4" strokeWidth={1.75} />}
       </button>
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3.5 pb-4 pt-6">
+      <nav className="flex-1 space-y-1 pd-scroll-hide overflow-y-auto px-3.5 pb-4 pt-6">
         {groups.map((g) => {
           const act = groupActive(g);
           const isOpen = open.includes(g.label) && !collapsed;
@@ -180,7 +180,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
           );
         })}
       </nav>
-      <div className="space-y-1 px-3.5 pb-5">
+      <div className="mx-3.5 space-y-1 border-t border-border pb-4 pt-3">
         <button onClick={onChat} title="Chat to us" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquare className="size-4 shrink-0" />{!collapsed && "Chat to us"}</button>
         <button onClick={() => toast.success("Thanks! Feedback noted.")} title="Send feedback" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquarePlus className="size-4 shrink-0" />{!collapsed && "Send feedback"}</button>
       </div>
