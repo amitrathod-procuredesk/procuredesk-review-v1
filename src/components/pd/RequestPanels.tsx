@@ -70,7 +70,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
       {editable ? (
         <div>
           <div className="mb-1 flex justify-between"><span className="text-xs text-muted-foreground">Budget</span><SourceMark s={r.sources.budget} /></div>
-          <select className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
+          <select id="budget-select-anchor" className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
             <option value="">Select a budget…</option>
             {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
           </select>

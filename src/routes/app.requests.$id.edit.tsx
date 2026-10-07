@@ -16,7 +16,7 @@ import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/requests/$id/edit")({
-  validateSearch: (s: Record<string, unknown>) => ({ prompt: typeof s.prompt === "string" ? s.prompt : undefined }),
+  validateSearch: (s: Record<string, unknown>): { prompt?: string } => (typeof s.prompt === "string" ? { prompt: s.prompt } : {}),
   head: ({ params }) => ({
     meta: [
       { title: `Edit ${params.id} · ProcureDesk` },

@@ -11,6 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
+import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
+import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
 import { Route as AppRequestsIdEditRouteImport } from './routes/app.requests.$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +28,31 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApprovalsRoute = AppApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
+  id: '/requests/',
+  path: '/requests/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsIdIndexRoute = AppRequestsIdIndexRouteImport.update({
+  id: '/requests/$id/',
+  path: '/requests/$id/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRequestsIdEditRoute = AppRequestsIdEditRouteImport.update({
   id: '/requests/$id/edit',
   path: '/requests/$id/edit',
@@ -32,25 +62,63 @@ const AppRequestsIdEditRoute = AppRequestsIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/admin': typeof AppAdminRoute
+  '/app/approvals': typeof AppApprovalsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/app/admin': typeof AppAdminRoute
+  '/app/approvals': typeof AppApprovalsRoute
+  '/app': typeof AppIndexRoute
+  '/app/requests': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/requests/$id': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/admin': typeof AppAdminRoute
+  '/app/approvals': typeof AppApprovalsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/app/requests/$id/edit'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/admin'
+    | '/app/approvals'
+    | '/app/'
+    | '/app/requests/'
+    | '/app/requests/$id/edit'
+    | '/app/requests/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/app/requests/$id/edit'
-  id: '__root__' | '/' | '/app' | '/app/requests/$id/edit'
+  to:
+    | '/'
+    | '/app/admin'
+    | '/app/approvals'
+    | '/app'
+    | '/app/requests'
+    | '/app/requests/$id/edit'
+    | '/app/requests/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/admin'
+    | '/app/approvals'
+    | '/app/'
+    | '/app/requests/'
+    | '/app/requests/$id/edit'
+    | '/app/requests/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -74,6 +142,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/approvals': {
+      id: '/app/approvals'
+      path: '/approvals'
+      fullPath: '/app/approvals'
+      preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests/': {
+      id: '/app/requests/'
+      path: '/requests'
+      fullPath: '/app/requests/'
+      preLoaderRoute: typeof AppRequestsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests/$id/': {
+      id: '/app/requests/$id/'
+      path: '/requests/$id'
+      fullPath: '/app/requests/$id/'
+      preLoaderRoute: typeof AppRequestsIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/requests/$id/edit': {
       id: '/app/requests/$id/edit'
       path: '/requests/$id/edit'
@@ -85,11 +188,21 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppApprovalsRoute: typeof AppApprovalsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
+  AppRequestsIdIndexRoute: typeof AppRequestsIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppApprovalsRoute: AppApprovalsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
+  AppRequestsIdIndexRoute: AppRequestsIdIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
