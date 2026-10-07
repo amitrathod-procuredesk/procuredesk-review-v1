@@ -36,7 +36,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
   if (!w) return <>{text}</>;
   const i = text.toLowerCase().indexOf(w.toLowerCase());
   if (i < 0) return <>{text}</>;
-  return <>{text.slice(0, i)}<mark className="rounded-sm bg-accent px-0.5 text-accent-foreground">{text.slice(i, i + w.length)}</mark>{text.slice(i + w.length)}</>;
+  return <>{text.slice(0, i)}<mark className="rounded-sm bg-accent text-accent-foreground">{text.slice(i, i + w.length)}</mark>{text.slice(i + w.length)}</>;
 }
 
 export function ItemToolbar({ r }: { r: PRequest }) {
