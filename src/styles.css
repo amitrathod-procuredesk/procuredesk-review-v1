@@ -264,3 +264,6 @@ select.pd-input-bare {
   background-size: 14px 14px;
   cursor: pointer;
 }
+
+.pd-scroll-hide { scrollbar-width: none; }
+.pd-scroll-hide::-webkit-scrollbar { display: none; }
