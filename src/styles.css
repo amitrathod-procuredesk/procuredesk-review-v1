@@ -245,3 +245,6 @@
 .pd-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
 .pd-scroll::-webkit-scrollbar-thumb { background: var(--input); border-radius: 999px; }
 .pd-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.pd-drawer-sec{margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.pd-drawer-sec:first-child{margin-top:0;padding-top:0;border-top:0}
