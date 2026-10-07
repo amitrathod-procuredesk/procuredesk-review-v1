@@ -66,7 +66,7 @@ function Detail() {
   const withdraw = () => {
     updateRequest(r.id, (x) => {
       x.status = "draft";
-      x.route.forEach((st) => st.approvals.forEach((ap) => { if (ap.status === "pending") ap.status = "waiting" as typeof ap.status; }));
+      x.route.forEach((st) => st.approvals.forEach((ap) => { if (ap.status === "pending") ap.status = "waiting"; }));
       log(x, `Request withdrawn by requester${reason.trim() ? ` — ${reason.trim()}` : ""}`, "system", me.id);
     });
     setWithdrawOpen(false);
