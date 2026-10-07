@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- ProcureDesk state lives in a client store (`src/lib/pd/store.ts`, persisted to localStorage) and all money/budget/route/policy values are derived in `src/lib/pd/engine.ts` from line items and admin rules — never hardcode totals or approval routes.
+- The copilot (`src/lib/pd/copilot.ts`) and assistant are deterministic and grounded only in org data; they prepare drafts but never submit, approve or change financial values without a user click.

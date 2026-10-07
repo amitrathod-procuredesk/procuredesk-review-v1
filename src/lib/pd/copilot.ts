@@ -246,7 +246,7 @@ export function respond(db: DB, r: PRequest, text: string) {
     r.requiredBy = dt;
     r.sources.requiredBy = "confirmed";
   }
-  if (!r.project && /new hire|onboard|hiring|starting/.test(lower)) {
+  if (!r.project && /hire|onboard|hiring|starting/.test(lower)) {
     r.project = db.org.projects.find((p) => /hiring/i.test(p)) ?? "";
     if (r.project) r.sources.project = "suggested";
   }

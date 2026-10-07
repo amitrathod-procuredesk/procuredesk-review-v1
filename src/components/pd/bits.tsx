@@ -1,9 +1,8 @@
-import { AlertTriangle, Check, CircleAlert, CircleCheck, Sparkles as _unused } from "lucide-react";
+import { AlertTriangle, Check, CircleAlert, CircleCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Source, Status, User } from "@/lib/pd/types";
 import { money, STATUS_LABEL, type Check as CheckT } from "@/lib/pd/engine";
 import { cn } from "@/lib/utils";
-void _unused;
 
 export function StatusBadge({ status }: { status: Status }) {
   return <span className={cn("pd-badge", `st-${status}`)}>{STATUS_LABEL[status]}</span>;
