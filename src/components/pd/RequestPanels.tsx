@@ -255,7 +255,8 @@ export function DuplicateList({ r }: { r: PRequest }) {
 export function Attachments({ r, editable }: { r: PRequest; editable?: boolean }) {
   const me = useMe();
   const input = useRef<HTMLInputElement>(null);
-  const [kind, setKind] = useState<Attachment["kind"]>("spec");
+  const [drag, setDrag] = useState(false);
+  const kindOf = (n: string): Attachment["kind"] => (/quote|quotation/i.test(n) ? "quote" : /spec/i.test(n) ? "spec" : "other");
   const [uploading, setUploading] = useState<string[]>([]);
   const add = (files: FileList | null) => {
     if (!files) return;
@@ -263,7 +264,7 @@ export function Attachments({ r, editable }: { r: PRequest; editable?: boolean }
       setUploading((u) => [...u, f.name]);
       setTimeout(() => {
         updateRequest(r.id, (x) => {
-          x.attachments.push({ id: uid("att"), name: f.name, size: f.size, kind, uploadedAt: new Date().toISOString() });
+          x.attachments.push({ id: uid("att"), name: f.name, size: f.size, kind: kindOf(f.name), uploadedAt: new Date().toISOString() });
           log(x, `Attachment added: ${f.name}`, "edit", me?.id);
         });
         setUploading((u) => u.filter((n) => n !== f.name));
@@ -272,36 +273,41 @@ export function Attachments({ r, editable }: { r: PRequest; editable?: boolean }
   };
   const kb = (n: number) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
   return (
-    <div className="space-y-2">
-      {r.attachments.length === 0 && uploading.length === 0 && <p className="text-xs text-muted-foreground">No attachments. Quotes, specifications and business cases help approvers decide faster.</p>}
+    <div className="space-y-1.5">
+      {!editable && r.attachments.length === 0 && <p className="text-xs text-muted-foreground">No attachments.</p>}
       {r.attachments.map((a) => (
-        <div key={a.id} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
-          <Paperclip className="size-3.5 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate">{a.name}</span>
-          <span className="text-[11px] capitalize text-muted-foreground">{a.kind} · {kb(a.size)}</span>
+        <div key={a.id} className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] transition-colors hover:bg-subtle">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-subtle text-muted-foreground group-hover:bg-card"><Paperclip className="size-3.5" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium leading-tight">{a.name}</p>
+            <p className="text-[11px] text-muted-foreground">{kb(a.size)}</p>
+          </div>
           {editable && (
-            <button aria-label={`Remove ${a.name}`} className="text-muted-foreground hover:text-destructive" onClick={() => updateRequest(r.id, (x) => { x.attachments = x.attachments.filter((y) => y.id !== a.id); log(x, `Attachment removed: ${a.name}`, "edit", me?.id); })}>
+            <button aria-label={`Remove ${a.name}`} className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100" onClick={() => updateRequest(r.id, (x) => { x.attachments = x.attachments.filter((y) => y.id !== a.id); log(x, `Attachment removed: ${a.name}`, "edit", me?.id); })}>
               <X className="size-3.5" />
             </button>
           )}
         </div>
       ))}
       {uploading.map((n) => (
-        <div key={n} className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+        <div key={n} className="flex items-center gap-2.5 px-2 py-1.5 text-[13px] text-muted-foreground">
           <span className="ai-thinking-dot size-1.5 rounded-full bg-primary" /> Uploading {n}…
         </div>
       ))}
       {editable && (
-        <div className="flex items-center gap-2 pt-1">
-          <select className="pd-input h-8 w-36" value={kind} onChange={(e) => setKind(e.target.value as Attachment["kind"])}>
-            <option value="quote">Supplier quote</option>
-            <option value="spec">Specification</option>
-            <option value="business">Business case</option>
-            <option value="other">Other</option>
-          </select>
-          <Button size="sm" variant="outline" onClick={() => input.current?.click()}><FileUp /> Upload</Button>
+        <>
+          <button
+            type="button"
+            onClick={() => input.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files); }}
+            className={cn("flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.03] hover:text-primary", drag && "border-primary bg-primary/[0.05] text-primary")}
+          >
+            <FileUp className="size-3.5" /> <span><span className="font-medium">Upload files</span> or drag here</span>
+          </button>
           <input ref={input} type="file" multiple hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
-        </div>
+        </>
       )}
     </div>
   );
