@@ -152,7 +152,7 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
         {(r.ai.pending || isDone) && (
           <div className="mt-3 flex justify-end border-t border-border pt-3">
             <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
-              updateRequest(r.id, (x) => { x.ai.pending = undefined as never; });
+              updateRequest(r.id, (x) => { x.ai.pending = null; });
               setOpen(false);
             }}>
               {isDone ? <><X className="size-3" /> Close</> : <><Sparkles className="size-3" /> Skip, I'll fill it in</>}
