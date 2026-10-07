@@ -179,7 +179,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                   <label className="block"><span className="pd-label">Quantity</span><input type="number" min={0} className="pd-input num h-9" value={editing.qty} onChange={(e) => patch(editing.id, { qty: Math.max(0, Number(e.target.value)) })} /></label>
                   <label className="block"><span className="pd-label">Unit price</span><input type="number" min={0} step="0.01" className="pd-input num h-9" value={editing.unitPrice} onChange={(e) => patch(editing.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></label>
                 </div>
-                <div className="[&_.grid]:lg:grid-cols-2"><LineDetail l={editing} editable onPatch={(p) => patch(editing.id, p)} /></div>
+                <div className="lg:[&_.grid]:grid-cols-2"><LineDetail l={editing} editable onPatch={(p) => patch(editing.id, p)} /></div>
               </div>
               <SheetFooter className="flex-row items-center justify-between border-t border-border">
                 <span className="text-sm text-muted-foreground">Line total <Money v={lineTotal(editing)} className="ml-1 font-semibold text-foreground" /></span>
