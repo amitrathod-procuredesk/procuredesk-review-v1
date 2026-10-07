@@ -71,9 +71,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
               </div>
               <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-6 text-[11.5px] text-muted-foreground">
                 <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
-                {l.catalogId && <span className="shrink-0 rounded bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">Catalog</span>}
                 {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
-                {l.source === "quote" && <span className="shrink-0 rounded bg-subtle px-1.5 py-px text-[10px] font-medium">Quote</span>}
               </div>
             </div>
             <div className="flex shrink-0 items-end justify-between gap-4 pl-6 sm:block sm:pl-0 sm:text-right">
@@ -84,12 +82,13 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                     <input type="number" min={1} aria-label={`Quantity for line ${i + 1}`} className="h-full w-9 border-x border-border bg-transparent text-center text-[12px] font-medium text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />
                     <button type="button" aria-label="Increase quantity" className="flex h-full w-5 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" onClick={() => patch(l.id, { qty: l.qty + 1 })}>+</button>
                   </div>
-                  <span>{l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</span>
+                  <span>× <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></span>
                 </div>
               ) : (
-                <p className="num text-[11.5px] text-muted-foreground">{l.qty} {l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</p>
+                <p className="num text-[11.5px] text-muted-foreground">{l.qty} × <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></p>
               )}
               <Money v={lineTotal(l)} className="text-sm font-semibold sm:mt-0.5 sm:block" />
+              {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${l.tax || 0} · Shipping ${l.shipping || 0}`}>incl. {[l.tax ? <>tax <Money key="t" v={l.tax} /></> : null, l.shipping ? <>shipping <Money key="s" v={l.shipping} /></> : null].filter(Boolean).map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>}
             </div>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">{actions(l, isOpen)}</div>
