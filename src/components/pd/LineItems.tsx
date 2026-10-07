@@ -72,7 +72,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                 </span>
                 <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.4]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
               </div>
-              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-[4.25rem] text-[11.5px] text-muted-foreground">
+              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-[4.5rem] text-[11.5px] text-muted-foreground">
                 <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
                 {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
               </div>
