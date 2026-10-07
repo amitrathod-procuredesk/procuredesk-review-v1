@@ -50,45 +50,40 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
     return acc;
   }, {}));
 
-  const COLS = "md:grid-cols-[minmax(0,1fr)_140px_130px_56px_52px_88px_72px_96px_56px]";
-  const COLS_NS = "md:grid-cols-[minmax(0,1fr)_150px_56px_52px_88px_72px_96px_56px]";
   const card = (l: LineItem, i: number, hideSupplier = false) => {
     const isOpen = open === l.id;
     const other = (l.tax || 0) + (l.shipping || 0);
-    const cell = (label: string, v: ReactNode, cls = "") => (
-      <div className={cn("min-w-0 truncate text-[13px]", cls)}>
-        <span className="mr-1 text-[10px] uppercase tracking-wider text-muted-foreground md:hidden">{label}</span>{v}
-      </div>
-    );
+    const sup = vendorName(l.vendorId);
+    const meta: ReactNode[] = [
+      !hideSupplier && (sup ? <span key="s" className="font-medium text-foreground/80">{sup}</span> : <span key="s" className="text-warning">No supplier</span>),
+      <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
+      l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
+    ].filter(Boolean);
     return (
-      <li key={l.id} className={cn("group rounded-lg border border-border bg-card transition-colors hover:border-primary/30", sel.includes(l.id) && "border-primary/40 bg-primary/[0.03]", edit === l.id && "border-primary/50")}>
-        <div className={cn("flex items-start gap-2.5 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
-          {editable && <input type="checkbox" className="mt-1 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
-          <div className={cn("grid min-w-0 flex-1 grid-cols-3 items-center gap-x-3 gap-y-1", hideSupplier ? COLS_NS : COLS)}>
-            <div className="col-span-3 min-w-0 md:col-span-1">
-              <p className={cn("line-clamp-2 break-words text-[13px] font-medium leading-snug", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
-              <p className="truncate text-[11px] text-muted-foreground">
-                <span className="num">#{i + 1} · {l.partNumber || "No part #"}</span>
-                {l.catalogId && <span className="text-success"> · Catalog</span>}
-                {l.source === "ai" && <span className="ai-mark"> · AI</span>}
-                {l.source === "quote" && <span> · Quote</span>}
-              </p>
+      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]", sel.includes(l.id) && "border-primary/40 bg-primary/[0.03]", edit === l.id && "border-primary/50 ring-1 ring-primary/20")}>
+        <div className={cn("flex items-start gap-3 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
+          {editable && <input type="checkbox" className="mt-0.5 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-2">
+                <span className="num mt-px shrink-0 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.4]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
+              </div>
+              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-6 text-[11.5px] text-muted-foreground">
+                <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
+                {l.catalogId && <span className="shrink-0 rounded bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">Catalog</span>}
+                {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
+                {l.source === "quote" && <span className="shrink-0 rounded bg-subtle px-1.5 py-px text-[10px] font-medium">Quote</span>}
+              </div>
             </div>
-            {cell("Acct", l.account || "—", "text-muted-foreground")}
-            {!hideSupplier && cell("Supplier", vendorName(l.vendorId) || <span className="text-warning">Not set</span>)}
-            {cell("UOM", l.uom, "text-muted-foreground")}
-            {cell("Qty", <span className="num">{l.qty}</span>, "md:text-right")}
-            {cell("Unit", <Money v={l.unitPrice} />, "md:text-right")}
-            {cell("Other", other ? <Money v={other} /> : "—", "md:text-right text-muted-foreground")}
-            <div className="col-span-3 flex items-center justify-between md:col-span-1 md:block md:text-right">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground md:hidden">Total</span>
-              <Money v={lineTotal(l)} className="text-[13px] font-semibold" />
+            <div className="flex shrink-0 items-end justify-between gap-4 pl-6 sm:block sm:pl-0 sm:text-right">
+              <p className="num text-[11.5px] text-muted-foreground">{l.qty} {l.uom.toLowerCase()} × <Money v={l.unitPrice} />{other > 0 && <> + <Money v={other} /></>}</p>
+              <Money v={lineTotal(l)} className="text-sm font-semibold sm:mt-0.5 sm:block" />
             </div>
-            <div className="hidden items-center justify-end gap-0.5 md:flex">{actions(l, isOpen)}</div>
           </div>
-          <div className="flex shrink-0 gap-0.5 md:hidden">{actions(l, isOpen)}</div>
+          <div className="-mr-1 flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">{actions(l, isOpen)}</div>
         </div>
-        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-10"><LineDetail l={l} /></div>}
+        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} /></div>}
       </li>
     );
   };
@@ -106,11 +101,6 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
         </DropdownMenu>
       )}
     </>
-  );
-  const head = (hideSupplier: boolean) => (
-    <div className={cn("hidden gap-x-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:grid", editable && "pl-[38px]", hideSupplier ? COLS_NS : COLS)}>
-      <span>Description</span><span>Account</span>{!hideSupplier && <span>Supplier</span>}<span>UOM</span><span className="text-right">Qty</span><span className="text-right">Unit price</span><span className="text-right">Other</span><span className="text-right">Total</span><span />
-    </div>
   );
   const LIMIT = 8;
   const q = filter.trim().toLowerCase();
@@ -160,7 +150,6 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
 
       {view === "list" ? (
         <div>
-          {visibleItems.length > 0 && head(false)}
           <ul className="space-y-1.5">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>
           {!q && more(visibleItems.length, "_list")}
         </div>
@@ -180,7 +169,6 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
-                    {head(true)}
                     <ul className="space-y-1.5">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>
                     {!q && more(items.length, g.id)}
                   </div>
