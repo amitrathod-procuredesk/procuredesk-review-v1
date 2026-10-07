@@ -230,37 +230,36 @@ function DField({ label, req, className, children }: { label: string; req?: bool
   );
 }
 
-function LineDetail({ l, editable, onPatch }: { l: LineItem; editable: boolean; onPatch: (p: Partial<LineItem>) => void }) {
+function LineDetail({ l }: { l: LineItem; editable?: boolean; onPatch?: (p: Partial<LineItem>) => void }) {
   const db = useDB();
   const v = db.vendors.find((x) => x.id === l.vendorId);
   const cat = db.catalog.find((c) => c.id === l.catalogId);
-  const ro = !editable;
+  const dash = (x?: string | null) => (x && String(x).trim() ? x : "—");
+  const items: [string, ReactNode][] = [
+    ["Supplier item #", <span className="num">{dash(l.partNumber)}</span>],
+    ["Item type", dash(l.itemType ?? "Material")],
+    ["Source from", cat ? "Catalog" : "Non-catalog"],
+    ["Category", dash(l.category)],
+    ["Account", dash(l.account)],
+    ["UOM", dash(l.uom)],
+    ["Class", dash(l.itemClass)],
+    ["Project code", dash(l.projectCode)],
+    ["Tax", <Money v={l.tax || 0} />],
+    ["Shipping", <Money v={l.shipping || 0} />],
+    ["Delivery date", l.deliveryDate ? smartDate(l.deliveryDate) : "—"],
+    ["Contract", v ? (v.contractActive ? `Active · ${v.name}` : "No contract") : "—"],
+    ["Web link", l.webLink ? <a href={l.webLink} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Open link</a> : "—"],
+    ["Notes", dash(l.notes)],
+  ];
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <label><span className="pd-label">Part number</span><input disabled={ro} className="pd-input" value={l.partNumber} onChange={(e) => onPatch({ partNumber: e.target.value })} /></label>
-      <label><span className="pd-label">Category</span>
-        <select disabled={ro} className="pd-input" value={l.category} onChange={(e) => onPatch({ category: e.target.value })}>
-          <option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
-      </label>
-      <label><span className="pd-label">Account</span>
-        <select disabled={ro} className="pd-input" value={l.account} onChange={(e) => onPatch({ account: e.target.value })}>
-          <option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}
-        </select>
-      </label>
-      <label><span className="pd-label">UOM</span>
-        <select disabled={ro} className="pd-input" value={l.uom} onChange={(e) => onPatch({ uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select>
-      </label>
-      <label><span className="pd-label">Tax</span><input disabled={ro} type="number" min={0} step="0.01" className="pd-input num" value={l.tax} onChange={(e) => onPatch({ tax: Math.max(0, Number(e.target.value)) })} /></label>
-      <label><span className="pd-label">Shipping</span><input disabled={ro} type="number" min={0} step="0.01" className="pd-input num" value={l.shipping} onChange={(e) => onPatch({ shipping: Math.max(0, Number(e.target.value)) })} /></label>
-      <label><span className="pd-label">Delivery date</span><input disabled={ro} type="date" className="pd-input" value={l.deliveryDate ?? ""} onChange={(e) => onPatch({ deliveryDate: e.target.value })} /></label>
-      <div><span className="pd-label">Contract</span><p className="h-8 text-sm leading-8">{v ? (v.contractActive ? `Active · ${v.name}` : "No contract") : "—"}</p></div>
-      <label className="sm:col-span-2 lg:col-span-3"><span className="pd-label">Notes</span><input disabled={ro} className="pd-input" value={l.notes ?? ""} onChange={(e) => onPatch({ notes: e.target.value })} /></label>
-      <div className="text-xs text-muted-foreground">
-        {cat ? <>Catalog price <Money v={cat.price} /> · {cat.available ? "Available" : "Backordered"}</> : "Non-catalog item"}
-        {l.deliveryDate && <><br />Arrives {smartDate(l.deliveryDate)}</>}
-      </div>
-    </div>
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+      {items.map(([k, val]) => (
+        <div key={k} className="min-w-0">
+          <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
+          <dd className="mt-1 truncate text-sm text-foreground">{val}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
