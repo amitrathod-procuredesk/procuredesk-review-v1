@@ -9,7 +9,7 @@ import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/compone
 import { Copilot } from "@/components/pd/Copilot";
 import { LineItems } from "@/components/pd/LineItems";
 import { Attachments, ChecksBlock, Comments, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
-import { budgetStatus, canSubmit, computeRoute, findDuplicates, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
+import { budgetStatus, canSubmit, computeRoute, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, type Check as CheckT } from "@/lib/pd/engine";
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
@@ -174,7 +174,6 @@ function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: 
   const b = budgetStatus(r, db);
   const sup = supplierBreakdown(r, db);
   const dept = db.departments.find((d) => d.id === r.departmentId);
-  const dups = findDuplicates(r, db);
   const route = computeRoute(r, db);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
