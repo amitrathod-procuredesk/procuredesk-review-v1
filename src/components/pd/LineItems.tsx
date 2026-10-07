@@ -1,4 +1,4 @@
-import { ChevronDown, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -67,9 +67,12 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
                 <span className="num mt-px shrink-0 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-subtle text-muted-foreground/60">
+                  {l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <ImageIcon className="size-4" aria-hidden />}
+                </span>
                 <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.4]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
               </div>
-              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-6 text-[11.5px] text-muted-foreground">
+              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-[4.25rem] text-[11.5px] text-muted-foreground">
                 <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
                 {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
               </div>
@@ -237,6 +240,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                     <select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.itemClass ?? ""} onChange={(e) => patch(editing.id, { itemClass: e.target.value })}><option value="">Select…</option>{["Office Supplies", "Hardware", "MRO", "Capital", "Operating"].map((c) => <option key={c}>{c}</option>)}</select>
                   </DField>
                   <DField label="Project code"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="-" value={editing.projectCode ?? ""} onChange={(e) => patch(editing.id, { projectCode: e.target.value })} /></DField>
+                  <DField label="Image URL"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="https://…" value={editing.imageUrl ?? ""} onChange={(e) => patch(editing.id, { imageUrl: e.target.value })} /></DField>
                   <DField label="Web link"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="-" value={editing.webLink ?? ""} onChange={(e) => patch(editing.id, { webLink: e.target.value })} /></DField>
                   <p className="pd-drawer-sec sm:col-span-2">Costs & delivery</p>
                   <DField label="Tax"><input type="number" min={0} step="0.01" className="pd-input num h-9 rounded-md bg-card text-sm" value={editing.tax} onChange={(e) => patch(editing.id, { tax: Math.max(0, Number(e.target.value)) })} /></DField>
