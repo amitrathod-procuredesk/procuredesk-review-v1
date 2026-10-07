@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Check, Clock, FileUp, Paperclip, Users, X } from "lucide-react";
+import { Check, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -172,61 +172,64 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
   const db = useDB();
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
   const cur = currentStageIndex(r);
-  const requester = db.users.find((u) => u.id === r.requesterId);
   if (!stages.length) return <p className="text-xs text-muted-foreground">Route will be calculated from your organization's approval rules.</p>;
+  const par = stages.map((s, i) => ({ s, i })).filter(({ s }) => s.approvals.length > 1);
   return (
-    <ol className="relative space-y-4">
-      <li className="flex items-center gap-2.5 text-sm">
-        <UserAvatar user={requester} /> <span>{requester?.name}</span>
-        <span className="text-xs text-muted-foreground">{r.submittedAt ? `Submitted ${smartTime(r.submittedAt)}` : "Requester"}</span>
-      </li>
-      {stages.map((s, i) => {
-        const done = !preview && s.approvals.every((a) => a.status === "approved");
-        const active = !preview && i === cur;
-        return (
-          <li key={s.id} className="relative pl-3.5">
-            <span className={cn("absolute top-1 left-0 h-[calc(100%-4px)] w-0.5 rounded-full", done ? "bg-success" : active ? "bg-primary" : "bg-border")} />
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">{i + 1}. {s.name}</p>
-              <span className="text-[11px] text-muted-foreground">{done ? "Complete" : active ? "In review" : preview ? s.reason : "Upcoming"}</span>
-            </div>
-            {s.approvals.length > 1 && (
-              <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><Users className="size-3" /> Parallel · {s.mode === "all" ? `All ${s.approvals.length} reviewers must approve` : "Any one reviewer can approve"}</p>
-            )}
-            <ul className="mt-1.5 space-y-1.5">
-              {s.approvals.map((a) => {
-                const u = db.users.find((x) => x.id === a.userId);
-                return (
-                  <li key={a.userId} className="flex items-start gap-2 text-sm">
-                    <UserAvatar user={u} />
-                    <div className="min-w-0 flex-1">
-                      <p className="leading-6">{u?.name} <span className="text-xs text-muted-foreground">· {u?.title}</span></p>
-                      {a.comment && <p className="text-xs text-muted-foreground">“{a.comment}”</p>}
-                      {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
-                    </div>
-                    <ApprovalState status={preview ? "waiting" : a.status} at={a.at} />
-                  </li>
-                );
-              })}
-            </ul>
-          </li>
-        );
-      })}
-    </ol>
+    <div>
+      <ol>
+        {stages.map((s, i) => {
+          const done = !preview && s.approvals.every((a) => a.status === "approved");
+          const active = !preview && i === cur;
+          const last = i === stages.length - 1;
+          const multi = s.approvals.length > 1;
+          const rows = s.approvals.map((a) => {
+            const u = db.users.find((x) => x.id === a.userId);
+            return (
+              <li key={a.userId} className="flex items-center gap-2.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-[11px] font-semibold text-foreground/70">{u?.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{u?.title}</p>
+                  {a.comment && <p className="text-xs text-muted-foreground">“{a.comment}”</p>}
+                  {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
+                </div>
+                <ApprovalState status={preview ? "waiting" : a.status} at={a.at} />
+              </li>
+            );
+          });
+          return (
+            <li key={s.id} className="relative pb-4 pl-9 last:pb-0">
+              {!last && <span className={cn("absolute left-[11px] top-6 bottom-0 w-px", done ? "bg-success/50" : "bg-border")} />}
+              <span className={cn("absolute left-0 top-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium", done ? "border-success bg-success text-primary-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
+                {done ? <Check className="size-3" /> : i + 1}
+              </span>
+              <div className="flex min-h-6 flex-wrap items-center gap-2">
+                <p className="text-[13px] font-semibold text-foreground/85">{s.name}</p>
+                {multi && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"><GitFork className="size-3" /> Parallel</span>}
+              </div>
+              <ul className={cn("mt-2 space-y-2.5", multi && "rounded-lg border border-border p-2.5")}>{rows}</ul>
+            </li>
+          );
+        })}
+      </ol>
+      {par.map(({ s, i }) => (
+        <p key={s.id} className="mt-3 text-xs text-muted-foreground">Step {i + 1} approvers review at the same time. {s.mode === "all" ? `All ${s.approvals.length} must approve.` : "Any one can approve."}</p>
+      ))}
+    </div>
   );
 }
 
 function ApprovalState({ status, at }: { status: string; at?: string }) {
   const map: Record<string, [string, string]> = {
-    approved: ["Approved", "text-success"],
-    rejected: ["Rejected", "text-destructive"],
-    changes: ["Changes", "text-warning"],
-    pending: ["Awaiting", "text-primary"],
-    waiting: ["Upcoming", "text-muted-foreground"],
+    approved: ["Approved", "bg-success/10 text-success"],
+    rejected: ["Rejected", "bg-destructive/10 text-destructive"],
+    changes: ["Changes", "bg-warning/15 text-warning"],
+    pending: ["Awaiting", "bg-primary/10 text-primary"],
+    waiting: ["Upcoming", "bg-subtle text-muted-foreground"],
   };
   const [l, c] = map[status];
   return (
-    <span className={cn("flex shrink-0 items-center gap-1 text-[11px] leading-6", c)} title={at ? new Date(at).toLocaleString() : undefined}>
+    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", c)} title={at ? new Date(at).toLocaleString() : undefined}>
       {status === "approved" ? <Check className="size-3" /> : status === "pending" ? <Clock className="size-3" /> : null}
       {l}
     </span>
@@ -402,6 +405,7 @@ function MiniSuppliers({ r }: { r: PRequest }) {
 }
 
 export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; hideChecks?: boolean }) {
+  const db = useDB();
   return (
     <div className="space-y-4">
       <div className="pd-panel rounded-xl p-4">
@@ -410,9 +414,13 @@ export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: {
       </div>
       {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
-      <Section title={editable ? "Approval route preview" : "Approval route"}>
+      <section className="pd-panel p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-[15px] font-semibold">Approval route</h3>
+          <span className="text-xs text-muted-foreground">{(() => { const n = (editable ? computeRoute(r, db) : r.route).reduce((t, s) => t + s.approvals.length, 0); return `${n} approver${n === 1 ? "" : "s"}`; })()}</span>
+        </div>
         <RouteTimeline r={r} preview={editable} />
-      </Section>
+      </section>
       {r.requiredBy && <p className="px-1 text-xs text-muted-foreground">Required by {smartDate(r.requiredBy)}</p>}
     </div>
   );
