@@ -1,36 +1,42 @@
-import { ArrowUp, Check } from "lucide-react";
+import { ArrowUp, Check, ChevronDown, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { respond, thinkingSteps } from "@/lib/pd/copilot";
 import { money } from "@/lib/pd/engine";
 import { getDB, updateRequest, useDB } from "@/lib/pd/store";
 import type { PRequest } from "@/lib/pd/types";
-import { AiGlyph } from "./bits";
+import { cn } from "@/lib/utils";
 
+/**
+ * Floating, text-only copilot. Shows just the current question / answer with
+ * pill options, so it never competes with the request form for space.
+ */
 export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: string }) {
   const db = useDB();
   const [text, setText] = useState("");
   const [steps, setSteps] = useState<string[]>([]);
   const [stepIdx, setStepIdx] = useState(0);
+  const [open, setOpen] = useState(true);
+  const [history, setHistory] = useState(false);
   const busy = steps.length > 0;
-  const end = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const send = (t: string) => {
     if (!t.trim() || busy) return;
     setText("");
+    setOpen(true);
     const s = thinkingSteps(getDB().requests.find((x) => x.id === r.id)!);
-    // Show the user's message immediately, then staged processing.
     updateRequest(r.id, (x) => { x.ai.messages.push({ id: `tmp_${Date.now()}`, role: "user", text: t }); });
     setSteps(s);
     setStepIdx(0);
-    s.forEach((_, i) => setTimeout(() => setStepIdx(i), i * 550));
+    s.forEach((_, i) => setTimeout(() => setStepIdx(i), i * 450));
     setTimeout(() => {
       updateRequest(r.id, (x, d) => {
         x.ai.messages = x.ai.messages.filter((m) => !m.id.startsWith("tmp_"));
         respond(d, x, t);
       });
       setSteps([]);
-    }, s.length * 550 + 150);
+    }, s.length * 450 + 150);
   };
 
   useEffect(() => {
@@ -40,91 +46,120 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
-  useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [r.ai.messages.length, stepIdx, busy]);
 
-  const last = r.ai.messages[r.ai.messages.length - 1];
+  const msgs = r.ai.messages;
+  const lastAi = [...msgs].reverse().find((m) => m.role === "ai");
+  const lastUser = [...msgs].reverse().find((m) => m.role === "user");
+  const isDone = lastAi?.kind === "done" && !r.ai.pending;
+
+  if (!open)
+    return (
+      <button
+        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+        className="pd-float fixed bottom-5 left-1/2 z-40 inline-flex h-10 -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-surface px-4 text-sm font-medium animate-in fade-in slide-in-from-bottom-2 hover:-translate-y-0.5 hover:-translate-x-1/2 transition-transform lg:left-[calc(50%-160px)]"
+      >
+        <span className="pd-ai-diamond" /> Ask copilot
+        {r.ai.pending && <span className="size-1.5 rounded-full bg-primary ai-thinking-dot" />}
+      </button>
+    );
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <AiGlyph />
-        <div>
-          <p className="text-sm font-medium">Procurement copilot</p>
-          <p className="text-[11px] text-muted-foreground">Prepares your request · you confirm every financial choice</p>
-        </div>
+    <div className="pd-float fixed bottom-5 left-1/2 z-40 w-[min(680px,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-border bg-surface animate-in fade-in slide-in-from-bottom-4 duration-300 lg:left-[calc(50%-160px)]">
+      <div className="flex items-center justify-end gap-1 px-3 pt-2">
+        {msgs.length > 1 && (
+          <button className="mr-auto pl-3 text-[11px] text-muted-foreground hover:text-foreground" onClick={() => setHistory((h) => !h)}>
+            {history ? "Hide conversation" : `Show conversation (${msgs.length})`}
+          </button>
+        )}
+        <button aria-label="Minimize copilot" onClick={() => setOpen(false)} className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className="size-4" /></button>
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-        {r.ai.messages.length === 0 && !busy && (
+
+      {history && (
+        <div className="mx-5 mb-2 max-h-48 space-y-2 overflow-y-auto border-b border-border pb-3 animate-in fade-in">
+          {msgs.slice(0, -1).map((m) => (
+            <p key={m.id} className={cn("text-xs", m.role === "user" ? "text-right text-muted-foreground" : "text-foreground/80")}>{m.role === "user" ? `You: ${m.text}` : m.text}</p>
+          ))}
+        </div>
+      )}
+
+      <div className="px-5 pb-4">
+        {busy ? (
+          <div className="space-y-2 py-1">
+            {lastUser && <p className="text-xs text-muted-foreground">“{lastUser.text}”</p>}
+            <ol className="space-y-1">
+              {steps.map((s, i) => (
+                <li key={s} className={cn("flex items-center gap-2 text-sm transition-colors", i <= stepIdx ? "text-foreground" : "text-muted-foreground/40")}>
+                  {i < stepIdx ? <Check className="size-3.5 text-success animate-in zoom-in" /> : <span className={cn("size-1.5 rounded-full bg-primary", i === stepIdx ? "ai-thinking-dot" : "opacity-30")} />}
+                  {s}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : !lastAi ? (
           <div className="space-y-3">
-            <p className="text-sm">What do you need? Describe it in plain words — I'll find catalog items, check budget and policy, and fill in the request.</p>
-            <div className="flex flex-col gap-1.5">
-              {["I need 4 MacBook Pro laptops for our new engineering hires", "10 monitors for the design team next month", "Standing desks for the Austin office"].map((s) => (
-                <button key={s} className="pd-chip h-auto justify-start py-1.5 text-left" onClick={() => send(s)}>{s}</button>
+            <p className="flex items-start gap-3 text-[15px] font-medium"><span className="pd-ai-diamond mt-1.5" /> What do you need? Describe it and I'll fill in the request.</p>
+            <div className="flex flex-wrap gap-2 pl-6">
+              {["4 MacBook Pro laptops for new hires", "10 monitors for the design team", "Standing desks for Austin"].map((s) => (
+                <button key={s} className="pd-pill" onClick={() => send(s)}>{s}</button>
               ))}
             </div>
           </div>
+        ) : (
+          <div key={lastAi.id} className="space-y-3 animate-in fade-in slide-in-from-bottom-1">
+            <p className="flex items-start gap-3 text-[15px] font-medium leading-snug">
+              <span className="pd-ai-diamond mt-1.5" />
+              <span>{lastAi.text}</span>
+            </p>
+            {lastAi.catalogIds && lastAi.options && (
+              <div className="flex flex-wrap gap-2 pl-6">
+                {lastAi.options.map((o) => {
+                  const c = db.catalog.find((x) => lastAi.catalogIds!.includes(x.id) && o.toLowerCase().includes(x.name.toLowerCase()));
+                  const v = c && db.vendors.find((x) => x.id === c.vendorId);
+                  return (
+                    <button key={o} className="pd-pill" onClick={() => send(o)}>
+                      <span className="font-medium">{c ? c.name : o}</span>
+                      {c && <span className="text-muted-foreground">{v?.name} · {money(c.price)}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {!lastAi.catalogIds && lastAi.options && (
+              <div className="flex flex-wrap gap-2 pl-6">
+                {lastAi.options.map((o) => <button key={o} className="pd-pill" onClick={() => send(o)}>{o}</button>)}
+              </div>
+            )}
+            {isDone && <p className="flex items-center gap-1.5 pl-6 text-xs text-success"><Check className="size-3.5" /> Request filled in — review the items below.</p>}
+          </div>
         )}
-        {r.ai.messages.map((m) =>
-          m.role === "user" ? (
-            <div key={m.id} className="ml-auto w-fit max-w-[90%]">
-              <p className="text-right text-[10px] text-muted-foreground">You said</p>
-              <p className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">{m.text}</p>
-            </div>
-          ) : (
-            <div key={m.id} className="space-y-2">
-              <p className="text-sm">{m.text}</p>
-              {m.catalogIds && (
-                <div className="space-y-1.5">
-                  {m.catalogIds.map((id) => {
-                    const c = db.catalog.find((x) => x.id === id);
-                    if (!c) return null;
-                    const v = db.vendors.find((x) => x.id === c.vendorId);
-                    return (
-                      <div key={id} className="rounded-md border border-border bg-surface p-3">
-                        <div className="flex justify-between gap-2">
-                          <p className="text-sm font-medium">{c.name}</p>
-                          <span className="num text-sm">{money(c.price)}</span>
-                        </div>
-                        <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                          <dt>Supplier</dt><dd className="text-foreground">{v?.name}</dd>
-                          <dt>Contract</dt><dd className="text-foreground">{v?.contractActive ? "Active" : "None"}</dd>
-                          <dt>Preferred vendor</dt><dd className="text-foreground">{v?.preferred ? "Yes" : "No"}</dd>
-                          <dt>Availability</dt><dd className={c.available ? "text-success" : "text-warning"}>{c.available ? "Available" : "Backordered"}</dd>
-                        </dl>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {m.options && m.id === last?.id && !busy && (
-                <div className="flex flex-wrap gap-1.5">
-                  {m.options.map((o, i) => (
-                    <button key={o} className="pd-chip" data-active={i === 0} onClick={() => send(o)}>{o}</button>
-                  ))}
-                </div>
-              )}
-              {m.kind === "done" && (
-                <p className="flex items-center gap-1 text-[11px] text-success"><Check className="size-3" /> Structured request generated — review it on the right</p>
-              )}
-            </div>
-          ),
+
+        <form className="mt-3 flex items-center gap-2 pl-6" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              className="h-10 w-full rounded-full border border-dashed border-input bg-transparent px-4 pr-11 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-solid focus:border-primary focus:ring-4 focus:ring-primary/10"
+              disabled={busy}
+              placeholder={r.ai.pending ? "Or type your answer…" : lastAi ? "Add something else, e.g. 4 docking stations" : "e.g. I need 4 MacBook Pro laptops for new hires"}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <button type="submit" aria-label="Send" disabled={!text.trim() || busy} className="absolute right-1 top-1 inline-flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-105 disabled:scale-90 disabled:opacity-0">
+              <ArrowUp className="size-4" />
+            </button>
+          </div>
+        </form>
+
+        {(r.ai.pending || isDone) && (
+          <div className="mt-3 flex justify-end border-t border-border pt-3">
+            <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
+              updateRequest(r.id, (x) => { x.ai.pending = undefined as never; });
+              setOpen(false);
+            }}>
+              {isDone ? <><X className="size-3" /> Close</> : <><Sparkles className="size-3" /> Skip, I'll fill it in</>}
+            </button>
+          </div>
         )}
-        {busy && (
-          <ol className="space-y-1">
-            {steps.map((s, i) => (
-              <li key={s} className={`flex items-center gap-2 text-xs ${i <= stepIdx ? "text-foreground" : "text-muted-foreground/50"}`}>
-                {i < stepIdx ? <Check className="size-3 text-success" /> : <span className={`size-1.5 rounded-full bg-ai ${i === stepIdx ? "ai-thinking-dot" : "opacity-30"}`} />}
-                {s}
-              </li>
-            ))}
-          </ol>
-        )}
-        <div ref={end} />
       </div>
-      <form className="flex gap-2 border-t border-border p-3" onSubmit={(e) => { e.preventDefault(); send(text); }}>
-        <input className="pd-input h-9" disabled={busy} placeholder={r.ai.pending ? "Type an answer or pick an option…" : "Add something else, e.g. 4 docking stations"} value={text} onChange={(e) => setText(e.target.value)} />
-        <button type="submit" aria-label="Send" disabled={!text.trim() || busy} className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-40"><ArrowUp className="size-4" /></button>
-      </form>
     </div>
   );
 }
