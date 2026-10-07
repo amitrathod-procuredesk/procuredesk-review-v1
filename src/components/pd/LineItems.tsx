@@ -41,70 +41,86 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
   const vendorName = (id: string) => db.vendors.find((v) => v.id === id)?.name ?? "";
   const allSel = r.items.length > 0 && sel.length === r.items.length;
   const [view, setView] = useState<"list" | "supplier">("list");
+  const [collapsed, setCollapsed] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState("");
   const groups = Object.values(r.items.reduce<Record<string, { id: string; name: string; items: LineItem[] }>>((acc, l) => {
     const k = l.vendorId || "_none";
     (acc[k] ??= { id: k, name: vendorName(l.vendorId), items: [] }).items.push(l);
     return acc;
   }, {}));
 
+  const COLS = "md:grid-cols-[minmax(0,1fr)_140px_130px_56px_52px_88px_72px_96px_56px]";
+  const COLS_NS = "md:grid-cols-[minmax(0,1fr)_150px_56px_52px_88px_72px_96px_56px]";
   const card = (l: LineItem, i: number, hideSupplier = false) => {
     const isOpen = open === l.id;
     const other = (l.tax || 0) + (l.shipping || 0);
-    const fields: [string, ReactNode, string?][] = [
-      ["Account", l.account || "—"],
-      ...(hideSupplier ? [] : [["Supplier", vendorName(l.vendorId) || <span className="text-warning">Not set</span>] as [string, ReactNode]]),
-      ["UOM", l.uom],
-      ["Qty", <span className="num">{l.qty}</span>, "text-right"],
-      ["Unit price", <Money v={l.unitPrice} />, "text-right"],
-      ["Other", other ? <Money v={other} /> : "—", "text-right"],
-    ];
+    const cell = (label: string, v: ReactNode, cls = "") => (
+      <div className={cn("min-w-0 truncate text-[13px]", cls)}>
+        <span className="mr-1 text-[10px] uppercase tracking-wider text-muted-foreground md:hidden">{label}</span>{v}
+      </div>
+    );
     return (
-      <li key={l.id} className={cn("group rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/40 bg-primary/[0.03]", edit === l.id && "border-primary/50 ring-2 ring-primary/10")}>
-        <div className={cn("flex gap-3 p-3 sm:p-4", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
+      <li key={l.id} className={cn("group rounded-lg border border-border bg-card transition-colors hover:border-primary/30", sel.includes(l.id) && "border-primary/40 bg-primary/[0.03]", edit === l.id && "border-primary/50")}>
+        <div className={cn("flex items-start gap-2.5 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
           {editable && <input type="checkbox" className="mt-1 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className={cn("line-clamp-2 text-sm font-medium leading-snug break-words", editable && "group-hover:text-primary transition-colors", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
-                <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted-foreground">
-                  <span className="num">#{i + 1}</span><span>·</span><span className="num">{l.partNumber || "No part number"}</span>
-                  {l.catalogId && <span className="text-success">· Catalog</span>}
-                  {l.source === "ai" && <span className="ai-mark">· AI added</span>}
-                  {l.source === "quote" && <span>· From quote</span>}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <Money v={lineTotal(l)} className="block text-[15px] font-semibold" />
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</span>
-              </div>
-              <div className="-mr-1 flex shrink-0 items-start gap-0.5">
-                <button aria-label={isOpen ? "Hide details" : "Show details"} onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-1 text-muted-foreground hover:bg-subtle"><ChevronDown className={cn("size-4 transition-transform", isOpen && "rotate-180")} /></button>
-                {editable && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger aria-label="Line actions" className="rounded p-1 text-muted-foreground hover:bg-subtle"><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEdit(l.id)}><Pencil /> Edit details</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => dup([l.id])}><Copy /> Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => del([l.id])}><Trash2 /> Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
+          <div className={cn("grid min-w-0 flex-1 grid-cols-3 items-center gap-x-3 gap-y-1", hideSupplier ? COLS_NS : COLS)}>
+            <div className="col-span-3 min-w-0 md:col-span-1">
+              <p className={cn("line-clamp-2 break-words text-[13px] font-medium leading-snug", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                <span className="num">#{i + 1} · {l.partNumber || "No part #"}</span>
+                {l.catalogId && <span className="text-success"> · Catalog</span>}
+                {l.source === "ai" && <span className="ai-mark"> · AI</span>}
+                {l.source === "quote" && <span> · Quote</span>}
+              </p>
             </div>
-            <dl className={cn("mt-3 grid grid-cols-3 gap-x-4 gap-y-2 border-t border-border/70 pt-3", hideSupplier ? "sm:grid-cols-5" : "sm:grid-cols-6")}>
-              {fields.map(([k, v, align]) => (
-                <div key={k} className={cn("min-w-0", align && "sm:text-right")}>
-                  <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
-                  <dd className="mt-0.5 truncate text-[13px]">{v}</dd>
-                </div>
-              ))}
-            </dl>
+            {cell("Acct", l.account || "—", "text-muted-foreground")}
+            {!hideSupplier && cell("Supplier", vendorName(l.vendorId) || <span className="text-warning">Not set</span>)}
+            {cell("UOM", l.uom, "text-muted-foreground")}
+            {cell("Qty", <span className="num">{l.qty}</span>, "md:text-right")}
+            {cell("Unit", <Money v={l.unitPrice} />, "md:text-right")}
+            {cell("Other", other ? <Money v={other} /> : "—", "md:text-right text-muted-foreground")}
+            <div className="col-span-3 flex items-center justify-between md:col-span-1 md:block md:text-right">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground md:hidden">Total</span>
+              <Money v={lineTotal(l)} className="text-[13px] font-semibold" />
+            </div>
+            <div className="hidden items-center justify-end gap-0.5 md:flex">{actions(l, isOpen)}</div>
           </div>
+          <div className="flex shrink-0 gap-0.5 md:hidden">{actions(l, isOpen)}</div>
         </div>
-        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-11"><LineDetail l={l} /></div>}
+        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-10"><LineDetail l={l} /></div>}
       </li>
     );
   };
+  const actions = (l: LineItem, isOpen: boolean) => (
+    <>
+      <button aria-label={isOpen ? "Hide details" : "Show details"} onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-1 text-muted-foreground hover:bg-subtle"><ChevronDown className={cn("size-3.5 transition-transform", isOpen && "rotate-180")} /></button>
+      {editable && (
+        <DropdownMenu>
+          <DropdownMenuTrigger aria-label="Line actions" className="rounded p-1 text-muted-foreground hover:bg-subtle"><MoreHorizontal className="size-3.5" /></DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEdit(l.id)}><Pencil /> Edit details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => dup([l.id])}><Copy /> Duplicate</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => del([l.id])}><Trash2 /> Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </>
+  );
+  const head = (hideSupplier: boolean) => (
+    <div className={cn("hidden gap-x-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:grid", editable && "pl-[38px]", hideSupplier ? COLS_NS : COLS)}>
+      <span>Description</span><span>Account</span>{!hideSupplier && <span>Supplier</span>}<span>UOM</span><span className="text-right">Qty</span><span className="text-right">Unit price</span><span className="text-right">Other</span><span className="text-right">Total</span><span />
+    </div>
+  );
+  const LIMIT = 8;
+  const q = filter.trim().toLowerCase();
+  const visibleItems = q ? r.items.filter((l) => [l.description, l.partNumber, vendorName(l.vendorId), l.account].join(" ").toLowerCase().includes(q)) : r.items;
+  const more = (n: number, k: string) => n > LIMIT && (
+    <button onClick={() => setExpanded((s) => ({ ...s, [k]: !s[k] }))} className="mt-1.5 w-full rounded-md border border-dashed border-border py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+      {expanded[k] ? "Show less" : `Show ${n - LIMIT} more item${n - LIMIT === 1 ? "" : "s"}`}
+    </button>
+  );
+  const cap = (arr: LineItem[], k: string) => (expanded[k] || q ? arr : arr.slice(0, LIMIT));
 
   return (
     <div id="line-items">
@@ -125,6 +141,12 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
             <input type="checkbox" aria-label="Select all" checked={allSel} onChange={() => setSel(allSel ? [] : r.items.map((i) => i.id))} /> Select all
           </label>
         )}
+        {r.items.length > 10 && (
+          <input aria-label="Filter items" className="pd-input h-7 w-44 text-xs" placeholder={`Filter ${r.items.length} items…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+        )}
+        {view === "supplier" && groups.length > 1 && (
+          <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(collapsed.length === groups.length ? [] : groups.map((g) => g.id))}>{collapsed.length === groups.length ? "Expand all" : "Collapse all"}</button>
+        )}
         <div role="tablist" aria-label="Item view" className="ml-auto inline-flex rounded-md border border-border bg-subtle/60 p-0.5 text-xs">
           {([["list", "List"], ["supplier", "By supplier"]] as const).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={cn("rounded px-2.5 py-1 font-medium transition-colors", view === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{l}</button>
@@ -137,22 +159,38 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
       )}
 
       {view === "list" ? (
-        <ul className="space-y-2">{r.items.map((l, i) => card(l, i))}</ul>
+        <div>
+          {visibleItems.length > 0 && head(false)}
+          <ul className="space-y-1.5">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>
+          {!q && more(visibleItems.length, "_list")}
+        </div>
       ) : (
-        <div className="space-y-4">
-          {groups.map((g) => (
-            <section key={g.id} className="animate-in fade-in">
-              <header className="mb-2 flex items-center gap-2 px-1">
-                <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[10px] font-semibold text-primary">{(g.name || "?").slice(0, 2).toUpperCase()}</span>
-                <span className="text-sm font-semibold">{g.name || "No supplier"}</span>
-                <span className="text-xs text-muted-foreground">· {g.items.length} item{g.items.length === 1 ? "" : "s"}</span>
-                <Money v={g.items.reduce((s, x) => s + lineTotal(x), 0)} className="ml-auto text-sm font-semibold" />
-              </header>
-              <ul className="space-y-2">{g.items.map((l) => card(l, r.items.indexOf(l), true))}</ul>
-            </section>
-          ))}
+        <div className="space-y-3">
+          {groups.map((g) => {
+            const items = q ? g.items.filter((l) => visibleItems.includes(l)) : g.items;
+            if (!items.length) return null;
+            const isCol = collapsed.includes(g.id) && !q;
+            return (
+              <section key={g.id} className="rounded-lg border border-border bg-subtle/30">
+                <button onClick={() => setCollapsed((c) => (c.includes(g.id) ? c.filter((x) => x !== g.id) : [...c, g.id]))} aria-expanded={!isCol} className="flex w-full items-center gap-2 px-3 py-2 text-left">
+                  <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", isCol && "-rotate-90")} />
+                  <span className="text-[13px] font-semibold">{g.name || "No supplier"}</span>
+                  <span className="text-xs text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
+                  <Money v={items.reduce((s, x) => s + lineTotal(x), 0)} className="ml-auto text-[13px] font-semibold" />
+                </button>
+                {!isCol && (
+                  <div className="animate-in fade-in px-2 pb-2">
+                    {head(true)}
+                    <ul className="space-y-1.5">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>
+                    {!q && more(items.length, g.id)}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
+      {q && visibleItems.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No items match “{filter}”.</p>}
 
       {editable && (
         <div className="mt-2 flex items-center justify-between">
