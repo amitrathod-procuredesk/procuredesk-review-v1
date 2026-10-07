@@ -155,7 +155,7 @@ function AdminDashboard() {
         <Section title="Recent activity" className="lg:col-span-2">
           <ul className="space-y-2">
             {activity.map((a) => (
-              <li key={a.id} className="flex gap-3 text-sm"><span className="num w-24 shrink-0 text-xs text-muted-foreground">{smartTime(a.at)}</span><Link to="/app/requests/$id" params={{ id: a.rid }} className="num w-28 shrink-0 text-xs text-primary">{a.rid}</Link><span className="min-w-0 truncate">{a.text}</span></li>
+              <li key={a.rid + a.id} className="flex gap-3 text-sm"><span className="num w-24 shrink-0 text-xs text-muted-foreground">{smartTime(a.at)}</span><Link to="/app/requests/$id" params={{ id: a.rid }} className="num w-28 shrink-0 text-xs text-primary">{a.rid}</Link><span className="min-w-0 truncate">{a.text}</span></li>
             ))}
           </ul>
         </Section>

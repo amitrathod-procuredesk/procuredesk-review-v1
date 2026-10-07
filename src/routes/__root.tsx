@@ -102,7 +102,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => hydrate(), []);
+  useEffect(() => { hydrate(); }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
