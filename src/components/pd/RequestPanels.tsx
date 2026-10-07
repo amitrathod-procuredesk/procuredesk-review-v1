@@ -405,6 +405,7 @@ function MiniSuppliers({ r }: { r: PRequest }) {
 }
 
 export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; hideChecks?: boolean }) {
+  const db = useDB();
   return (
     <div className="space-y-4">
       <div className="pd-panel rounded-xl p-4">
