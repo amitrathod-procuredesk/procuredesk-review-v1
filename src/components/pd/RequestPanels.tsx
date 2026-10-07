@@ -387,14 +387,14 @@ function MiniSuppliers({ r }: { r: PRequest }) {
   );
 }
 
-export function SummaryRail({ r, editable, onCheckAction, extra }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode }) {
+export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; hideChecks?: boolean }) {
   return (
     <div className="space-y-4">
       <div className="pd-panel rounded-xl p-4">
         <TotalsBlock r={r} />
         <div className="mt-4 border-t border-border pt-4"><BudgetBlock r={r} editable={editable} /></div>
       </div>
-      <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>
+      {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
       <Section title={editable ? "Approval route preview" : "Approval route"}>
         <RouteTimeline r={r} preview={editable} />
