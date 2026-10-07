@@ -4,13 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AiGlyph, Empty, Money, Section, StatusBadge } from "@/components/pd/bits";
-import { AssistantThread } from "@/components/pd/GlobalAssistant";
+import { Empty, Money, Section, StatusBadge } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
-import { ActivityLog, Attachments, BudgetBlock, ChecksBlock, Comments, RouteTimeline, SupplierBlock, TotalsBlock } from "@/components/pd/RequestPanels";
-import { budgetStatus, currentStageIndex, findDuplicates, isPendingFor, money, runChecks, smartDate, supplierBreakdown, totals } from "@/lib/pd/engine";
+import { ActivityLog, Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
+import { currentStageIndex, isPendingFor, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
 import { decide, delegate, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
-import type { DB, PRequest } from "@/lib/pd/types";
+import type { PRequest } from "@/lib/pd/types";
 
 export const Route = createFileRoute("/app/requests/$id/")({
   head: ({ params }) => ({
@@ -24,19 +23,6 @@ export const Route = createFileRoute("/app/requests/$id/")({
   component: Detail,
 });
 
-function aiSummary(r: PRequest, db: DB) {
-  const sup = supplierBreakdown(r, db);
-  const b = budgetStatus(r, db);
-  const items = r.items.slice(0, 2).map((i) => `${i.qty} ${i.description}`).join(" and ");
-  const more = r.items.length > 2 ? ` plus ${r.items.length - 2} more line${r.items.length > 3 ? "s" : ""}` : "";
-  const dept = db.departments.find((d) => d.id === r.departmentId)?.name;
-  let s = `This request includes ${items}${more} for ${dept ?? "an unassigned department"}${r.project ? ` (${r.project})` : ""}. It uses ${sup.map((x) => x.name).join(", ") || "no supplier"}`;
-  s += b ? (b.over ? ` and exceeds the ${b.budget.name} budget by ${money(-b.remaining)}${r.exceptionRequested ? "; the requester asked for an exception" : ""}.` : ` and fits within ${b.budget.name}, leaving ${money(b.remaining)}.`) : ".";
-  const dups = findDuplicates(r, db);
-  if (dups.length) s += ` A similar request (${dups[0].id}) was submitted recently.`;
-  return s;
-}
-
 function Detail() {
   const { id } = Route.useParams();
   const db = useDB();
@@ -47,6 +33,7 @@ function Detail() {
   const [reason, setReason] = useState("");
   const [preset, setPreset] = useState("");
   const [delegateTo, setDelegateTo] = useState("");
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   if (!r) return <div className="p-8"><Empty title="Request not found" action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   const canView = me.role !== "requestor" || r.requesterId === me.id;
@@ -76,6 +63,17 @@ function Detail() {
   const quickApprove = () => (needsConfirm ? setAction("approve") : (decide(r.id, me.id, "approve", ""), toast.success("Approved")));
   const advance = (to: PRequest["status"], label: string) => updateRequest(r.id, (x) => { x.status = to; log(x, label, "system", me.id); });
 
+  const withdraw = () => {
+    updateRequest(r.id, (x) => {
+      x.status = "draft";
+      x.route.forEach((st) => st.approvals.forEach((ap) => { if (ap.status === "pending") ap.status = "waiting" as typeof ap.status; }));
+      log(x, `Request withdrawn by requester${reason.trim() ? ` — ${reason.trim()}` : ""}`, "system", me.id);
+    });
+    setWithdrawOpen(false);
+    setReason("");
+    toast.success("Request withdrawn — it's back in your drafts");
+  };
+
   return (
     <div className="pb-24 md:pb-0">
       <header className="border-b border-border bg-surface px-4 py-4 md:px-8">
@@ -99,6 +97,7 @@ function Detail() {
                 <Button size="sm" onClick={quickApprove}>Approve</Button>
               </>}
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
+              {isOwner && r.status === "pending" && <Button size="sm" variant="outline" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>}
               {(isOwner || me.role === "admin") && ["draft", "pending", "changes"].includes(r.status) && <Button size="sm" variant="ghost" onClick={() => { advance("cancelled", "Request cancelled"); toast("Request cancelled"); }}>Cancel request</Button>}
               {me.role === "admin" && r.status === "approved" && <Button size="sm" onClick={() => advance("ordered", "Purchase order issued")}>Mark ordered</Button>}
               {me.role === "admin" && r.status === "ordered" && <><Button size="sm" variant="outline" onClick={() => advance("partial", "Partially received")}>Partially received</Button><Button size="sm" onClick={() => advance("received", "All items received")}>Mark received</Button></>}
@@ -131,7 +130,15 @@ function Detail() {
         </aside>
       </div>
 
-      {isOwner && r.status === "pending" && (
+      {mine && (
+        <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
+          <Button variant="outline" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
+          <Button variant="outline" className="flex-1" onClick={() => setAction("changes")}>Changes</Button>
+          <Button className="flex-1" onClick={quickApprove}>Approve</Button>
+        </div>
+      )}
+
+      {isOwner && r.status === "pending" && !mine && (
         <div className="fixed inset-x-0 bottom-14 z-20 border-t border-border bg-surface p-3 md:hidden">
           <Button variant="outline" className="w-full" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>
         </div>
