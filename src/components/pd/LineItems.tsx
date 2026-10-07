@@ -64,17 +64,17 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
         <div className={cn("flex items-start gap-3 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
           {editable && <input type="checkbox" className="mt-0.5 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-2">
-                <span className="num mt-px shrink-0 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
-                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-subtle text-muted-foreground/60">
-                  {l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <ImageIcon className="size-4" aria-hidden />}
-                </span>
-                <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.4]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
-              </div>
-              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-[4.5rem] text-[11.5px] text-muted-foreground">
-                <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
-                {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <span className="num w-4 shrink-0 self-start pt-0.5 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+              <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-subtle text-muted-foreground/60">
+                {l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <ImageIcon className="size-4" aria-hidden />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
+                <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                  <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
+                  {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
+                </div>
               </div>
             </div>
             <div className="flex shrink-0 items-end justify-between gap-4 pl-6 sm:block sm:pl-0 sm:text-right">
