@@ -112,11 +112,6 @@ function Detail() {
 
       <div className="grid gap-4 p-4 md:p-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-4">
-          <section className="ai-surface rounded-r-lg px-4 py-3">
-            <p className="mb-1 flex items-center gap-2 text-xs font-medium text-ai"><AiGlyph /> AI summary</p>
-            <p className="text-sm leading-relaxed">{aiSummary(r, db)}</p>
-          </section>
-          <Section title="Procurement checks"><ChecksBlock r={r} /></Section>
           <Section title={`Line items · ${r.items.length}`}><LineItems r={r} editable={false} /></Section>
           <Section title="Overview">
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
@@ -126,24 +121,33 @@ function Detail() {
               {(r.noteBuyer || r.noteSupplier) && <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Notes</dt><dd>{r.noteBuyer}{r.noteSupplier && <><br />To supplier: {r.noteSupplier}</>}</dd></div>}
             </dl>
           </Section>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>
-            <Section title="Comments"><Comments r={r} /></Section>
-          </div>
+          <Section title="Comments"><Comments r={r} /></Section>
           <Section title="Activity · audit trail"><ActivityLog r={r} /></Section>
         </div>
         <aside className="space-y-4">
-          <Section title="Total"><TotalsBlock r={r} /></Section>
-          <Section title="Budget"><BudgetBlock r={r} /></Section>
-          <Section title="Approval route"><RouteTimeline r={r} preview={r.status === "draft"} /></Section>
-          <Section title="Suppliers"><SupplierBlock r={r} /></Section>
-          {me.role !== "requestor" && (
-            <Section title="Ask AI about this request">
-              <div className="h-80"><AssistantThread compact ctx={r} suggestions={["Why is this request over budget?", "Is the supplier preferred?", "What similar requests were made recently?", "What policy requires my approval?"]} /></div>
-            </Section>
-          )}
+          <div className="lg:sticky lg:top-4">
+            <SummaryRail r={r} hideChecks extra={<Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>} />
+          </div>
         </aside>
       </div>
+
+      {isOwner && r.status === "pending" && (
+        <div className="fixed inset-x-0 bottom-14 z-20 border-t border-border bg-surface p-3 md:hidden">
+          <Button variant="outline" className="w-full" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>
+        </div>
+      )}
+
+      <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Withdraw this request?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">It will be pulled back from approvers and returned to you as a draft, so you can edit and resubmit it.</p>
+          <textarea className="pd-input h-16 py-2" placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWithdrawOpen(false)}>Keep pending</Button>
+            <Button onClick={withdraw}>Withdraw request</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {mine && (
         <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
