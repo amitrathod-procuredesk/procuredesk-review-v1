@@ -85,11 +85,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
                     <td><button aria-label={isOpen ? "Hide details" : "Show details"} title="Show details" onClick={() => setOpen(isOpen ? null : l.id)} className="rounded p-0.5 text-muted-foreground transition-transform hover:bg-subtle">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
                     <td className="num text-xs text-muted-foreground">{i + 1}</td>
                     <td>
-                      {editable ? (
-                        <input className="pd-input-bare" value={l.description} placeholder="What is it?" onChange={(e) => patch(l.id, { description: e.target.value })} />
-                      ) : (
-                        <span>{l.description}</span>
-                      )}
+                      <span className={cn("block px-1.5 font-medium", editable && "group-hover:text-primary transition-colors", !l.description && "text-muted-foreground")}>{l.description || "Untitled item"}</span>
                       <p className="px-1.5 text-[11px] text-muted-foreground">
                         {l.partNumber || "No part number"}
                         {l.catalogId && <span className="ml-1.5 text-success">· Catalog</span>}
