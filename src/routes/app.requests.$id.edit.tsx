@@ -36,7 +36,7 @@ function EditRequest() {
   const me = useMe()!;
   const r = db.requests.find((x) => x.id === id);
   const [submitted, setSubmitted] = useState(false);
-  const [review, setReview] = useState(false);
+  const [tried, setTried] = useState(false);
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   if (r.requesterId !== me.id && me.role !== "admin")
@@ -52,18 +52,27 @@ function EditRequest() {
       if (label) log(x, label, "edit", me.id);
     });
 
+  const trySubmit = () => {
+    const checks = runChecks(r, db);
+    if (canSubmit(checks)) { submitRequest(r.id, me.id); setSubmitted(true); return; }
+    setTried(true);
+    const msg = checks.find((c) => c.level === "error");
+    toast.error("Fill in the highlighted fields", { description: msg?.detail ?? msg?.title });
+    setTimeout(() => document.querySelector<HTMLElement>('.pd-validate [aria-invalid="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  };
+
   const onCheck = (c: CheckT) => {
     const target = { attach: "attachments", exception: "rail-budget", budget: "rail-budget", edit: "line-items", duplicate: "dup" }[c.action!];
     document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
-    <div className="flex min-h-[calc(100vh)] flex-col">
+    <div className={cn("flex min-h-[calc(100vh)] flex-col", tried && "pd-validate")}>
       <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur md:px-6">
         <Link to="/app/requests" aria-label="Back" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <input aria-label="Request title" className="pd-input-bare -ml-1.5 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
+            <input aria-label="Request title" aria-invalid={!r.title.trim() || undefined} className="pd-input-bare -ml-1.5 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
             <SourceMark s={r.sources.title} />
           </div>
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /> <span className="flex items-center gap-1"><Check className="size-3" /> Saved {smartTime(r.updatedAt)}</span></p>
@@ -71,7 +80,7 @@ function EditRequest() {
         <div className="flex items-center gap-2">
           <Copilot r={r} initialPrompt={prompt} />
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
-          <Button size="sm" onClick={() => setReview(true)}>Review & submit</Button>
+          <Button size="sm" onClick={trySubmit}>Submit</Button>
         </div>
       </header>
 
@@ -103,7 +112,6 @@ function EditRequest() {
         </aside>
       </div>
 
-      <ReviewDialog r={r} open={review} onOpenChange={setReview} onSubmit={() => { submitRequest(r.id, me.id); setReview(false); setSubmitted(true); }} />
     </div>
   );
 }
@@ -132,56 +140,6 @@ function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?
         </div>
       )}
     </section>
-  );
-}
-
-function ReviewDialog({ r, open, onOpenChange, onSubmit }: { r: PRequest; open: boolean; onOpenChange: (o: boolean) => void; onSubmit: () => void }) {
-  const db = useDB();
-  const checks = runChecks(r, db);
-  const ok = canSubmit(checks);
-  const b = budgetStatus(r, db);
-  const sup = supplierBreakdown(r, db);
-  const dept = db.departments.find((d) => d.id === r.departmentId);
-  const route = computeRoute(r, db);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader><DialogTitle>Review purchase request</DialogTitle></DialogHeader>
-        <div className="grid gap-6 sm:grid-cols-[1fr_1fr]">
-          <div className="space-y-3">
-            <div>
-              <p className="text-base font-semibold">{r.title || "Untitled request"}</p>
-              <p className="text-sm text-muted-foreground">{r.items.slice(0, 3).map((i) => `${i.qty} × ${i.description}`).join(", ")}{r.items.length > 3 ? ` +${r.items.length - 3} more` : ""}</p>
-            </div>
-            <div><p className="text-xs text-muted-foreground">Estimated total</p><Money v={totals(r).total} className="text-2xl font-medium" /></div>
-            <dl className="space-y-1.5 text-sm">
-              {[
-                ["Department", dept?.name ?? "—"],
-                ["Project", r.project || "—"],
-                ["Supplier", sup.map((s) => s.name).join(", ") || "—"],
-                ["Required by", smartDate(r.requiredBy)],
-                ["Budget", b ? `${b.budget.name}` : "—"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4"><dt className="text-muted-foreground">{k}</dt><dd className="text-right">{v}</dd></div>
-              ))}
-            </dl>
-          </div>
-          <div className="space-y-4">
-            <div><p className="pd-section-title mb-2">Checks</p><ChecksBlock r={r} /></div>
-            <div>
-              <p className="pd-section-title mb-2">Approval route</p>
-              <p className="mb-2 text-sm">You → {route.map((s) => s.name).join(" → ")}</p>
-              <RouteTimeline r={r} preview />
-            </div>
-          </div>
-        </div>
-        {!ok && <p className="text-sm text-destructive">Resolve the items marked in red before submitting. {b?.over && "For budget issues, choose another budget or request an exception."}</p>}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => { onOpenChange(false); toast.success("Saved as draft"); }}>Save as draft</Button>
-          <Button disabled={!ok} onClick={onSubmit}>Send for approval · {money(totals(r).total)}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

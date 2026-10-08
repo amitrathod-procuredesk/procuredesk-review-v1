@@ -134,7 +134,7 @@
     @apply mb-1 block text-xs font-medium text-muted-foreground;
   }
   .pd-input {
-    @apply h-9 w-full rounded-[6px] border border-input bg-surface px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-primary focus:ring-[3px] focus:ring-primary/12 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/12;
+    @apply h-9 w-full rounded-[6px] border border-input bg-surface px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-primary focus:ring-[3px] focus:ring-primary/12 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground;
   }
   .pd-input-bare {
     @apply h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none hover:border-input focus:border-ring focus:bg-surface;
@@ -284,3 +284,7 @@ input[type="checkbox"]:checked::after { content: ""; width: .55rem; height: .3re
 input[type="checkbox"]:indeterminate::after { content: ""; width: .5rem; height: 2px; background: var(--primary-foreground); border-radius: 1px; }
 input[type="radio"]:checked { border-color: var(--primary); border-width: 5px; }
 input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Submit-time validation: required fields only turn red after a submit attempt */
+.pd-validate [aria-invalid="true"] { border-color: var(--destructive) !important; border-style: solid !important; background-color: var(--danger-soft); color: var(--destructive); }
+.pd-validate [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 14%, transparent); }
