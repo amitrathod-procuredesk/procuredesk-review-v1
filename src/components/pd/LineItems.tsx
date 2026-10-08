@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
-export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
+export function LineItems({ r, editable, heading }: { r: PRequest; editable: boolean; heading?: ReactNode }) {
   const db = useDB();
   const me = useMe();
   const [open, setOpen] = useState<string | null>(null);
@@ -138,7 +138,8 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
         </div>
       )}
 
-      {r.items.length > 0 && <div className="mb-2 flex items-center gap-2">
+      {(heading || r.items.length > 0) && <div className={cn("flex flex-wrap items-center gap-2", heading ? "mb-3 min-h-7" : "mb-2")}>
+        {heading && <h2 className="pd-section-title mr-auto">{heading}</h2>}
         {editable && r.items.length > 0 && (
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" aria-label="Select all" checked={allSel} onChange={() => setSel(allSel ? [] : r.items.map((i) => i.id))} /> Select all
@@ -150,11 +151,11 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
         {view === "supplier" && groups.length > 1 && (
           <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(collapsed.length === groups.length ? [] : groups.map((g) => g.id))}>{collapsed.length === groups.length ? "Expand all" : "Collapse all"}</button>
         )}
-        <div role="tablist" aria-label="Item view" className="ml-auto inline-flex rounded-md border border-border bg-subtle/60 p-0.5 text-xs">
+        {r.items.length > 0 && <div role="tablist" aria-label="Item view" className="ml-auto inline-flex rounded-md border border-border bg-subtle/60 p-0.5 text-xs">
           {([["list", "List"], ["supplier", "By supplier"]] as const).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={cn("rounded px-2.5 py-1 font-medium transition-colors", view === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{l}</button>
           ))}
-        </div>
+        </div>}
       </div>}
 
       {r.items.length === 0 && (

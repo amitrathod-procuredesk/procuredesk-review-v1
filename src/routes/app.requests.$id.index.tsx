@@ -118,7 +118,7 @@ function Detail() {
 
       <div className="grid gap-4 p-4 md:p-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-4">
-          <Section title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}><LineItems r={r} editable={false} /></Section>
+          <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
           <Section title="Overview">
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
               {[["Business unit", r.businessUnit], ["Request type", r.requestType], ["Requester", requester?.name], ["Ship to", r.shipTo], ["Payment", r.paymentMethod], ["Shipment", r.shipmentType], ["Required by", smartDate(r.requiredBy)], ["Quote #", r.quoteNo || "—"], ["Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ") || "—"]].map(([k, v]) => (
