@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { AlarmClock, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { AlarmClock, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -87,7 +87,7 @@ function AppShell() {
 
       <div className="flex min-h-0 flex-1">
         <SideNav collapsed={collapsed} setCollapsed={setCollapsed} pendingCount={pendingCount} role={me.role} onChat={() => setAssistant(true)} />
-        <div className="flex min-w-0 flex-1 flex-col border-l border-border pb-16 md:pb-0">
+        <div className="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
           <main className="min-w-0 flex-1">
             <Outlet />
           </main>
@@ -136,14 +136,14 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
   const groupActive = (g: NavGroup) => (g.to ? (g.exact ? path === g.to : path.startsWith(g.to)) : !!g.children?.some((c) => c.to && path.startsWith(c.to)));
   const [open, setOpen] = useState<string[]>(() => groups.filter(groupActive).map((g) => g.label).concat("Purchase"));
   const toggle = (l: string) => setOpen((o) => (o.includes(l) ? o.filter((x) => x !== l) : [...o, l]));
-  const row = "flex h-10 w-full items-center gap-2.5 rounded-lg px-2 text-[14px] text-foreground transition-colors hover:bg-sidebar-accent";
+  const row = "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] text-foreground transition-colors hover:bg-sidebar-accent";
 
   return (
-    <aside className={cn("sticky top-[60px] hidden h-[calc(100vh-60px)] shrink-0 flex-col bg-sidebar transition-[width] duration-200 md:flex", collapsed ? "w-[64px]" : "w-[250px]")}>
-      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-[15px] top-4 z-40 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-foreground/70 shadow-md transition-colors hover:border-primary/40 hover:text-primary">
-        {collapsed ? <PanelLeftOpen className="size-4" strokeWidth={1.75} /> : <PanelLeftClose className="size-4" strokeWidth={1.75} />}
+    <aside className={cn("sticky top-[60px] z-30 hidden h-[calc(100vh-60px)] shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex", collapsed ? "w-[56px]" : "w-[216px]")}>
+      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-3 top-5 z-40 flex size-6 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground shadow-sm outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/30">
+        {collapsed ? <ChevronRight className="size-3.5" strokeWidth={2} /> : <ChevronLeft className="size-3.5" strokeWidth={2} />}
       </button>
-      <nav className="flex-1 space-y-1 pd-scroll-hide overflow-y-auto px-3.5 pb-4 pt-6">
+      <nav className={cn("flex-1 space-y-0.5 pd-scroll-hide overflow-y-auto pb-3 pt-4", collapsed ? "px-2" : "px-3")}>
         {groups.map((g) => {
           const act = groupActive(g);
           const isOpen = open.includes(g.label) && !collapsed;
@@ -163,15 +163,15 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
                 {!collapsed && <><span className="flex-1 truncate text-left">{g.label}</span><ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} /></>}
               </button>
               {isOpen && (
-                <div className="animate-in fade-in slide-in-from-top-1 mb-1 ml-[11px] mt-1 space-y-1 border-l border-border pl-[11px]">
+                <div className="animate-in fade-in slide-in-from-top-1 mb-1 ml-[17px] mt-0.5 space-y-0.5 border-l border-border pl-2">
                   {g.children.map((c) =>
                     c.to ? (
-                      <Link key={c.label} to={c.to} className="flex h-9 items-center rounded-lg px-3 text-[14px] text-foreground transition-colors hover:bg-sidebar-accent data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium">
+                      <Link key={c.label} to={c.to} className="flex h-8 items-center rounded-md px-2.5 text-[13px] text-muted-foreground data-[status=active]:text-primary text-foreground transition-colors hover:bg-sidebar-accent data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium">
                         <span className="flex-1 truncate">{c.label}</span>
                         {c.badge ? <span className="num rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{c.badge}</span> : null}
                       </Link>
                     ) : (
-                      <button key={c.label} onClick={() => soon(c.label)} className="flex h-9 w-full items-center rounded-lg px-3 text-left text-[14px] text-foreground transition-colors hover:bg-sidebar-accent">{c.label}</button>
+                      <button key={c.label} onClick={() => soon(c.label)} className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-sidebar-accent">{c.label}</button>
                     ),
                   )}
                 </div>
@@ -180,7 +180,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
           );
         })}
       </nav>
-      <div className="mx-3.5 space-y-1 border-t border-border pb-4 pt-3">
+      <div className={cn("space-y-0.5 border-t border-sidebar-border py-2", collapsed ? "mx-2" : "mx-3")}>
         <button onClick={onChat} title="Chat to us" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquare className="size-4 shrink-0" />{!collapsed && "Chat to us"}</button>
         <button onClick={() => toast.success("Thanks! Feedback noted.")} title="Send feedback" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquarePlus className="size-4 shrink-0" />{!collapsed && "Send feedback"}</button>
       </div>
