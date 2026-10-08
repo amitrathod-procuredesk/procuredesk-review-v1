@@ -145,7 +145,7 @@ function Detail() {
             {(() => {
               type Fact = [typeof Building2, string, string | undefined, string?];
               const opts: Fact[] = ([[r.urgent, "Urgent", "text-destructive"], [r.delayed, "Delayed release", ""], [r.blanket, "Blanket order", ""]] as const).filter(([on]) => on).map(([, t, c]) => [Zap, "Option", t, c]);
-              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? smartDate(r.requiredBy) : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo], ...opts];
+              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? `Needed by ${smartDate(r.requiredBy)}` : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo && `Quote ${r.quoteNo}`], ...opts];
               const shown = facts.filter(([, , v]) => v);
               return (
                 <>
