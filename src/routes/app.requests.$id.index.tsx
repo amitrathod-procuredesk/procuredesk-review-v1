@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Empty, Money, Section, StatusBadge } from "@/components/pd/bits";
+import { Empty, Section, StatusBadge } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
 import { AuditTrailButton, POST_APPROVAL, RequestActionsButton } from "@/components/pd/RequestActions";
 import { Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
