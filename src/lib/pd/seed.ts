@@ -92,7 +92,7 @@ export function seedDB(): DB {
       { id: "v_local", name: "Peak Office Co.", preferred: false, verified: false, contractActive: false, categories: ["Furniture & Facilities"] },
     ],
     catalog: [
-      { id: "c_mbp", name: "MacBook Pro 14-inch", partNumber: "MBP14-M4 · Apple", vendorId: "v_amazon", price: 1999, category: "IT Equipment", account: "IT Equipment Expense", keywords: ["macbook", "mac book", "laptop"], available: true },
+      { id: "c_mbp", name: "MacBook Pro 14-inch", partNumber: "MBP14-M4", vendorId: "v_amazon", price: 1999, category: "IT Equipment", account: "IT Equipment Expense", keywords: ["macbook", "mac book", "laptop"], available: true },
       { id: "c_dell", name: "Dell Latitude 7450", partNumber: "LAT7450 · Dell", vendorId: "v_cdw", price: 1450, category: "IT Equipment", account: "IT Equipment Expense", keywords: ["latitude", "dell laptop", "laptop", "windows"], available: true },
       { id: "c_mouse", name: "Wireless mouse, ergonomic", partNumber: "LG M220 · Logitech Mouse", vendorId: "v_phoenix", price: 18.5, category: "Office Supplies", account: "Office Supplies Expense", keywords: ["mouse", "mice"], available: true },
       { id: "c_mon", name: '27" monitor, 4K IPS panel', partNumber: "DL U270 · Dell UltraSharp", vendorId: "v_nova", price: 310, category: "IT Equipment", account: "IT Equipment Expense", keywords: ["monitor", "display", "screen"], available: true },
@@ -136,7 +136,7 @@ export function seedDB(): DB {
         submittedAt: iso(-4, 11),
         updatedAt: iso(-4, 11),
         requiredBy: dateOnly(10),
-        items: [li({ id: "l1", description: "MacBook Pro 14-inch", partNumber: "MBP14-M4 · Apple", vendorId: "v_amazon", qty: 5, unitPrice: 1999, catalogId: "c_mbp" })],
+        items: [li({ id: "l1", description: "MacBook Pro 14-inch", partNumber: "MBP14-M4", vendorId: "v_amazon", qty: 5, unitPrice: 1999, catalogId: "c_mbp" })],
         attachments: [{ id: "at1", name: "amazon-quote-5x-mbp.pdf", size: 184320, kind: "quote", uploadedAt: iso(-4) }],
         route: [
           { id: "r_fin", name: "Finance review", mode: "all", reason: "Total ≥ $5,000.00", approvals: [{ userId: "u_mark", status: "approved", at: iso(-3), comment: "Within hiring plan." }] },
