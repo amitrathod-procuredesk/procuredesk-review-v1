@@ -148,7 +148,7 @@ function Detail() {
         <DialogContent>
           <DialogHeader><DialogTitle>Withdraw this request?</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">It will be pulled back from approvers and returned to you as a draft, so you can edit and resubmit it.</p>
-          <textarea className="pd-input h-16 py-2" placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <textarea className="pd-input py-2" placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawOpen(false)}>Keep pending</Button>
             <Button onClick={withdraw}>Withdraw request</Button>
@@ -163,7 +163,7 @@ function Detail() {
             <div className="space-y-3 text-sm">
               <p>You're approving <span className="font-medium">{money(totals(r).total)}</span> despite these open checks:</p>
               <ChecksBlock r={{ ...r }} />
-              <textarea className="pd-input h-16 py-2" placeholder="Optional comment" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <textarea className="pd-input py-2" placeholder="Optional comment" value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
           )}
           {action === "reject" && (

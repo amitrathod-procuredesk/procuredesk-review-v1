@@ -172,7 +172,7 @@ function RulesTab() {
                 <p className="font-medium">{r.name}</p>
                 <p className="text-xs text-muted-foreground">When total ≥ {money(r.minAmount)}{r.category ? ` and contains ${r.category}` : ""} → {r.approverIds.map((id) => db.users.find((u) => u.id === id)?.name).join(", ")}{r.approverIds.length > 1 ? ` (${r.mode === "all" ? "all must approve" : "any one"})` : ""}</p>
               </div>
-              <label className="flex items-center gap-1.5 text-xs">Min <input type="number" className="pd-input num h-7 w-24" value={r.minAmount} onChange={(e) => mutate((d) => (d.rules.find((x) => x.id === r.id)!.minAmount = Math.max(0, Number(e.target.value))))} /></label>
+              <label className="flex items-center gap-1.5 text-xs">Min <input type="number" className="pd-input num w-24" value={r.minAmount} onChange={(e) => mutate((d) => (d.rules.find((x) => x.id === r.id)!.minAmount = Math.max(0, Number(e.target.value))))} /></label>
               <Switch checked={r.enabled} onCheckedChange={(v) => mutate((d) => (d.rules.find((x) => x.id === r.id)!.enabled = v))} aria-label="Enabled" />
               <button aria-label="Delete rule" className="text-muted-foreground hover:text-destructive" onClick={() => mutate((d) => (d.rules = d.rules.filter((x) => x.id !== r.id)))}><Trash2 className="size-4" /></button>
             </li>

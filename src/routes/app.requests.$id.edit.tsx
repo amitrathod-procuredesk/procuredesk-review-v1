@@ -63,7 +63,7 @@ function EditRequest() {
         <Link to="/app/requests" aria-label="Back" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <input aria-label="Request title" className="pd-input-bare -ml-1.5 h-7 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
+            <input aria-label="Request title" className="pd-input-bare -ml-1.5 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
             <SourceMark s={r.sources.title} />
           </div>
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /> <span className="flex items-center gap-1"><Check className="size-3" /> Saved {smartTime(r.updatedAt)}</span></p>
