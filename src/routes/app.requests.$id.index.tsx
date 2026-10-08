@@ -77,8 +77,8 @@ function Detail() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button size="sm" aria-label="More approval options" className="rounded-l-none border-l border-primary-foreground/20 px-2"><ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
-          <DropdownMenuItem onClick={quickApprove}><CheckCheck className="size-4" /><div><p className="text-sm">Approve all items</p><p className="text-xs text-muted-foreground">{liveItems.length} items · {money(totals(r).total)}</p></div></DropdownMenuItem>
-          <DropdownMenuItem disabled={liveItems.length < 2} onClick={openPartial}><ListChecks className="size-4" /><div><p className="text-sm">Approve selected items…</p><p className="text-xs text-muted-foreground">Decline the rest of the lines</p></div></DropdownMenuItem>
+          <DropdownMenuItem onClick={quickApprove}><CheckCheck className="size-4" /><div><p className="text-sm">Approve all items</p><p className="text-xs text-muted-foreground">{liveItems.length} item{liveItems.length === 1 ? "" : "s"} · {money(totals(r).total)}</p></div></DropdownMenuItem>
+          <DropdownMenuItem disabled={liveItems.length < 2} onClick={openPartial}><ListChecks className="size-4" /><div><p className="text-sm">Approve selected items…</p><p className="text-xs text-muted-foreground">{liveItems.length < 2 ? "Needs 2 or more lines" : "Decline the rest of the lines"}</p></div></DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setAction("changes")}><MessageSquareReply className="size-4" /><div><p className="text-sm">Request changes</p><p className="text-xs text-muted-foreground">Send back to the requester</p></div></DropdownMenuItem>
         </DropdownMenuContent>
