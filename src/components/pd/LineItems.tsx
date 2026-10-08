@@ -379,7 +379,7 @@ function NameSearch({ l, vendorName, onText, onPick }: { l: LineItem; vendorName
   const [focus, setFocus] = useState(false);
   const [hi, setHi] = useState(0);
   const q = (l.name ?? "").trim().toLowerCase();
-  const hits = q.length < 1 ? [] : db.catalog.filter((c) => c.id !== l.catalogId && [c.name, c.partNumber, ...c.keywords].join(" ").toLowerCase().includes(q)).slice(0, 5);
+  const hits = q.length < 1 ? [] : db.catalog.filter((c) => c.id !== l.catalogId && c.name.toLowerCase().includes(q)).slice(0, 5);
   const show = focus && hits.length > 0;
   const pick = (c: CatalogItem) => { onPick(c); setFocus(false); };
   return (
@@ -396,15 +396,11 @@ function NameSearch({ l, vendorName, onText, onPick }: { l: LineItem; vendorName
         }} />
       {show && (
         <div role="listbox" className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-popover shadow-lg animate-in fade-in slide-in-from-top-1">
-          <p className="px-3 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Found in catalog</p>
+          <p className="px-3 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Matching item names</p>
           {hits.map((c, i) => (
             <button key={c.id} type="button" role="option" aria-selected={i === hi} onMouseEnter={() => setHi(i)} onMouseDown={(e) => { e.preventDefault(); pick(c); }}
-              className={cn("flex w-full items-center gap-3 px-3 py-2 text-left", i === hi && "bg-accent")}>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-medium">{c.name}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{[c.partNumber, vendorName(c.vendorId)].filter(Boolean).join(" · ")}</span>
-              </span>
-              <Money v={c.price} className="shrink-0 text-[12px] text-muted-foreground" />
+              className={cn("flex w-full items-center px-3 py-1.5 text-left text-muted-foreground", i === hi && "bg-accent")}>
+              <span className="min-w-0 flex-1 truncate text-[13px]">{(() => { const k = c.name.toLowerCase().indexOf(q); return <>{c.name.slice(0, k)}<mark className="bg-transparent font-semibold text-foreground">{c.name.slice(k, k + q.length)}</mark>{c.name.slice(k + q.length)}</>; })()}</span>
             </button>
           ))}
           <p className="border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">Not listed? Keep typing to add it as a new item.</p>
