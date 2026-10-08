@@ -84,7 +84,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
             <input
               aria-label="Search catalog"
               className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              placeholder="Add an item: search the catalogue by name, part number or supplier"
+              placeholder="Search catalog by name, part # or supplier"
               value={q}
               onFocus={() => setFocus(true)}
               onChange={(e) => { setQ(e.target.value); setFocus(true); }}
@@ -96,7 +96,10 @@ export function ItemToolbar({ r }: { r: PRequest }) {
                 if (e.key === "Escape") setFocus(false);
               }}
             />
-            <kbd className="hidden rounded border border-border px-1.5 text-[10px] text-muted-foreground sm:inline">↵</kbd>
+            <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
+            <button type="button" onClick={() => { setBrowse(true); setFocus(false); }} title="Browse the full catalog" className="-mr-1.5 inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground">
+              <LayoutGrid className="size-3.5" /><span className="hidden sm:inline">Browse catalog</span>
+            </button>
           </div>
           {showList && (
             <div className="pd-float absolute left-0 top-12 z-30 w-full sm:w-[min(580px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-popover animate-in fade-in slide-in-from-top-1 duration-150">
@@ -137,7 +140,6 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           )}
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="h-10 border-border bg-surface px-3.5 text-sm font-medium shadow-none hover:bg-subtle" onClick={() => setBrowse(true)}><LayoutGrid /> Browse</Button>
           <Button size="sm" variant="outline" className="h-10 border-border bg-surface px-3.5 text-sm font-medium shadow-none hover:bg-subtle" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
           <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
