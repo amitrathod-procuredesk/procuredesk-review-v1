@@ -81,7 +81,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                     </span>); })()}
                   {editable && !l.declined && stockFor(l.catalogId) && (
                     <button type="button" onClick={() => patch(l.id, { fulfillment: fromStock(l) ? "purchase" : "inventory" })} className="shrink-0 text-[10.5px] font-medium text-primary hover:underline" title={fromStock(l) ? "Order from the supplier instead" : `${stockFor(l.catalogId)!.onHand} available at ${stockFor(l.catalogId)!.location}`}>
-                      {fromStock(l) ? "Buy instead" : `Use stock (${stockFor(l.catalogId)!.onHand})`}
+                      {fromStock(l) ? "Buy instead" : "Use stock"}
                     </button>
                   )}
                   {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}

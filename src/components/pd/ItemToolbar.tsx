@@ -99,7 +99,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
             <kbd className="hidden rounded border border-border px-1.5 text-[10px] text-muted-foreground sm:inline">↵</kbd>
           </div>
           {showList && (
-            <div className="pd-float absolute inset-x-0 top-12 z-30 overflow-hidden rounded-lg border border-border bg-popover animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="pd-float absolute left-0 top-12 z-30 w-full sm:w-auto sm:min-w-[min(560px,calc(100vw-2rem))] sm:right-0 overflow-hidden rounded-lg border border-border bg-popover animate-in fade-in slide-in-from-top-1 duration-150">
               {results.length > 0 && <p className="px-3 pt-2.5 pb-1 text-[11px] font-medium text-muted-foreground">Catalog · {results.length} match{results.length === 1 ? "" : "es"}</p>}
               <ul role="listbox">
                 {results.map((c, i) => {
