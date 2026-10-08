@@ -469,7 +469,6 @@ export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChec
         <RouteTimeline r={r} preview={editable} />
       </section>
       {after}
-      {r.requiredBy && <p className="px-1 text-xs text-muted-foreground">Required by {smartDate(r.requiredBy)}</p>}
     </div>
   );
 }
