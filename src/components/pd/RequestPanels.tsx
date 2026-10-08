@@ -185,7 +185,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
         const approvedCount = s.approvals.filter((a) => a.status === "approved").length;
         const person = (a: (typeof s.approvals)[number], dense?: boolean) => {
           const u = db.users.find((x) => x.id === a.userId);
-          const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : isNext && a.status === "waiting" ? "next" : a.status;
+          const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : isNext && !multi && a.status === "waiting" ? "next" : a.status;
           return (
             <div key={a.userId} title={!multi ? s.name : undefined} className={cn("flex items-center gap-2.5 rounded-md transition-colors", dense ? "px-2 py-1.5 hover:bg-subtle/70" : "min-h-6", st === "skipped" && "opacity-55")}>
               <span className={cn("relative flex size-7 shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-foreground/70", st === "pending" && "ring-2 ring-pending/30")}>
