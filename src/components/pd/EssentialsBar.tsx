@@ -1,4 +1,5 @@
-import { Building2, CalendarDays, Check, ChevronDown, CreditCard, FileText, FolderKanban, MapPin, Truck, User, Users, Zap, Clock, Repeat } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronDown, CreditCard, FileText, FolderKanban, MapPin, Truck, User, Users, Zap, Clock, Layers, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDB } from "@/lib/pd/store";
@@ -52,8 +53,8 @@ function Options({ opts, value, onPick, close }: { opts: Opt[]; value?: string; 
   );
 }
 
-function Toggle({ on, icon, label, onChange }: { on: boolean; icon: ReactNode; label: string; onChange: (v: boolean) => void }) {
-  return (
+function Toggle({ on, icon, label, onChange, info }: { on: boolean; icon: ReactNode; label: string; onChange: (v: boolean) => void; info?: string }) {
+  const btn = (
     <button
       aria-pressed={on}
       onClick={() => onChange(!on)}
@@ -65,6 +66,20 @@ function Toggle({ on, icon, label, onChange }: { on: boolean; icon: ReactNode; l
       {on ? <Check /> : icon}
       {label}
     </button>
+  );
+  if (!info) return btn;
+  return (
+    <span className="inline-flex items-center">
+      {btn}
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" aria-label={`About ${label}`} className="-ml-1 grid size-6 place-items-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:text-foreground"><Info className="size-3.5" /></button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-64 text-xs leading-relaxed">{info}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </span>
   );
 }
 
@@ -115,8 +130,8 @@ export function EssentialsBar({ r, set }: { r: PRequest; set: SetFn }) {
       </div>
       <div className="flex flex-wrap items-center gap-1 border-t border-border/60 pt-2">
         <Toggle on={r.urgent} icon={<Zap />} label="Urgent" onChange={(v) => set({ urgent: v }, undefined, `Urgent ${v ? "enabled" : "disabled"}`)} />
-        <Toggle on={r.delayed} icon={<Clock />} label="Delayed release" onChange={(v) => set({ delayed: v }, undefined, `Delayed release ${v ? "enabled" : "disabled"}`)} />
-        <Toggle on={r.blanket} icon={<Repeat />} label="Blanket requisition" onChange={(v) => set({ blanket: v }, undefined, `Blanket requisition ${v ? "enabled" : "disabled"}`)} />
+        <Toggle on={r.delayed} icon={<Clock />} label="Delayed release" info="When enabled, approval will not automatically generate an order. You can release items partially or multiple times, and any orders created from this request will auto-approve." onChange={(v) => set({ delayed: v }, undefined, `Delayed release ${v ? "enabled" : "disabled"}`)} />
+        <Toggle on={r.blanket} icon={<Layers />} label="Blanket requisition" onChange={(v) => set({ blanket: v }, undefined, `Blanket requisition ${v ? "enabled" : "disabled"}`)} />
       </div>
     </div>
   );
