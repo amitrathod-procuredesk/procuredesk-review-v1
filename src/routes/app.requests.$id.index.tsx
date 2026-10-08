@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, Money, Section, StatusBadge } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
-import { ActivityLog, Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
+import { AuditTrailButton, POST_APPROVAL, RequestActionsButton } from "@/components/pd/RequestActions";
+import { Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
 import { currentStageIndex, isPendingFor, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
 import { decide, delegate, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { PRequest } from "@/lib/pd/types";
@@ -76,7 +77,7 @@ function Detail() {
 
   return (
     <div className="pb-24 md:pb-0">
-      <header className="border-b border-border bg-surface px-4 py-4 md:px-8">
+      <header className="no-print-actions border-b border-border bg-surface px-4 py-4 md:px-8">
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
@@ -85,11 +86,17 @@ function Detail() {
               <span className="num">{r.id}</span><StatusBadge status={r.status} />
               <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span><span>· {requester?.name}</span>
               {r.urgent && <span className="pd-badge st-rejected">Urgent</span>}
+              {r.tags?.map((t) => <span key={t} className="inline-flex h-5 items-center rounded-full bg-subtle px-2 text-[11px] font-medium text-foreground/70">{t}</span>)}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Money v={totals(r).total} className="text-2xl font-medium" />
+            <div className="flex gap-2 md:hidden">
+              <AuditTrailButton r={r} compact />
+              {(POST_APPROVAL as readonly string[]).includes(r.status) && <RequestActionsButton r={r} />}
+            </div>
             <div className="hidden gap-2 md:flex">
+              <AuditTrailButton r={r} />
               {mine && <>
                 <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Delegate</Button>
                 <Button variant="outline" size="sm" onClick={() => setAction("reject")}>Reject</Button>
@@ -99,9 +106,10 @@ function Detail() {
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
               {isOwner && r.status === "pending" && <Button size="sm" variant="outline" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>}
               {(isOwner || me.role === "admin") && ["draft", "pending", "changes"].includes(r.status) && <Button size="sm" variant="ghost" onClick={() => { advance("cancelled", "Request cancelled"); toast("Request cancelled"); }}>Cancel request</Button>}
-              {me.role === "admin" && r.status === "approved" && <Button size="sm" onClick={() => advance("ordered", "Purchase order issued")}>Mark ordered</Button>}
-              {me.role === "admin" && r.status === "ordered" && <><Button size="sm" variant="outline" onClick={() => advance("partial", "Partially received")}>Partially received</Button><Button size="sm" onClick={() => advance("received", "All items received")}>Mark received</Button></>}
-              {me.role === "admin" && r.status === "partial" && <Button size="sm" onClick={() => advance("received", "All items received")}>Mark received</Button>}
+              {me.role === "admin" && r.status === "approved" && <Button size="sm" variant="outline" onClick={() => advance("ordered", "Purchase order issued")}>Mark ordered</Button>}
+              {me.role === "admin" && r.status === "ordered" && <><Button size="sm" variant="outline" onClick={() => advance("partial", "Partially received")}>Partially received</Button><Button size="sm" variant="outline" onClick={() => advance("received", "All items received")}>Mark received</Button></>}
+              {me.role === "admin" && r.status === "partial" && <Button size="sm" variant="outline" onClick={() => advance("received", "All items received")}>Mark received</Button>}
+              {(POST_APPROVAL as readonly string[]).includes(r.status) && <RequestActionsButton r={r} />}
             </div>
           </div>
         </div>
@@ -121,7 +129,6 @@ function Detail() {
             </dl>
           </Section>
           <Section title="Comments"><Comments r={r} /></Section>
-          <Section title="Activity · audit trail"><ActivityLog r={r} /></Section>
         </div>
         <aside className="space-y-4">
           <div className="lg:sticky lg:top-4">

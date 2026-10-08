@@ -183,3 +183,34 @@ export function delegate(id: string, fromId: string, toId: string) {
     log(r, `${n(fromId)} delegated approval to ${n(toId)}`, "system", fromId);
   });
 }
+
+/** Duplicate a request as a fresh draft for the given user (items, essentials, notes; no approvals/history). */
+export function copyRequest(sourceId: string, userId: string): string {
+  let id = "";
+  mutate((d) => {
+    const src = d.requests.find((x) => x.id === sourceId);
+    if (!src) return;
+    d.seq += 1;
+    id = `REQ-${d.seq}`;
+    const c: PRequest = JSON.parse(JSON.stringify(src));
+    Object.assign(c, {
+      id,
+      title: src.title ? `Copy of ${src.title}` : "",
+      status: "draft",
+      requesterId: userId,
+      items: c.items.map((it) => ({ ...it, id: uid("li") })),
+      attachments: [],
+      comments: [],
+      activity: [],
+      route: [],
+      rfqs: [],
+      decisionReason: undefined,
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    });
+    log(c, `Request created as a copy of ${src.id}`, "create", userId);
+    d.requests.unshift(c);
+    log(src, `Copied to ${id}`, "system", userId);
+  });
+  return id;
+}
