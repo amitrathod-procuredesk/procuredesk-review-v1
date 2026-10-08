@@ -119,9 +119,9 @@ export function seedDB(): DB {
         requiredBy: dateOnly(24),
         sources: { title: "confirmed", department: "confirmed", budget: "suggested", project: "suggested", requiredBy: "needs" },
         items: [
-          li({ id: "l1", name: "MacBook Pro laptop", description: "Macbook pro laptop", partNumber: "", vendorId: "v_amazon", qty: 1, unitPrice: 1000 }),
-          li({ id: "l2", description: "Wireless mouse, ergonomic", partNumber: "LG M220 · Logitech Mouse", vendorId: "v_phoenix", qty: 25, unitPrice: 18.5, account: "Office Supplies Expense", category: "Office Supplies", catalogId: "c_mouse" }),
-          li({ id: "l3", description: '27" monitor, 4K IPS panel', partNumber: "DL U270 · Dell UltraSharp", vendorId: "v_nova", qty: 4, unitPrice: 310, catalogId: "c_mon" }),
+          li({ id: "l1", name: "MacBook Pro laptop", description: "14-inch, M3 Pro, 18GB RAM, 512GB SSD — for the new engineering hire", partNumber: "", vendorId: "v_amazon", qty: 1, unitPrice: 1000 }),
+          li({ id: "l2", name: "Ergonomic wireless mouse", description: "Wireless mouse, ergonomic", partNumber: "LG M220 · Logitech Mouse", vendorId: "v_phoenix", qty: 25, unitPrice: 18.5, account: "Office Supplies Expense", category: "Office Supplies", catalogId: "c_mouse" }),
+          li({ id: "l3", name: "27-inch 4K monitor", description: '27" monitor, 4K IPS panel', partNumber: "DL U270 · Dell UltraSharp", vendorId: "v_nova", qty: 4, unitPrice: 310, catalogId: "c_mon" }),
         ],
         activity: [{ id: "a1", at: iso(0, 9), actorId: "u_amit", text: "Request created", kind: "create" }],
       }),
