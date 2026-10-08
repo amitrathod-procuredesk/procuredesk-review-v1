@@ -99,7 +99,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
             <kbd className="hidden rounded border border-border px-1.5 text-[10px] text-muted-foreground sm:inline">↵</kbd>
           </div>
           {showList && (
-            <div className="pd-float absolute left-0 top-12 z-30 w-full sm:w-auto sm:min-w-[min(560px,calc(100vw-2rem))] sm:right-0 overflow-hidden rounded-lg border border-border bg-popover animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="pd-float absolute left-0 top-12 z-30 w-full sm:w-[min(580px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-popover animate-in fade-in slide-in-from-top-1 duration-150">
               {results.length > 0 && <p className="px-3 pt-2.5 pb-1 text-[11px] font-medium text-muted-foreground">Catalog · {results.length} match{results.length === 1 ? "" : "es"}</p>}
               <ul role="listbox">
                 {results.map((c, i) => {
@@ -113,11 +113,12 @@ export function ItemToolbar({ r }: { r: PRequest }) {
                           <span className="block truncate text-sm font-medium"><Highlight text={c.name} q={q} /></span>
                           <span className="block truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}{st && <span className="text-success"> · {st.onHand} in stock</span>}</span>
                         </span>
-                        <span className={cn("num text-sm", st && "mr-[92px]")}>{money(c.price)}</span>
-                        <Plus className={cn("size-4 text-primary transition-opacity", hi === i ? "opacity-100" : "opacity-0")} />
+                        <span className="num shrink-0 text-sm">{money(c.price)}</span>
+                        <Plus className={cn("size-4 shrink-0 text-primary transition-opacity", hi === i ? "opacity-100" : "opacity-0")} />
+                        {st && <span aria-hidden className="w-[98px] shrink-0" />}
                       </button>
                       {st && (
-                        <button onMouseEnter={() => setHi(i)} onClick={() => addCatalog(c, "inventory")} title={`Issue from ${st.location} — no purchase`} className="absolute right-10 top-1/2 inline-flex h-7 -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-surface px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-success/50 hover:text-success">
+                        <button onMouseEnter={() => setHi(i)} onClick={() => addCatalog(c, "inventory")} title={`Issue from ${st.location} — no purchase`} className="absolute right-3 top-1/2 inline-flex h-7 -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-surface px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-success/50 hover:text-success">
                           <Warehouse className="size-3.5" /> From stock
                         </button>
                       )}
