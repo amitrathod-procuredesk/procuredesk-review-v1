@@ -100,8 +100,8 @@ function Detail() {
   };
 
   return (
-    <div className="pb-24 md:pb-0">
-      <header className="no-print-actions border-b border-border bg-surface px-4 py-4 md:px-8">
+    <div className="pb-24 md:pb-0 lg:flex lg:h-[calc(100dvh-60px)] lg:flex-col lg:overflow-hidden lg:pb-0 print:block print:h-auto">
+      <header className="no-print-actions shrink-0 border-b border-border bg-surface px-4 py-4 md:px-8">
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
@@ -139,8 +139,8 @@ function Detail() {
         {r.decisionReason && ["changes", "rejected"].includes(r.status) && <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 text-sm">{r.status === "rejected" ? "Rejected" : "Changes requested"}: “{r.decisionReason}”</p>}
       </header>
 
-      <div className="grid gap-4 p-4 md:p-8 lg:grid-cols-[1fr_340px]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-4 p-4 md:p-8 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_340px] lg:gap-0 lg:p-0">
+        <div className="pd-scroll min-w-0 space-y-4 lg:overflow-y-auto lg:overscroll-contain lg:py-6 lg:pl-8 lg:pr-4">
           <section className="pd-panel px-4 py-3" aria-label="Request details">
             {(() => {
               type Fact = [typeof Building2, string, string | undefined, string?];
@@ -170,8 +170,8 @@ function Detail() {
           </section>
           <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
         </div>
-        <aside className="space-y-4">
-          <div className="lg:sticky lg:top-4">
+        <aside className="pd-scroll space-y-4 lg:overflow-y-auto lg:overscroll-contain lg:py-6 lg:pl-4 lg:pr-8">
+          <div>
             <SummaryRail r={r} hideChecks extra={<Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>} after={<Section title="Comments"><Comments r={r} /></Section>} />
           </div>
         </aside>

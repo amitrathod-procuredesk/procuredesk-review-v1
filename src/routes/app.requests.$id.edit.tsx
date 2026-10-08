@@ -67,8 +67,8 @@ function EditRequest() {
   };
 
   return (
-    <div className={cn("flex min-h-[calc(100vh)] flex-col", tried && "pd-validate")}>
-      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur md:px-6">
+    <div className={cn("flex min-h-[calc(100vh)] flex-col lg:h-[calc(100dvh-60px)] lg:min-h-0 lg:overflow-hidden", tried && "pd-validate")}>
+      <header className="sticky top-0 z-20 flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur md:px-6">
         <Link to="/app/requests" aria-label="Back" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -84,9 +84,9 @@ function EditRequest() {
         </div>
       </header>
 
-      <div className="grid flex-1 gap-0 lg:grid-cols-[1fr_320px]">
+      <div className="grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_320px]">
 
-        <div className="min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64">
+        <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
           {r.status === "changes" && r.decisionReason && (
             <div className="rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
               <p className="font-medium">Changes requested</p>
@@ -107,8 +107,8 @@ function EditRequest() {
 
         </div>
 
-        <aside id="rail-budget" className="border-t border-border bg-subtle/50 p-4 lg:border-t-0 lg:border-l">
-          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable hideChecks onCheckAction={onCheck} extra={<><div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div></>} after={<Section title="Comments"><Comments r={r} /></Section>} /></div>
+        <aside id="rail-budget" className="pd-scroll border-t border-border bg-subtle/50 p-4 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l">
+          <div><SummaryRail r={r} editable hideChecks onCheckAction={onCheck} extra={<><div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div></>} after={<Section title="Comments"><Comments r={r} /></Section>} /></div>
         </aside>
       </div>
 
