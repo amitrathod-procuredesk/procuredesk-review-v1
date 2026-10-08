@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, SlidersHorizontal, StickyNote } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -142,11 +142,22 @@ function Detail() {
       <div className="grid gap-4 p-4 md:p-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-4">
           <Section title="Overview">
-            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-              {[["Business unit", r.businessUnit], ["Request type", r.requestType], ["Requester", requester?.name], ["Ship to", r.shipTo], ["Payment", r.paymentMethod], ["Shipment", r.shipmentType], ["Required by", smartDate(r.requiredBy)], ["Quote #", r.quoteNo || "—"], ["Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ") || "—"]].map(([k, v]) => (
-                <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd>{v}</dd></div>
+            <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">
+              {([[Building2, "Business unit", r.businessUnit], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [MapPin, "Ship to", r.shipTo], [CreditCard, "Payment", r.paymentMethod], [Truck, "Shipment", r.shipmentType], [CalendarDays, "Required by", r.requiredBy ? smartDate(r.requiredBy) : ""], [Hash, "Quote #", r.quoteNo], [SlidersHorizontal, "Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ")]] as const).map(([Icon, k, v]) => (
+                <div key={k} className="flex min-w-0 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-subtle">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-subtle text-muted-foreground"><Icon className="h-4 w-4" /></span>
+                  <div className="min-w-0">
+                    <dt className="text-[11px] leading-4 text-muted-foreground">{k}</dt>
+                    <dd className={v ? "truncate text-sm font-medium leading-5" : "text-sm leading-5 text-muted-foreground/60"} title={v || undefined}>{v || "Not set"}</dd>
+                  </div>
+                </div>
               ))}
-              {(r.noteBuyer || r.noteSupplier) && <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Notes</dt><dd>{r.noteBuyer}{r.noteSupplier && <><br />To supplier: {r.noteSupplier}</>}</dd></div>}
+              {(r.noteBuyer || r.noteSupplier) && (
+                <div className="flex gap-3 rounded-lg px-2 py-2 sm:col-span-2 xl:col-span-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-subtle text-muted-foreground"><StickyNote className="h-4 w-4" /></span>
+                  <div className="min-w-0"><dt className="text-[11px] leading-4 text-muted-foreground">Notes</dt><dd className="text-sm leading-5">{r.noteBuyer}{r.noteSupplier && <><br /><span className="text-muted-foreground">To supplier:</span> {r.noteSupplier}</>}</dd></div>
+                </div>
+              )}
             </dl>
           </Section>
           <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
