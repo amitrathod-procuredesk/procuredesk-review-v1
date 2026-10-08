@@ -61,7 +61,7 @@ export function CheckIcon({ level }: { level: CheckT["level"] }) {
   return <CircleAlert className="size-4 shrink-0 check-error" />;
 }
 
-export function Section({ title, action, children, className }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Section({ title, action, children, className }: { title: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={cn("pd-panel", className)}>
       <header className="flex items-center justify-between px-5 pt-4">
