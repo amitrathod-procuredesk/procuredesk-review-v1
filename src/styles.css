@@ -134,7 +134,7 @@
     @apply mb-1 block text-xs font-medium text-muted-foreground;
   }
   .pd-input {
-    @apply h-9 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground shadow-[0_1px_1px_rgba(16,24,40,0.03)] outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-primary focus:ring-[3px] focus:ring-primary/12 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/12;
+    @apply h-9 w-full rounded-[6px] border border-input bg-surface px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-primary focus:ring-[3px] focus:ring-primary/12 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/12;
   }
   .pd-input-bare {
     @apply h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none hover:border-input focus:border-ring focus:bg-surface;
