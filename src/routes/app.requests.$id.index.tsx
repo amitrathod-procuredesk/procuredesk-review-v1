@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,9 @@ import { Empty, Section, StatusBadge } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
 import { AuditTrailButton, POST_APPROVAL, RequestActionsButton } from "@/components/pd/RequestActions";
 import { Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
-import { currentStageIndex, isPendingFor, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
+import { currentStageIndex, isPendingFor, lineTotal, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
 import { decide, delegate, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
+import { cn } from "@/lib/utils";
 import type { PRequest } from "@/lib/pd/types";
 
 export const Route = createFileRoute("/app/requests/$id/")({
@@ -30,7 +32,8 @@ function Detail() {
   const me = useMe()!;
   const nav = useNavigate();
   const r = db.requests.find((x) => x.id === id);
-  const [action, setAction] = useState<null | "approve" | "reject" | "changes" | "delegate">(null);
+  const [action, setAction] = useState<null | "approve" | "partial" | "reject" | "changes" | "delegate">(null);
+  const [keep, setKeep] = useState<string[]>([]);
   const [reason, setReason] = useState("");
   const [preset, setPreset] = useState("");
   const [delegateTo, setDelegateTo] = useState("");
@@ -52,6 +55,10 @@ function Detail() {
     if (action === "delegate") {
       delegate(r.id, me.id, delegateTo);
       toast.success("Approval delegated");
+    } else if (action === "partial") {
+      const live = r.items.filter((l) => !l.declined);
+      decide(r.id, me.id, "approve", reason, live.filter((l) => !keep.includes(l.id)).map((l) => l.id));
+      toast.success(`Approved ${keep.length} of ${live.length} items`, { description: "Declined items are excluded from the total." });
     } else if (action) {
       const text = action === "reject" ? [preset, reason].filter(Boolean).join(" — ") : reason;
       decide(r.id, me.id, action, text);
@@ -61,6 +68,23 @@ function Detail() {
     setReason("");
     setPreset("");
   };
+  const liveItems = r.items.filter((l) => !l.declined);
+  const openPartial = () => { setKeep(liveItems.map((l) => l.id)); setReason(""); setAction("partial"); };
+  const keptTotal = liveItems.filter((l) => keep.includes(l.id)).reduce((s, l) => s + lineTotal(l), 0);
+  const approveMenu = (full?: boolean) => (
+    <div className={cn("inline-flex", full && "flex-1")}>
+      <Button size="sm" className={cn("rounded-r-none", full && "flex-1")} onClick={quickApprove}>Approve</Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild><Button size="sm" aria-label="More approval options" className="rounded-l-none border-l border-primary-foreground/20 px-2"><ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuItem onClick={quickApprove}><CheckCheck className="size-4" /><div><p className="text-sm">Approve all items</p><p className="text-xs text-muted-foreground">{liveItems.length} items · {money(totals(r).total)}</p></div></DropdownMenuItem>
+          <DropdownMenuItem disabled={liveItems.length < 2} onClick={openPartial}><ListChecks className="size-4" /><div><p className="text-sm">Approve selected items…</p><p className="text-xs text-muted-foreground">Decline the rest of the lines</p></div></DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setAction("changes")}><MessageSquareReply className="size-4" /><div><p className="text-sm">Request changes</p><p className="text-xs text-muted-foreground">Send back to the requester</p></div></DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
   const quickApprove = () => (needsConfirm ? setAction("approve") : (decide(r.id, me.id, "approve", ""), toast.success("Approved")));
   const advance = (to: PRequest["status"], label: string) => updateRequest(r.id, (x) => { x.status = to; log(x, label, "system", me.id); });
 
@@ -97,10 +121,9 @@ function Detail() {
             <div className="hidden gap-2 md:flex">
               <AuditTrailButton r={r} />
               {mine && <>
-                <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Delegate</Button>
+                <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Reassign</Button>
                 <Button variant="outline" size="sm" onClick={() => setAction("reject")}>Reject</Button>
-                <Button variant="outline" size="sm" onClick={() => setAction("changes")}>Request changes</Button>
-                <Button size="sm" onClick={quickApprove}>Approve</Button>
+                {approveMenu()}
               </>}
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
               {isOwner && r.status === "pending" && <Button size="sm" variant="outline" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>}
@@ -138,9 +161,9 @@ function Detail() {
 
       {mine && (
         <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
-          <Button variant="outline" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
-          <Button variant="outline" className="flex-1" onClick={() => setAction("changes")}>Changes</Button>
-          <Button className="flex-1" onClick={quickApprove}>Approve</Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("delegate")}>Reassign</Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
+          {approveMenu(true)}
         </div>
       )}
 
@@ -164,12 +187,39 @@ function Detail() {
 
       <Dialog open={!!action} onOpenChange={(o) => !o && setAction(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{{ approve: "Approve request", reject: "Reject request", changes: "Request changes", delegate: "Delegate approval" }[action ?? "approve"]}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{{ approve: "Approve request", partial: "Approve selected items", reject: "Reject request", changes: "Request changes", delegate: "Reassign approval" }[action ?? "approve"]}</DialogTitle></DialogHeader>
           {action === "approve" && (
             <div className="space-y-3 text-sm">
               <p>You're approving <span className="font-medium">{money(totals(r).total)}</span> despite these open checks:</p>
               <ChecksBlock r={{ ...r }} />
               <textarea className="pd-input py-2" placeholder="Optional comment" value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+          )}
+          {action === "partial" && (
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Unselected lines will be declined and removed from the total. The request then continues to the next approver.</p>
+              <ul className="max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border">
+                {liveItems.map((l) => {
+                  const on = keep.includes(l.id);
+                  return (
+                    <li key={l.id}>
+                      <label className={cn("flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-subtle/60", !on && "bg-subtle/40")}>
+                        <input type="checkbox" checked={on} onChange={() => setKeep((k) => (on ? k.filter((x) => x !== l.id) : [...k, l.id]))} />
+                        <span className={cn("min-w-0 flex-1", !on && "text-muted-foreground line-through")}>
+                          <span className="block truncate font-medium">{l.description || "Untitled item"}</span>
+                          <span className="num block text-xs text-muted-foreground">{l.qty} × {money(l.unitPrice)}</span>
+                        </span>
+                        <span className={cn("num shrink-0 font-medium", !on && "text-muted-foreground line-through")}>{money(lineTotal(l))}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="flex items-baseline justify-between rounded-md bg-subtle/60 px-3 py-2">
+                <span className="text-muted-foreground">Approving {keep.length} of {liveItems.length}</span>
+                <span className="num"><span className="font-semibold">{money(keptTotal)}</span>{keep.length < liveItems.length && <span className="ml-1.5 text-xs text-muted-foreground line-through">{money(totals(r).total)}</span>}</span>
+              </div>
+              <textarea className="pd-input py-2" placeholder={keep.length < liveItems.length ? "Why are the other lines declined? (optional)" : "Optional comment"} value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
           )}
           {action === "reject" && (
@@ -191,10 +241,10 @@ function Detail() {
             <Button variant="outline" onClick={() => setAction(null)}>Cancel</Button>
             <Button
               variant={action === "reject" ? "destructive" : "default"}
-              disabled={(action === "changes" && !reason.trim()) || (action === "reject" && (!preset || (preset === "Other" && !reason.trim()))) || (action === "delegate" && !delegateTo)}
+              disabled={(action === "partial" && (keep.length === 0 || keep.length === liveItems.length)) || (action === "changes" && !reason.trim()) || (action === "reject" && (!preset || (preset === "Other" && !reason.trim()))) || (action === "delegate" && !delegateTo)}
               onClick={confirm}
             >
-              {{ approve: "Approve", reject: "Reject request", changes: "Send back to requester", delegate: "Delegate" }[action ?? "approve"]}
+              {action === "partial" ? (keep.length === 0 ? "Select at least one" : keep.length === liveItems.length ? "Deselect lines to decline" : `Approve ${keep.length} item${keep.length > 1 ? "s" : ""}`) : { approve: "Approve", partial: "", reject: "Reject request", changes: "Send back to requester", delegate: "Reassign" }[action ?? "approve"]}
             </Button>
           </DialogFooter>
         </DialogContent>
