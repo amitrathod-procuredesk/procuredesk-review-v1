@@ -99,7 +99,7 @@ function EditRequest() {
             <EssentialsBar r={r} set={set} />
           </Section>
 
-          <Section title="What you're buying">
+          <Section title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}>
             <LineItems r={r} editable />
           </Section>
 
