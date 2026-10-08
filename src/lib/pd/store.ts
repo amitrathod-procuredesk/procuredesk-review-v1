@@ -204,7 +204,7 @@ export function copyRequest(sourceId: string, userId: string): string {
       title: src.title ? `Copy of ${src.title}` : "",
       status: "draft",
       requesterId: userId,
-      items: c.items.map((it) => ({ ...it, id: uid("li") })),
+      items: c.items.filter((it) => !it.declined).map((it) => ({ ...it, id: uid("li") })),
       attachments: [],
       comments: [],
       activity: [],
