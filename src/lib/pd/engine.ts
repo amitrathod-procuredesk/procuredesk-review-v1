@@ -14,7 +14,7 @@ export function totals(r: PRequest) {
     tax = 0,
     shipping = 0;
   for (const l of r.items) {
-    if (l.declined) continue;
+    if (l.declined || l.fulfillment === "inventory") continue;
     subtotal += lineSubtotal(l);
     tax += l.tax || 0;
     shipping += l.shipping || 0;
@@ -25,7 +25,7 @@ export function totals(r: PRequest) {
 export function supplierBreakdown(r: PRequest, db: DB) {
   const map = new Map<string, { vendorId: string; name: string; amount: number; lines: number }>();
   for (const l of r.items) {
-    if (l.declined) continue;
+    if (l.declined || l.fulfillment === "inventory") continue;
     const v = db.vendors.find((x) => x.id === l.vendorId);
     const key = l.vendorId || "none";
     const cur = map.get(key) ?? { vendorId: key, name: v?.name ?? "No supplier", amount: 0, lines: 0 };

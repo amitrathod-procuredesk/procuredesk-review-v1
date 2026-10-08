@@ -85,6 +85,8 @@ export interface LineItem {
   deliveryDate?: string;
   notes?: string;
   catalogId?: string;
+  /** "inventory" = issued from internal stock (no purchase, excluded from spend); default purchase from supplier. */
+  fulfillment?: "purchase" | "inventory";
   source?: "ai" | "quote" | "manual";
   itemType?: string;
   itemClass?: string;

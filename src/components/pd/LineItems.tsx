@@ -1,4 +1,5 @@
-import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { INVENTORY, fromStock, stockFor } from "@/lib/pd/inventory";
+import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -74,6 +75,15 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
                   {l.declined && <span className="shrink-0 rounded bg-danger-soft px-1.5 py-px text-[10px] font-medium text-destructive" title={`Declined by ${db.users.find((u) => u.id === l.declined!.by)?.name ?? "approver"}${l.declined.reason ? ` — ${l.declined.reason}` : ""}`}>Declined · {db.users.find((u) => u.id === l.declined!.by)?.name.split(" ")[0]}</span>}
+                  {fromStock(l) && (() => { const st = INVENTORY[l.catalogId ?? ""]; const short = st && l.qty > st.onHand; return (
+                    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-medium", short ? "bg-attention-soft text-attention" : "bg-success-soft text-success")} title={st ? `${st.onHand} on hand at ${st.location} · no purchase` : "Issued from internal stock"}>
+                      <Warehouse className="size-3" />{short ? `Only ${st.onHand} in stock` : "From stock"}
+                    </span>); })()}
+                  {editable && !l.declined && stockFor(l.catalogId) && (
+                    <button type="button" onClick={() => patch(l.id, { fulfillment: fromStock(l) ? "purchase" : "inventory" })} className="shrink-0 text-[10.5px] font-medium text-primary hover:underline" title={fromStock(l) ? "Order from the supplier instead" : `${stockFor(l.catalogId)!.onHand} available at ${stockFor(l.catalogId)!.location}`}>
+                      {fromStock(l) ? "Buy instead" : "Use stock"}
+                    </button>
+                  )}
                   {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
                 </div>
               </div>
@@ -91,7 +101,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               ) : (
                 <p className="num text-[11.5px] text-muted-foreground">{l.qty} × <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></p>
               )}
-              <Money v={lineTotal(l)} className={cn("text-sm font-semibold sm:mt-0.5 sm:block", l.declined && "text-muted-foreground line-through decoration-muted-foreground/60")} />
+              {fromStock(l) ? <span className="text-sm font-semibold text-muted-foreground sm:mt-0.5 sm:block" title="Issued from internal stock — not added to the total">No cost</span> : <Money v={lineTotal(l)} className={cn("text-sm font-semibold sm:mt-0.5 sm:block", l.declined && "text-muted-foreground line-through decoration-muted-foreground/60")} />}
               {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${l.tax || 0} · Shipping ${l.shipping || 0}`}>incl. {[l.tax ? <>tax <Money key="t" v={l.tax} /></> : null, l.shipping ? <>shipping <Money key="s" v={l.shipping} /></> : null].filter(Boolean).map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>}
             </div>
           </div>
@@ -186,7 +196,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", isCol && "-rotate-90")} />
                   <span className="text-[13px] font-semibold">{g.name || "No supplier"}</span>
                   <span className="text-xs text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
-                  <Money v={items.reduce((s, x) => s + (x.declined ? 0 : lineTotal(x)), 0)} className="ml-auto text-[13px] font-semibold" />
+                  <Money v={items.reduce((s, x) => s + (x.declined || fromStock(x) ? 0 : lineTotal(x)), 0)} className="ml-auto text-[13px] font-semibold" />
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
@@ -291,6 +301,7 @@ function LineDetail({ l }: { l: LineItem; editable?: boolean; onPatch?: (p: Part
     ["Supplier item #", <span className="num">{dash(l.partNumber)}</span>],
     ["Item type", dash(l.itemType ?? "Material")],
     ["Source from", cat ? "Catalog" : "Non-catalog"],
+    ["Fulfilment", fromStock(l) ? `From stock${INVENTORY[l.catalogId ?? ""] ? ` · ${INVENTORY[l.catalogId ?? ""].location}` : ""}` : "Purchase from supplier"],
     ["Category", dash(l.category)],
     ["Account", dash(l.account)],
     ["UOM", dash(l.uom)],
