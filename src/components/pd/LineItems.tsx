@@ -60,7 +60,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
       l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
     ].filter(Boolean);
     return (
-      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
+      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground" hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
         <div className={cn("flex items-start gap-3 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
           {editable && <input type="checkbox" className="mt-0.5 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
@@ -73,6 +73,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
+                  {l.declined && <span className="shrink-0 rounded bg-danger-soft px-1.5 py-px text-[10px] font-medium text-destructive" title={`Declined by ${db.users.find((u) => u.id === l.declined!.by)?.name ?? "approver"}${l.declined.reason ? ` — ${l.declined.reason}` : ""}`}>Declined · {db.users.find((u) => u.id === l.declined!.by)?.name.split(" ")[0]}</span>}
                   {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
                 </div>
               </div>
@@ -90,7 +91,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               ) : (
                 <p className="num text-[11.5px] text-muted-foreground">{l.qty} × <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></p>
               )}
-              <Money v={lineTotal(l)} className="text-sm font-semibold sm:mt-0.5 sm:block" />
+              <Money v={lineTotal(l)} className={cn("text-sm font-semibold sm:mt-0.5 sm:block", l.declined && "text-muted-foreground line-through decoration-muted-foreground/60")} />
               {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${l.tax || 0} · Shipping ${l.shipping || 0}`}>incl. {[l.tax ? <>tax <Money key="t" v={l.tax} /></> : null, l.shipping ? <>shipping <Money key="s" v={l.shipping} /></> : null].filter(Boolean).map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>}
             </div>
           </div>
@@ -185,7 +186,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", isCol && "-rotate-90")} />
                   <span className="text-[13px] font-semibold">{g.name || "No supplier"}</span>
                   <span className="text-xs text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
-                  <Money v={items.reduce((s, x) => s + lineTotal(x), 0)} className="ml-auto text-[13px] font-semibold" />
+                  <Money v={items.reduce((s, x) => s + (x.declined ? 0 : lineTotal(x)), 0)} className="ml-auto text-[13px] font-semibold" />
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
