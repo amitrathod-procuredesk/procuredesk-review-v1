@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
-import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
+import { Empty, Field, Money, Section, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
 import { EssentialsBar } from "@/components/pd/EssentialsBar";
 import { LineItems } from "@/components/pd/LineItems";
@@ -73,7 +73,6 @@ function EditRequest() {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <input aria-label="Request title" aria-invalid={!r.title.trim() || undefined} className="pd-input-bare -ml-1.5 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
-            <SourceMark s={r.sources.title} />
           </div>
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /></p>
         </div>
