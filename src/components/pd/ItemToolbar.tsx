@@ -277,3 +277,89 @@ function PunchOut({ r, open, onOpenChange }: { r: PRequest; open: boolean; onOpe
     </Dialog>
   );
 }
+
+function CatalogBrowser({ r, open, onOpenChange }: { r: PRequest; open: boolean; onOpenChange: (o: boolean) => void }) {
+  const db = useDB();
+  const me = useMe();
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState<string>("All");
+  const [cart, setCart] = useState<Record<string, number>>({});
+  useEffect(() => { if (!open) { setQ(""); setCat("All"); setCart({}); } }, [open]);
+  const cats = useMemo(() => ["All", ...Array.from(new Set(db.catalog.map((c) => c.category)))], [db.catalog]);
+  const list = useMemo(() => {
+    const t = q.toLowerCase().split(/\s+/).filter(Boolean);
+    return db.catalog.filter((c) => {
+      if (cat !== "All" && c.category !== cat) return false;
+      if (!t.length) return true;
+      const v = db.vendors.find((x) => x.id === c.vendorId)?.name ?? "";
+      const hay = `${c.name} ${c.partNumber} ${c.keywords.join(" ")} ${v}`.toLowerCase();
+      return t.every((w) => hay.includes(w));
+    });
+  }, [db, q, cat]);
+  const picked = Object.entries(cart).filter(([, n]) => n > 0);
+  const total = picked.reduce((s, [id, n]) => s + (db.catalog.find((c) => c.id === id)?.price ?? 0) * n, 0);
+  const set = (id: string, n: number) => setCart({ ...cart, [id]: Math.max(0, n) });
+  const add = () => {
+    updateRequest(r.id, (x) => {
+      picked.forEach(([id, n]) => {
+        const c = db.catalog.find((k) => k.id === id); if (!c) return;
+        const ex = x.items.find((i) => i.catalogId === c.id);
+        if (ex) ex.qty += n; else x.items.push(fromCatalog(c, n));
+      });
+      log(x, `${picked.length} catalog item${picked.length === 1 ? "" : "s"} added from catalog browser`, "edit", me?.id);
+    });
+    toast.success(`${picked.length} item${picked.length === 1 ? "" : "s"} added`, { description: money(total) });
+    onOpenChange(false);
+  };
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex w-full flex-col gap-0 bg-surface p-0 sm:max-w-lg">
+        <SheetHeader className="space-y-3 border-b border-border p-4">
+          <SheetTitle>Browse catalog</SheetTitle>
+          <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+            <Search className="size-4 text-muted-foreground" />
+            <input aria-label="Filter catalog" className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" placeholder="Filter by name, part number or supplier" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none]">
+            {cats.map((c) => (
+              <button key={c} onClick={() => setCat(c)} className={cn("shrink-0 rounded-full border px-2.5 py-1 text-xs transition-colors", cat === c ? "border-primary bg-accent text-accent-foreground" : "border-border text-muted-foreground hover:bg-subtle")}>{c}</button>
+            ))}
+          </div>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto">
+          {list.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">No catalog items match.</p>}
+          <ul className="divide-y divide-border">
+            {list.map((c) => {
+              const v = db.vendors.find((x) => x.id === c.vendorId);
+              const n = cart[c.id] ?? 0;
+              const inReq = r.items.some((i) => i.catalogId === c.id);
+              return (
+                <li key={c.id} className={cn("flex items-center gap-3 px-4 py-2.5 transition-colors", n > 0 && "bg-accent/40")}>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle text-[10px] font-semibold text-muted-foreground">{c.category.slice(0, 2).toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{c.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}{inReq && " · In request"}</p>
+                  </div>
+                  <span className="num shrink-0 text-sm">{money(c.price)}</span>
+                  {n === 0 ? (
+                    <button aria-label={`Add ${c.name}`} onClick={() => set(c.id, 1)} className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-primary hover:bg-subtle"><Plus className="size-4" /></button>
+                  ) : (
+                    <div className="flex shrink-0 items-center rounded-md border border-primary/40 animate-in zoom-in-95">
+                      <button aria-label="Decrease" className="p-1.5" onClick={() => set(c.id, n - 1)}><Minus className="size-3.5" /></button>
+                      <span className="num w-6 text-center text-sm">{n}</span>
+                      <button aria-label="Increase" className="p-1.5" onClick={() => set(c.id, n + 1)}><Plus className="size-3.5" /></button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <SheetFooter className="flex-row items-center justify-between border-t border-border p-4">
+          <span className="text-sm text-muted-foreground">{picked.length ? <>{picked.length} selected · <span className="num font-semibold text-foreground">{money(total)}</span></> : `${list.length} item${list.length === 1 ? "" : "s"}`}</span>
+          <div className="flex gap-2"><Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={!picked.length} onClick={add}>Add to request</Button></div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
