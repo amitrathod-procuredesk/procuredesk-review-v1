@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -105,7 +105,7 @@ function Detail() {
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
         <div className="flex flex-wrap items-start justify-between gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-6">
           <div className="min-w-0 flex-1 basis-[28rem]">
-            <h1 className="line-clamp-2 break-words text-xl font-semibold leading-snug tracking-tight" title={r.title}>{r.title || "Untitled request"}</h1>
+            <RequestTitle text={r.title || "Untitled request"} />
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge status={r.status} />
               <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span>
@@ -267,6 +267,33 @@ function Detail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Clamps long titles to two lines; a "Show more" toggle appears only when the title actually overflows. */
+function RequestTitle({ text }: { text: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const [open, setOpen] = useState(false);
+  const [over, setOver] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => { if (!open) setOver(el.scrollHeight - el.clientHeight > 1); };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text, open]);
+  useEffect(() => setOpen(false), [text]);
+  return (
+    <div>
+      <h1 ref={ref} id="req-title" className={`break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"}`}>{text}</h1>
+      {(over || open) && (
+        <button type="button" aria-expanded={open} aria-controls="req-title" onClick={() => setOpen((o) => !o)} className="mt-0.5 inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline">
+          {open ? "Show less" : "Show full title"}<ChevronDown className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      )}
     </div>
   );
 }
