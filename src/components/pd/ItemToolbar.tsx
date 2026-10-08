@@ -109,22 +109,22 @@ export function ItemToolbar({ r }: { r: PRequest }) {
                   const v = db.vendors.find((x) => x.id === c.vendorId);
                   const st = stockFor(c.id);
                   return (
-                    <li key={c.id} role="option" aria-selected={hi === i} className="group/opt relative">
-                      <button onMouseEnter={() => setHi(i)} onClick={() => pick(i)} title="Order from supplier" className={cn("flex w-full items-center gap-3 px-3 py-2 text-left transition-colors", hi === i && "bg-accent")}>
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle text-[10px] font-semibold text-muted-foreground">{c.category.slice(0, 2).toUpperCase()}</span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium"><Highlight text={c.name} q={q} /></span>
-                          <span className="block truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}{st && <span className="text-success"> · {st.onHand} in stock</span>}</span>
-                        </span>
-                        <span className="num shrink-0 text-sm">{money(c.price)}</span>
-                        <Plus className={cn("size-4 shrink-0 text-primary transition-opacity", hi === i ? "opacity-100" : "opacity-0")} />
-                        {st && <span aria-hidden className="w-[98px] shrink-0" />}
-                      </button>
-                      {st && (
-                        <button onMouseEnter={() => setHi(i)} onClick={() => addCatalog(c, "inventory")} title={`Issue from ${st.location} — no purchase`} className="absolute right-3 top-1/2 inline-flex h-7 -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-surface px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-success/50 hover:text-success">
-                          <Warehouse className="size-3.5" /> From stock
+                    <li key={c.id} role="option" aria-selected={hi === i} onMouseEnter={() => setHi(i)} className={cn("flex items-center gap-3 px-3 py-2 transition-colors", hi === i && "bg-accent/60")}>
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle text-[10px] font-semibold text-muted-foreground">{c.category.slice(0, 2).toUpperCase()}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium"><Highlight text={c.name} q={q} /></span>
+                        <span className="block truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}</span>
+                      </span>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {st && (
+                          <button onClick={() => addCatalog(c, "inventory")} title={`Take from ${st.location} — no purchase, no cost`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-foreground transition-colors hover:border-success/60 hover:bg-success-soft hover:text-success">
+                            <Warehouse className="size-3.5 text-success" /> Take from stock <span className="num text-muted-foreground">({st.onHand})</span>
+                          </button>
+                        )}
+                        <button onClick={() => addCatalog(c, "purchase")} title={`Buy from ${v?.name}`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-surface px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
+                          <ShoppingCart className="size-3.5" /> Buy <span className="num">{money(c.price)}</span>
                         </button>
-                      )}
+                      </div>
                     </li>
                   );
                 })}
