@@ -356,7 +356,7 @@ function CatalogBrowser({ r, open, onOpenChange }: { r: PRequest; open: boolean;
                     {st && (
                       <div role="radiogroup" aria-label="Source" className="mt-1.5 inline-flex rounded-md bg-subtle p-0.5 text-[11px]">
                         {(["purchase", "inventory"] as const).map((k) => (
-                          <button key={k} role="radio" aria-checked={f === k} onClick={() => setSrc({ ...src, [c.id]: k })} className={cn("inline-flex items-center gap-1 rounded px-2 py-0.5 font-medium transition-colors", f === k ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                          <button key={k} role="radio" aria-checked={f === k} onClick={() => { setSrc({ ...src, [c.id]: k }); if (k === "inventory" && n > st.onHand) set(c.id, st.onHand); }} className={cn("inline-flex items-center gap-1 rounded px-2 py-0.5 font-medium transition-colors", f === k ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
                             {k === "purchase" ? <><ShoppingCart className="size-3" /> Buy</> : <><Warehouse className="size-3" /> Stock · {st.onHand}</>}
                           </button>
                         ))}
