@@ -194,6 +194,7 @@ export interface PRequest {
   duplicateAcknowledged?: boolean;
   tags?: string[];
   rfqs?: { id: string; at: string; vendorIds: string[] }[];
+  reminders?: { userId: string; at: string; by: string }[];
   createdAt: string;
   updatedAt: string;
   submittedAt?: string;

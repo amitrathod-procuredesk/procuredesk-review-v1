@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Check, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
+import { Bell, BellRing, Check, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -170,6 +170,15 @@ export function ChecksBlock({ r, onAction }: { r: PRequest; onAction?: (c: Check
 
 export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }) {
   const db = useDB();
+  const me = useMe();
+  const canRemind = !preview && r.status === "pending" && me?.id === r.requesterId;
+  const COOLDOWN = 4 * 3600_000;
+  const lastReminder = (uid2: string) => [...(r.reminders ?? [])].reverse().find((x) => x.userId === uid2);
+  const remind = (uid2: string) => {
+    const name = db.users.find((x) => x.id === uid2)?.name ?? "approver";
+    updateRequest(r.id, (x) => { x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me!.id }]; log(x, `Reminder sent to ${name}`, "system", me?.id); });
+    toast.success(`Reminder sent to ${name.split(" ")[0]}`, { description: "They'll get a notification about this pending approval." });
+  };
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
   const cur = currentStageIndex(r);
   if (!stages.length) return <p className="text-xs text-muted-foreground">Route will be calculated from your organization's approval rules.</p>;
@@ -198,6 +207,18 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
+              {canRemind && st === "pending" && (() => {
+                const lr = lastReminder(a.userId);
+                const cooling = !!lr && Date.now() - new Date(lr.at).getTime() < COOLDOWN;
+                return (
+                  <button type="button" onClick={() => remind(a.userId)} disabled={cooling}
+                    aria-label={cooling ? `Reminded ${smartTime(lr!.at)}` : `Send reminder to ${u?.name}`}
+                    title={cooling ? `Reminded ${smartTime(lr!.at)} · you can remind again in a few hours` : `Remind ${u?.name?.split(" ")[0]}`}
+                    className={cn("group/rem flex size-7 shrink-0 items-center justify-center rounded-full transition-colors", cooling ? "cursor-default text-success" : "text-muted-foreground hover:bg-pending-soft hover:text-pending focus-visible:bg-pending-soft focus-visible:text-pending")}>
+                    {cooling ? <BellRing className="size-3.5" /> : <Bell className="size-3.5 transition-transform group-hover/rem:rotate-12" />}
+                  </button>
+                );
+              })()}
               <ApprovalState status={st} at={a.at} />
             </div>
           );
