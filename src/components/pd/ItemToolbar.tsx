@@ -13,7 +13,7 @@ import { stockFor } from "@/lib/pd/inventory";
 
 export const fromCatalog = (c: CatalogItem, qty = 1, fulfillment: "purchase" | "inventory" = "purchase"): LineItem => ({
   fulfillment,
-  id: uid("li"), description: c.name, partNumber: c.partNumber, account: c.account, vendorId: c.vendorId,
+  id: uid("li"), name: c.name, description: c.name, partNumber: c.partNumber, account: c.account, vendorId: c.vendorId,
   uom: "EACH", qty, unitPrice: c.price, tax: 0, shipping: 0, category: c.category, catalogId: c.id, source: "manual",
 });
 
