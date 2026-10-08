@@ -84,13 +84,12 @@ function Detail() {
             <h1 className="text-xl font-semibold tracking-tight">{r.title || "Untitled request"}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge status={r.status} />
-              <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span><span>· {requester?.name}</span>
+              <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span>
               {r.urgent && <span className="pd-badge st-rejected">Urgent</span>}
               {r.tags?.map((t) => <span key={t} className="inline-flex h-5 items-center rounded-full bg-subtle px-2 text-[11px] font-medium text-foreground/70">{t}</span>)}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <Money v={totals(r).total} className="text-2xl font-medium" />
             <div className="flex gap-2 md:hidden">
               <AuditTrailButton r={r} compact />
               {(POST_APPROVAL as readonly string[]).includes(r.status) && <RequestActionsButton r={r} />}
@@ -122,7 +121,7 @@ function Detail() {
           <Section title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}><LineItems r={r} editable={false} /></Section>
           <Section title="Overview">
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-              {[["Business unit", r.businessUnit], ["Request type", r.requestType], ["Contact", requester?.name], ["Ship to", r.shipTo], ["Payment", r.paymentMethod], ["Shipment", r.shipmentType], ["Required by", smartDate(r.requiredBy)], ["Quote #", r.quoteNo || "—"], ["Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ") || "—"]].map(([k, v]) => (
+              {[["Business unit", r.businessUnit], ["Request type", r.requestType], ["Requester", requester?.name], ["Ship to", r.shipTo], ["Payment", r.paymentMethod], ["Shipment", r.shipmentType], ["Required by", smartDate(r.requiredBy)], ["Quote #", r.quoteNo || "—"], ["Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ") || "—"]].map(([k, v]) => (
                 <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd>{v}</dd></div>
               ))}
               {(r.noteBuyer || r.noteSupplier) && <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Notes</dt><dd>{r.noteBuyer}{r.noteSupplier && <><br />To supplier: {r.noteSupplier}</>}</dd></div>}
