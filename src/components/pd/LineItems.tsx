@@ -1,5 +1,5 @@
 import { INVENTORY, fromStock, stockFor } from "@/lib/pd/inventory";
-import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
