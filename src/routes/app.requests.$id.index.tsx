@@ -103,9 +103,9 @@ function Detail() {
     <div className="pb-24 md:pb-0 lg:flex lg:h-[calc(100dvh-60px)] lg:flex-col lg:overflow-hidden lg:pb-0 print:block print:h-auto">
       <header className="no-print-actions shrink-0 border-b border-border bg-surface px-4 py-4 md:px-8">
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight">{r.title || "Untitled request"}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-6">
+          <div className="min-w-0 flex-1 basis-[28rem]">
+            <h1 className="line-clamp-2 break-words text-xl font-semibold leading-snug tracking-tight" title={r.title}>{r.title || "Untitled request"}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge status={r.status} />
               <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span>
