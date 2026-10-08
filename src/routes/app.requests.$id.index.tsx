@@ -169,11 +169,10 @@ function Detail() {
             })()}
           </section>
           <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
-          <Section title="Comments"><Comments r={r} /></Section>
         </div>
         <aside className="space-y-4">
           <div className="lg:sticky lg:top-4">
-            <SummaryRail r={r} hideChecks extra={<Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>} />
+            <SummaryRail r={r} hideChecks extra={<Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>} after={<Section title="Comments"><Comments r={r} /></Section>} />
           </div>
         </aside>
       </div>
