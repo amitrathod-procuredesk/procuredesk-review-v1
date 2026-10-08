@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -141,28 +141,33 @@ function Detail() {
 
       <div className="grid gap-4 p-4 md:p-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-4">
-          <Section title="Overview">
+          <section className="pd-panel px-4 py-3" aria-label="Request details">
             {(() => {
-              const rows: [string, string | undefined][] = [["Business unit", r.businessUnit], ["Request type", r.requestType], ["Requester", requester?.name], ["Required by", r.requiredBy ? smartDate(r.requiredBy) : ""], ["Ship to", r.shipTo], ["Shipment", r.shipmentType], ["Payment", r.paymentMethod], ["Quote #", r.quoteNo], ["Options", [r.urgent && "Urgent", r.delayed && "Delayed release", r.blanket && "Blanket"].filter(Boolean).join(", ")]];
-              const set = rows.filter(([, v]) => v); const unset = rows.filter(([, v]) => !v).map(([k]) => k);
+              type Fact = [typeof Building2, string, string | undefined, string?];
+              const opts: Fact[] = ([[r.urgent, "Urgent", "text-destructive"], [r.delayed, "Delayed release", ""], [r.blanket, "Blanket order", ""]] as const).filter(([on]) => on).map(([, t, c]) => [Zap, "Option", t, c]);
+              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? `Needed by ${smartDate(r.requiredBy)}` : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo && `Quote ${r.quoteNo}`], ...opts];
+              const shown = facts.filter(([, , v]) => v);
               return (
                 <>
-                  <dl className="grid grid-cols-1 gap-x-8 text-sm md:grid-cols-2">
-                    {set.map(([k, v]) => (
-                      <div key={k} className="flex min-w-0 items-baseline gap-3 py-1.5">
-                        <dt className="w-28 shrink-0 text-muted-foreground">{k}</dt>
-                        <dd className="min-w-0 truncate font-medium" title={v}>{v}</dd>
-                      </div>
+                  <ul className="flex flex-wrap items-center gap-1.5">
+                    {shown.map(([Icon, k, v, c]) => (
+                      <li key={k + v} title={`${k}: ${v}`} className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border px-2.5 text-[13px] leading-none">
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${c || "text-muted-foreground"}`} aria-hidden />
+                        <span className="sr-only">{k}: </span>
+                        <span className={`truncate ${c || ""}`}>{v}</span>
+                      </li>
                     ))}
-                  </dl>
+                  </ul>
                   {(r.noteBuyer || r.noteSupplier) && (
-                    <div className="mt-2 flex gap-3 py-1.5 text-sm"><span className="w-28 shrink-0 text-muted-foreground">Notes</span><p className="min-w-0">{r.noteBuyer}{r.noteSupplier && <><br /><span className="text-muted-foreground">To supplier:</span> {r.noteSupplier}</>}</p></div>
+                    <p className="mt-2.5 flex gap-2 border-t border-border/60 pt-2.5 text-[13px] text-muted-foreground">
+                      <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span className="min-w-0 text-foreground/80">{r.noteBuyer}{r.noteSupplier && <>{r.noteBuyer && " · "}<span className="text-muted-foreground">To supplier:</span> {r.noteSupplier}</>}</span>
+                    </p>
                   )}
-                  {unset.length > 0 && <p className="mt-2 text-xs text-muted-foreground/70">Not set: {unset.join(" · ")}</p>}
                 </>
               );
             })()}
-          </Section>
+          </section>
           <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
           <Section title="Comments"><Comments r={r} /></Section>
         </div>
