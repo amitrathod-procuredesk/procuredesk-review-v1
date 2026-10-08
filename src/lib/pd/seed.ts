@@ -119,7 +119,7 @@ export function seedDB(): DB {
         requiredBy: dateOnly(24),
         sources: { title: "confirmed", department: "confirmed", budget: "suggested", project: "suggested", requiredBy: "needs" },
         items: [
-          li({ id: "l1", description: "Macbook pro laptop", partNumber: "", vendorId: "v_amazon", qty: 1, unitPrice: 1000 }),
+          li({ id: "l1", name: "MacBook Pro laptop", description: "Macbook pro laptop", partNumber: "", vendorId: "v_amazon", qty: 1, unitPrice: 1000 }),
           li({ id: "l2", description: "Wireless mouse, ergonomic", partNumber: "LG M220 · Logitech Mouse", vendorId: "v_phoenix", qty: 25, unitPrice: 18.5, account: "Office Supplies Expense", category: "Office Supplies", catalogId: "c_mouse" }),
           li({ id: "l3", description: '27" monitor, 4K IPS panel', partNumber: "DL U270 · Dell UltraSharp", vendorId: "v_nova", qty: 4, unitPrice: 310, catalogId: "c_mon" }),
         ],

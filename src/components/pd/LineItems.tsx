@@ -66,12 +66,14 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           {editable && <input type="checkbox" className="mt-0.5 shrink-0" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <span className="num w-4 shrink-0 self-start pt-0.5 text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
               <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-subtle text-muted-foreground/60">
                 {l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <ImageIcon className="size-4" aria-hidden />}
               </span>
               <div className="min-w-0 flex-1">
-                <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "Untitled item"}</p>
+                {l.name?.trim() && l.name.trim() !== l.description.trim() ? (<>
+                  <p className={cn("min-w-0 truncate text-[13px] font-semibold leading-[1.35]", editable && "transition-colors group-hover:text-primary")} title={l.name}>{l.name}</p>
+                  {l.description && <p className="line-clamp-2 min-w-0 break-words text-[12px] leading-[1.35] text-muted-foreground" title={l.description}>{l.description}</p>}
+                </>) : <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.name?.trim() || l.description || "Untitled item"}</p>}
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
                   {l.declined && <span className="shrink-0 rounded bg-danger-soft px-1.5 py-px text-[10px] font-medium text-destructive" title={`Declined by ${db.users.find((u) => u.id === l.declined!.by)?.name ?? "approver"}${l.declined.reason ? ` — ${l.declined.reason}` : ""}`}>Declined · {db.users.find((u) => u.id === l.declined!.by)?.name.split(" ")[0]}</span>}
@@ -128,7 +130,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   );
   const LIMIT = 8;
   const q = filter.trim().toLowerCase();
-  const visibleItems = q ? r.items.filter((l) => [l.description, l.partNumber, vendorName(l.vendorId), l.account].join(" ").toLowerCase().includes(q)) : r.items;
+  const visibleItems = q ? r.items.filter((l) => [l.name ?? "", l.description, l.partNumber, vendorName(l.vendorId), l.account].join(" ").toLowerCase().includes(q)) : r.items;
   const more = (n: number, k: string) => n > LIMIT && (
     <button onClick={() => setExpanded((s) => ({ ...s, [k]: !s[k] }))} className="mt-1.5 w-full rounded-md border border-dashed border-border py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
       {expanded[k] ? "Show less" : `Show ${n - LIMIT} more item${n - LIMIT === 1 ? "" : "s"}`}
@@ -225,12 +227,13 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] text-primary font-semibold text-muted-foreground">{(editing.category || editing.description || "?").slice(0, 2).toUpperCase()}</span>
                 <div className="min-w-0 text-left">
                   <p className="truncate text-[11px] text-muted-foreground">Line {r.items.indexOf(editing) + 1}{vendorName(editing.vendorId) && ` · ${vendorName(editing.vendorId)}`}{editing.catalogId && " · Catalog"}</p>
-                  <SheetTitle className="truncate text-[15px] font-semibold leading-tight">{editing.description || "Untitled item"}</SheetTitle>
+                  <SheetTitle className="truncate text-[15px] font-semibold leading-tight">{editing.name || editing.description || "Untitled item"}</SheetTitle>
                 </div>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto px-5 py-4">
                 <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 animate-in fade-in slide-in-from-right-2 duration-300">
                   <p className="pd-drawer-sec sm:col-span-2">Item</p>
+                  <DField label="Item name" className="sm:col-span-2"><input className="pd-input text-sm" placeholder="e.g. MacBook Pro 14-inch" value={editing.name ?? ""} onChange={(e) => patch(editing.id, { name: e.target.value })} /></DField>
                   <DField label="Description" req className="sm:col-span-2"><input className={cn("pd-input text-sm", !editing.description && "border-destructive")} value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></DField>
                   <DField label="Account" req className="sm:col-span-2">
                     <select className={cn("pd-input text-sm", !editing.account && "border-destructive")} value={editing.account} onChange={(e) => patch(editing.id, { account: e.target.value })}>
