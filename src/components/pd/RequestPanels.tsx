@@ -178,13 +178,14 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
       {stages.map((s, i) => {
         const done = !preview && stageComplete(s);
         const active = !preview && i === cur;
+        const isNext = !preview && cur >= 0 && i === cur + 1;
         const last = i === stages.length - 1;
         const multi = s.approvals.length > 1;
         const anyDone = s.mode === "any" && done;
         const approvedCount = s.approvals.filter((a) => a.status === "approved").length;
         const person = (a: (typeof s.approvals)[number], dense?: boolean) => {
           const u = db.users.find((x) => x.id === a.userId);
-          const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : a.status;
+          const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : isNext && !multi && a.status === "waiting" ? "next" : a.status;
           return (
             <div key={a.userId} title={!multi ? s.name : undefined} className={cn("flex items-center gap-2.5 rounded-md transition-colors", dense ? "px-2 py-1.5 hover:bg-subtle/70" : "min-h-6", st === "skipped" && "opacity-55")}>
               <span className={cn("relative flex size-7 shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-foreground/70", st === "pending" && "ring-2 ring-pending/30")}>
@@ -219,6 +220,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                   <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", s.mode === "all" ? "bg-primary/10 text-primary" : "bg-subtle text-foreground/70")}>
                     {s.mode === "all" ? <><GitFork className="size-3" /> All must approve</> : <><Users className="size-3" /> Any one</>}
                   </span>
+                  {isNext && <span className="rounded-full bg-transit-soft px-2 py-0.5 text-[11px] font-medium text-transit">Up next</span>}
                   {!preview && s.mode === "all" && <span className="num ml-auto text-[11px] text-muted-foreground">{approvedCount}/{s.approvals.length}</span>}
                 </div>
                 <div className={cn("mt-2 space-y-0.5 rounded-lg border p-1 transition-colors", active ? "border-pending/40" : "border-border")}>{s.approvals.map((a) => person(a, true))}</div>
@@ -238,6 +240,7 @@ function ApprovalState({ status, at }: { status: string; at?: string }) {
     changes: ["Changes", "bg-attention-soft text-attention"],
     pending: ["Awaiting", "bg-pending-soft text-pending"],
     waiting: ["Upcoming", "bg-subtle text-muted-foreground"],
+    next: ["Up next", "bg-transit-soft text-transit"],
     skipped: ["Not needed", "bg-transparent text-muted-foreground"],
   };
   const [l, c] = map[status];
