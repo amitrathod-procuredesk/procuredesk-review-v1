@@ -448,7 +448,7 @@ function MiniSuppliers({ r }: { r: PRequest }) {
   );
 }
 
-export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; hideChecks?: boolean }) {
+export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; after?: ReactNode; hideChecks?: boolean }) {
   const db = useDB();
   return (
     <div className="space-y-4">
@@ -465,6 +465,7 @@ export function SummaryRail({ r, editable, onCheckAction, extra, hideChecks }: {
         </div>
         <RouteTimeline r={r} preview={editable} />
       </section>
+      {after}
       {r.requiredBy && <p className="px-1 text-xs text-muted-foreground">Required by {smartDate(r.requiredBy)}</p>}
     </div>
   );
