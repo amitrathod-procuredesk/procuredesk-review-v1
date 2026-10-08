@@ -297,9 +297,17 @@ function RequestTitle({ text }: { text: string }) {
       aria-expanded={toggle ? open : undefined}
       onClick={toggle ? () => setOpen((o) => !o) : undefined}
       onKeyDown={toggle ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); } } : undefined}
-      className={`break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"} ${toggle ? "cursor-pointer rounded-sm transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
+      className={`group relative break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"} ${toggle ? "cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
     >
       {text}
+      {open && (
+        <span className="ml-1.5 align-baseline text-sm font-medium text-primary group-hover:underline">less</span>
+      )}
+      {toggle && !open && (
+        <span className="absolute bottom-0 right-0 bg-gradient-to-r from-transparent via-background to-background pl-8 text-sm font-medium leading-[inherit] text-primary group-hover:underline">
+          <span className="text-foreground">… </span>more
+        </span>
+      )}
     </h1>
   );
 }
