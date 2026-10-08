@@ -56,7 +56,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   const [tagDraft, setTagDraft] = useState("");
 
   const isOwner = r.requesterId === me.id;
-  const isOps = me.role === "admin" || me.role === "procurement" || me.role === "finance";
+  const isOps = me.role === "admin";
   const closed = r.status === "closed";
   const canCancel = r.status === "approved" && (isOwner || isOps);
   const canClose = !closed && (isOwner || isOps);
