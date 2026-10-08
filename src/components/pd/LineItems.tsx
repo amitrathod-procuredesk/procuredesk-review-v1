@@ -46,7 +46,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     return () => window.removeEventListener("pd:additem", h);
   });
   const add = (text = "") => {
-    const n = { ...blank(), name: text, description: text };
+    const n = { ...blank(), description: text };
     fresh.current = n.id;
     updateRequest(r.id, (x) => { x.items.push(n); log(x, "Line item added", "edit", me?.id); });
     setEdit(n.id);
@@ -70,6 +70,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     const other = (l.tax || 0) + (l.shipping || 0);
     const sup = vendorName(l.vendorId);
     const meta: ReactNode[] = [
+      l.name?.trim() && <span key="n" className="text-foreground/70">{l.name.trim()}</span>,
       !hideSupplier && (sup ? <span key="s" className="font-medium text-foreground/80">{sup}</span> : <span key="s" className="text-warning">No supplier</span>),
       <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
       l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
@@ -84,10 +85,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 {l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <ImageIcon className="size-4" aria-hidden />}
               </span>
               <div className="min-w-0 flex-1">
-                {l.name?.trim() && l.name.trim() !== l.description.trim() ? (<>
-                  <p className={cn("min-w-0 truncate text-[13px] font-semibold leading-[1.35]", editable && "transition-colors group-hover:text-primary")} title={l.name}>{l.name}</p>
-                  {l.description && <p className="line-clamp-2 min-w-0 break-words text-[12px] leading-[1.35] text-muted-foreground" title={l.description}>{l.description}</p>}
-                </>) : <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.name?.trim() || l.description || "Untitled item"}</p>}
+                <p className={cn("line-clamp-2 min-w-0 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
                   {l.declined && <span className="shrink-0 rounded bg-danger-soft px-1.5 py-px text-[10px] font-medium text-destructive" title={`Declined by ${db.users.find((u) => u.id === l.declined!.by)?.name ?? "approver"}${l.declined.reason ? ` — ${l.declined.reason}` : ""}`}>Declined · {db.users.find((u) => u.id === l.declined!.by)?.name.split(" ")[0]}</span>}
