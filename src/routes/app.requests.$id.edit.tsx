@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Select, TextArea, TextInput } from "@/components/pd/form";
 import { Empty, Field, Money, Section, SourceMark, StatusBadge } from "@/components/pd/bits";
 import { Copilot } from "@/components/pd/Copilot";
 import { EssentialsBar } from "@/components/pd/EssentialsBar";
@@ -113,7 +114,7 @@ function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?
   const [open, setOpen] = useState(false);
   return (
     <section className="pd-panel">
-      <button className="flex h-10 w-full items-center justify-between px-4 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <button className="flex h-12 w-full items-center justify-between px-5 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className="pd-section-title">More details</span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           {!open && "Notes, attention, quote # and website"}
@@ -121,13 +122,13 @@ function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?
         </span>
       </button>
       {open && (
-        <div className="space-y-5 border-t border-border p-4">
+        <div className="px-5 pb-5 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Note to buyer"><textarea className="pd-input h-16 py-2" value={r.noteBuyer} onChange={(e) => set({ noteBuyer: e.target.value })} /></Field>
-            <Field label="Note to supplier"><textarea className="pd-input h-16 py-2" value={r.noteSupplier} onChange={(e) => set({ noteSupplier: e.target.value })} /></Field>
-            <Field label="Attention"><select className="pd-input" value={r.attentionId ?? ""} onChange={(e) => set({ attentionId: e.target.value || undefined })}><option value="">No one</option>{db.users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></Field>
-            <Field label="Supplier quote #"><input className="pd-input num" value={r.quoteNo} onChange={(e) => set({ quoteNo: e.target.value })} /></Field>
-            <Field label="Website reference" className="sm:col-span-2"><input className="pd-input" placeholder="https://" value={r.website} onChange={(e) => set({ website: e.target.value })} /></Field>
+            <Field label="Note to buyer"><TextArea placeholder="Anything procurement should know" value={r.noteBuyer} onChange={(e) => set({ noteBuyer: e.target.value })} /></Field>
+            <Field label="Note to supplier"><TextArea placeholder="Shown on the purchase order" value={r.noteSupplier} onChange={(e) => set({ noteSupplier: e.target.value })} /></Field>
+            <Field label="Attention"><Select value={r.attentionId ?? ""} onChange={(e) => set({ attentionId: e.target.value || undefined })}><option value="">No one</option>{db.users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select></Field>
+            <Field label="Supplier quote #"><TextInput className="num" placeholder="e.g. Q-10234" value={r.quoteNo} onChange={(e) => set({ quoteNo: e.target.value })} /></Field>
+            <Field label="Website reference" className="sm:col-span-2"><TextInput type="url" placeholder="https://" value={r.website} onChange={(e) => set({ website: e.target.value })} /></Field>
           </div>
         </div>
       )}
