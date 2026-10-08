@@ -75,7 +75,7 @@ function EditRequest() {
             <input aria-label="Request title" aria-invalid={!r.title.trim() || undefined} className="pd-input-bare -ml-1.5 max-w-lg text-base font-semibold" placeholder="Untitled request" value={r.title} onChange={(e) => set({ title: e.target.value }, "title")} />
             <SourceMark s={r.sources.title} />
           </div>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /> <span className="flex items-center gap-1"><Check className="size-3" /> Saved {smartTime(r.updatedAt)}</span></p>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /></p>
         </div>
         <div className="flex items-center gap-2">
           <Copilot r={r} initialPrompt={prompt} />
