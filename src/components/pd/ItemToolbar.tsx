@@ -84,7 +84,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
             <input
               aria-label="Search catalog"
               className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              placeholder="Search catalog by name, part # or supplier"
+              placeholder="Search items, part # or supplier"
               value={q}
               onFocus={() => setFocus(true)}
               onChange={(e) => { setQ(e.target.value); setFocus(true); }}
