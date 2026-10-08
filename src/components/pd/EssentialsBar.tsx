@@ -8,13 +8,14 @@ import { cn } from "@/lib/utils";
 type SetFn = (p: Partial<PRequest>, key?: string, label?: string) => void;
 type Opt = { value: string; label: string };
 
-function Chip({ icon, label, value, ai, children, wide }: { icon: ReactNode; label: string; value?: string; ai?: boolean; children: (close: () => void) => ReactNode; wide?: boolean }) {
+function Chip({ icon, label, value, ai, children, wide, required }: { icon: ReactNode; label: string; value?: string; ai?: boolean; children: (close: () => void) => ReactNode; wide?: boolean; required?: boolean }) {
   const [open, setOpen] = useState(false);
   const empty = !value;
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          aria-invalid={(required && empty) || undefined}
           className={cn(
             "group inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-full px-3 text-[13px] transition-all active:scale-[0.98]",
             empty ? "border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary" : "bg-subtle text-foreground hover:bg-accent",
@@ -82,7 +83,7 @@ export function EssentialsBar({ r, set }: { r: PRequest; set: SetFn }) {
         <Chip icon={<Building2 />} label="Business unit" value={r.businessUnit}>
           {(c) => <Options opts={list(db.org.businessUnits)} value={r.businessUnit} onPick={(v) => set({ businessUnit: v })} close={c} />}
         </Chip>
-        <Chip icon={<Users />} label="Department" value={dept?.name} ai={ai("department")}>
+        <Chip icon={<Users />} label="Department" required value={dept?.name} ai={ai("department")}>
           {(c) => <Options opts={db.departments.map((d) => ({ value: d.id, label: d.name }))} value={r.departmentId} close={c} onPick={(v) => { const d = db.departments.find((x) => x.id === v); set({ departmentId: v, businessUnit: d?.businessUnit ?? r.businessUnit }, "department", `Department set to ${d?.name}`); }} />}
         </Chip>
         <Chip icon={<FileText />} label="Type" value={r.requestType}>
@@ -103,7 +104,7 @@ export function EssentialsBar({ r, set }: { r: PRequest; set: SetFn }) {
         <Chip icon={<Truck />} label="Shipment" value={r.shipmentType}>
           {(c) => <Options opts={list(SHIPMENT_TYPES)} value={r.shipmentType} onPick={(v) => set({ shipmentType: v })} close={c} />}
         </Chip>
-        <Chip icon={<CalendarDays />} label="Needed by" value={fmtDate} ai={ai("requiredBy")}>
+        <Chip icon={<CalendarDays />} label="Needed by" required value={fmtDate} ai={ai("requiredBy")}>
           {(c) => (
             <div className="space-y-2 px-2 pb-2">
               <input type="date" autoFocus className="pd-input" value={r.requiredBy ?? ""} onChange={(e) => set({ requiredBy: e.target.value || undefined }, "requiredBy")} />

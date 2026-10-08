@@ -95,7 +95,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
         ) : <SourceMark s={r.sources.budget} />}
       </div>
       {editable ? (
-        <select id="budget-select-anchor" className="pd-input rounded-lg" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
+        <select id="budget-select-anchor" aria-invalid={!r.budgetId || undefined} className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
           <option value="">Select a budget…</option>
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
