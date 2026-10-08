@@ -67,7 +67,7 @@ function RequestorHome() {
                     <p className="truncate text-xs text-muted-foreground">{r.status === "changes" ? `“${r.decisionReason}”` : `Draft · saved ${smartTime(r.updatedAt)}`}</p>
                   </div>
                   <StatusBadge status={r.status} />
-                  <Money v={totals(r).total} className="w-24 text-right text-sm" />
+                  <span className="w-24 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span>
                   <ArrowRight className="size-4 text-muted-foreground" />
                 </Link>
               </li>
@@ -90,7 +90,7 @@ function RequestorHome() {
                       <p className="text-xs text-muted-foreground"><span className="num">{r.id}</span>{stage ? ` · With ${stage.name}` : ""}</p>
                     </div>
                     <StatusBadge status={r.status} />
-                    <Money v={totals(r).total} className="w-24 text-right text-sm" />
+                    <span className="w-24 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span>
                   </Link>
                 </li>
               );

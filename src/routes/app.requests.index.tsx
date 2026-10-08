@@ -161,7 +161,7 @@ function Requests() {
                       {show("Requestor") && <td>{db.users.find((u) => u.id === r.requesterId)?.name}</td>}
                       {show("Department") && <td>{db.departments.find((d) => d.id === r.departmentId)?.name ?? "—"}</td>}
                       {show("Supplier") && <td>{sup[0]?.name ?? "—"}{sup.length > 1 && <span className="text-xs text-muted-foreground"> +{sup.length - 1}</span>}</td>}
-                      {show("Amount") && <td className="text-right"><Money v={totals(r).total} /></td>}
+                      {show("Amount") && <td className="text-right"><Money v={totals(r).total} /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></td>}
                       {show("Status") && <td><StatusBadge status={r.status} /></td>}
                       {show("Required") && <td className="text-xs">{smartDate(r.requiredBy)}</td>}
                       {show("Created") && <td className="text-xs text-muted-foreground">{smartDate(r.createdAt)}</td>}
@@ -173,7 +173,7 @@ function Requests() {
           </div>
           <ul className="space-y-2 md:hidden">
             {pageRows.map((r) => (
-              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="truncate text-sm font-medium">{r.title || "Untitled"}</p><Money v={totals(r).total} className="text-sm" /></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge status={r.status} /></div></Link></li>
+              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="truncate text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge status={r.status} /></div></Link></li>
             ))}
           </ul>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
