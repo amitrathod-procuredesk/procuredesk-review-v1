@@ -235,8 +235,8 @@ function ApprovalState({ status, at }: { status: string; at?: string }) {
   const map: Record<string, [string, string]> = {
     approved: ["Approved", "bg-success/10 text-success"],
     rejected: ["Rejected", "bg-destructive/10 text-destructive"],
-    changes: ["Changes", "bg-warning/15 text-warning"],
-    pending: ["Awaiting", "bg-primary/10 text-primary"],
+    changes: ["Changes", "bg-attention-soft text-attention"],
+    pending: ["Awaiting", "bg-pending-soft text-pending"],
     waiting: ["Upcoming", "bg-subtle text-muted-foreground"],
     skipped: ["Not needed", "bg-transparent text-muted-foreground"],
   };
@@ -396,7 +396,7 @@ export function ActivityLog({ r }: { r: PRequest }) {
       {sorted.map((a) => (
         <li key={a.id} className="flex gap-3 text-sm">
           <span className="num w-28 shrink-0 text-[11px] leading-5 text-muted-foreground">{new Date(a.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", a.kind === "ai" ? "bg-ai" : a.kind === "approve" ? "bg-success" : a.kind === "reject" ? "bg-destructive" : a.kind === "changes" ? "bg-warning" : "bg-muted-foreground/40")} />
+          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", a.kind === "ai" ? "bg-ai" : a.kind === "approve" ? "bg-success" : a.kind === "reject" ? "bg-destructive" : a.kind === "changes" ? "bg-attention" : a.kind === "submit" ? "bg-pending" : "bg-muted-foreground/40")} />
           <span className="min-w-0">
             {a.text}
             {a.actorId && <span className="text-xs text-muted-foreground"> · {db.users.find((u) => u.id === a.actorId)?.name}</span>}
