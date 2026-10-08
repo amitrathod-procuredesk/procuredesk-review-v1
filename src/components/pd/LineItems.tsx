@@ -9,7 +9,8 @@ import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ItemToolbar } from "./ItemToolbar";
+import { ItemToolbar, fromCatalog } from "./ItemToolbar";
+import type { CatalogItem } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
@@ -246,7 +247,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               <div className="flex-1 overflow-y-auto px-5 py-4">
                 <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 animate-in fade-in slide-in-from-right-2 duration-300">
                   <p className="pd-drawer-sec sm:col-span-2">Item</p>
-                  <DField label="Item name" className="sm:col-span-2"><input className="pd-input text-sm" placeholder="e.g. MacBook Pro 14-inch" value={editing.name ?? ""} onChange={(e) => patch(editing.id, { name: e.target.value })} /></DField>
+                  <DField label="Item name" className="sm:col-span-2"><NameSearch l={editing} vendorName={vendorName} onText={(v) => patch(editing.id, { name: v })} onPick={(c) => { const { id: _id, ...rest } = fromCatalog(c, editing.qty || 1); patch(editing.id, rest, `“${c.name}” selected from catalog`); }} /></DField>
                   <DField label="Description" req className="sm:col-span-2"><input className={cn("pd-input text-sm", !editing.description && "border-destructive")} value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></DField>
                   <DField label="Account" req className="sm:col-span-2">
                     <select className={cn("pd-input text-sm", !editing.account && "border-destructive")} value={editing.account} onChange={(e) => patch(editing.id, { account: e.target.value })}>
@@ -372,5 +373,45 @@ function MultiEdit({ open, onOpenChange, r, ids }: { open: boolean; onOpenChange
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function NameSearch({ l, vendorName, onText, onPick }: { l: LineItem; vendorName: (id: string) => string; onText: (v: string) => void; onPick: (c: CatalogItem) => void }) {
+  const db = useDB();
+  const [focus, setFocus] = useState(false);
+  const [hi, setHi] = useState(0);
+  const q = (l.name ?? "").trim().toLowerCase();
+  const hits = q.length < 1 ? [] : db.catalog.filter((c) => c.id !== l.catalogId && [c.name, c.partNumber, ...c.keywords].join(" ").toLowerCase().includes(q)).slice(0, 5);
+  const show = focus && hits.length > 0;
+  const pick = (c: CatalogItem) => { onPick(c); setFocus(false); };
+  return (
+    <div className="relative">
+      <input className="pd-input text-sm" placeholder="Search catalog or type a new item name" autoComplete="off" role="combobox" aria-expanded={show} value={l.name ?? ""}
+        onFocus={() => setFocus(true)} onBlur={() => setTimeout(() => setFocus(false), 120)}
+        onChange={(e) => { onText(e.target.value); setHi(0); setFocus(true); }}
+        onKeyDown={(e) => {
+          if (!show) return;
+          if (e.key === "ArrowDown") { e.preventDefault(); setHi((h) => (h + 1) % hits.length); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); setHi((h) => (h - 1 + hits.length) % hits.length); }
+          else if (e.key === "Enter") { e.preventDefault(); pick(hits[hi]); }
+          else if (e.key === "Escape") setFocus(false);
+        }} />
+      {show && (
+        <div role="listbox" className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-popover shadow-lg animate-in fade-in slide-in-from-top-1">
+          <p className="px-3 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Found in catalog</p>
+          {hits.map((c, i) => (
+            <button key={c.id} type="button" role="option" aria-selected={i === hi} onMouseEnter={() => setHi(i)} onMouseDown={(e) => { e.preventDefault(); pick(c); }}
+              className={cn("flex w-full items-center gap-3 px-3 py-2 text-left", i === hi && "bg-accent")}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-medium">{c.name}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{[c.partNumber, vendorName(c.vendorId)].filter(Boolean).join(" · ")}</span>
+              </span>
+              <Money v={c.price} className="shrink-0 text-[12px] text-muted-foreground" />
+            </button>
+          ))}
+          <p className="border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">Not listed? Keep typing to add it as a new item.</p>
+        </div>
+      )}
+    </div>
   );
 }
