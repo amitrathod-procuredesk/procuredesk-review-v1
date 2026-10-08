@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { budgetStatus, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartDate, smartTime, stageComplete, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
+import { budgetStatus, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartTime, stageComplete, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
@@ -469,7 +469,6 @@ export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChec
         <RouteTimeline r={r} preview={editable} />
       </section>
       {after}
-      {r.requiredBy && <p className="px-1 text-xs text-muted-foreground">Required by {smartDate(r.requiredBy)}</p>}
     </div>
   );
 }
