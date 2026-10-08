@@ -1,6 +1,6 @@
 import { INVENTORY, fromStock, stockFor } from "@/lib/pd/inventory";
 import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -32,8 +32,21 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
       else if (label) log(x, label, "edit", me?.id);
       Object.assign(l, p);
     });
-  const add = () => {
-    const n = blank();
+  const fresh = useRef<string | null>(null);
+  const closeEdit = () => {
+    const f = fresh.current && r.items.find((i) => i.id === fresh.current);
+    if (f && !f.unitPrice && !f.vendorId && !f.account && !f.partNumber) updateRequest(r.id, (x) => { x.items = x.items.filter((i) => i.id !== f.id); });
+    fresh.current = null;
+    setEdit(null);
+  };
+  useEffect(() => {
+    const h = (e: Event) => { const t = String((e as CustomEvent).detail ?? ""); add(t); };
+    window.addEventListener("pd:additem", h);
+    return () => window.removeEventListener("pd:additem", h);
+  });
+  const add = (text = "") => {
+    const n = { ...blank(), name: text, description: text };
+    fresh.current = n.id;
     updateRequest(r.id, (x) => { x.items.push(n); log(x, "Line item added", "edit", me?.id); });
     setEdit(n.id);
   };
@@ -215,11 +228,11 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
 
       {editable && r.items.length > 0 && (
         <div className="mt-2 flex items-center justify-between">
-          <Button size="sm" variant="ghost" onClick={add}><Plus /> Add item</Button>
+          <Button size="sm" variant="ghost" onClick={() => add()}><Plus /> Add item</Button>
           <span className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"}</span>
         </div>
       )}
-      <Sheet open={!!editing} onOpenChange={(o) => !o && setEdit(null)}>
+      <Sheet open={!!editing} onOpenChange={(o) => !o && closeEdit()}>
         <SheetContent className="flex w-full flex-col gap-0 border-l border-border bg-card p-0 sm:max-w-[440px]">
           {editing && (
             <>
@@ -274,7 +287,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <div className="leading-tight"><p className="text-[11px] text-muted-foreground">Line total</p><Money v={lineTotal(editing)} className="text-base font-semibold" /></div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { del([editing.id]); setEdit(null); }}><Trash2 /> Delete</Button>
-                  <Button size="sm" className="px-5" onClick={() => setEdit(null)}>Done</Button>
+                  <Button size="sm" className="px-5" onClick={() => { fresh.current = null; setEdit(null); }}>Done</Button>
                 </div>
               </SheetFooter>
             </>

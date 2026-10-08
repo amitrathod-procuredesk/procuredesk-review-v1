@@ -47,7 +47,6 @@ export function ItemToolbar({ r }: { r: PRequest }) {
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
   const [hi, setHi] = useState(0);
-  const [manual, setManual] = useState<string | null>(null);
   const [punch, setPunch] = useState(false);
   const [browse, setBrowse] = useState(false);
   useEffect(() => { const h = () => setPunch(true); window.addEventListener("pd:punchout", h); return () => window.removeEventListener("pd:punchout", h); }, []);
@@ -73,7 +72,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
     toast.success(`${c.name} added`, { description: f === "inventory" ? `From stock · ${st?.location} · no purchase needed` : `${money(c.price)} · ${db.vendors.find((v) => v.id === c.vendorId)?.name}` });
     setQ("");
   };
-  const pick = (i: number) => { if (i < results.length) addCatalog(results[i]); else { setManual(q.trim()); setFocus(false); } };
+  const pick = (i: number) => { if (i < results.length) addCatalog(results[i]); else { window.dispatchEvent(new CustomEvent("pd:additem", { detail: q.trim() })); setQ(""); setFocus(false); } };
 
   return (
     <>
@@ -144,69 +143,12 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
-      <ManualItemSheet r={r} initial={manual} onClose={() => { setManual(null); setQ(""); }} />
       <PunchOut r={r} open={punch} onOpenChange={setPunch} />
       <CatalogBrowser r={r} open={browse} onOpenChange={setBrowse} />
     </>
   );
 }
 
-function ManualItemSheet({ r, initial, onClose }: { r: PRequest; initial: string | null; onClose: () => void }) {
-  const db = useDB();
-  const me = useMe();
-  const empty = { description: "", partNumber: "", vendorId: "", account: "", category: "", uom: "EACH", qty: 1, unitPrice: 0, deliveryDate: "", notes: "", link: "" };
-  const [f, setF] = useState(empty);
-  const [touched, setTouched] = useState(false);
-  useEffect(() => { if (initial !== null) { setF({ ...empty, description: initial }); setTouched(false); } // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initial]);
-  const errs = { description: !f.description.trim(), vendorId: !f.vendorId, qty: !(f.qty > 0), unitPrice: !(f.unitPrice > 0) };
-  const bad = Object.values(errs).some(Boolean);
-  const save = () => {
-    setTouched(true);
-    if (bad) return;
-    updateRequest(r.id, (x) => {
-      x.items.push({ id: uid("li"), description: f.description.trim(), partNumber: f.partNumber, account: f.account, vendorId: f.vendorId, uom: f.uom, qty: f.qty, unitPrice: f.unitPrice, tax: 0, shipping: 0, category: f.category, deliveryDate: f.deliveryDate || undefined, notes: [f.notes, f.link].filter(Boolean).join(" · ") || undefined, source: "manual" });
-      log(x, `Non-catalog item “${f.description.trim()}” added manually`, "edit", me?.id);
-    });
-    toast.success("Item added", { description: `${f.description} · ${money(f.qty * f.unitPrice)}` });
-    onClose();
-  };
-  const err = (k: keyof typeof errs) => touched && errs[k] && "border-destructive focus:border-destructive";
-  return (
-    <Sheet open={initial !== null} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
-        <SheetHeader className="border-b border-border">
-          <SheetTitle>Add non-catalog item</SheetTitle>
-          <p className="text-xs text-muted-foreground">Not in your catalog. Procurement may review the supplier and price.</p>
-        </SheetHeader>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <label className="block"><span className="pd-label">Description *</span><input autoFocus className={cn("pd-input", err("description"))} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="pd-label">Part number</span><input className="pd-input" value={f.partNumber} onChange={(e) => setF({ ...f, partNumber: e.target.value })} /></label>
-            <label className="block"><span className="pd-label">Supplier *</span>
-              <select className={cn("pd-input", err("vendorId"))} value={f.vendorId} onChange={(e) => setF({ ...f, vendorId: e.target.value })}>
-                <option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}{v.preferred ? " ★" : ""}</option>)}
-              </select>
-            </label>
-            <label className="block"><span className="pd-label">Category</span><select className="pd-input" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Account</span><select className="pd-input" value={f.account} onChange={(e) => setF({ ...f, account: e.target.value })}><option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Quantity *</span><input type="number" min={1} className={cn("pd-input num", err("qty"))} value={f.qty} onChange={(e) => setF({ ...f, qty: Number(e.target.value) })} /></label>
-            <label className="block"><span className="pd-label">UOM</span><select className="pd-input" value={f.uom} onChange={(e) => setF({ ...f, uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Unit price *</span><input type="number" min={0} step="0.01" className={cn("pd-input num", err("unitPrice"))} value={f.unitPrice} onChange={(e) => setF({ ...f, unitPrice: Number(e.target.value) })} /></label>
-            <label className="block"><span className="pd-label">Need by</span><input type="date" className="pd-input" value={f.deliveryDate} onChange={(e) => setF({ ...f, deliveryDate: e.target.value })} /></label>
-          </div>
-          <label className="block"><span className="pd-label">Product link</span><input className="pd-input" placeholder="https://" value={f.link} onChange={(e) => setF({ ...f, link: e.target.value })} /></label>
-          <label className="block"><span className="pd-label">Notes</span><textarea className="pd-input" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
-          {touched && bad && <p className="text-xs text-destructive animate-in fade-in">Fill in the required fields marked *.</p>}
-        </div>
-        <SheetFooter className="flex-row items-center justify-between border-t border-border">
-          <span className="text-sm text-muted-foreground">Line total <span className="num ml-1 font-semibold text-foreground">{money((f.qty || 0) * (f.unitPrice || 0))}</span></span>
-          <div className="flex gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button onClick={save}>Add item</Button></div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
-}
 
 function PunchOut({ r, open, onOpenChange }: { r: PRequest; open: boolean; onOpenChange: (o: boolean) => void }) {
   const db = useDB();
