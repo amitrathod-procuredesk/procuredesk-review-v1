@@ -171,10 +171,10 @@ function Detail() {
               <div className="flex flex-wrap gap-1.5">
                 {["Budget unavailable", "Duplicate purchase", "Not required", "Policy violation", "Incorrect information", "Other"].map((p) => <button key={p} className="pd-chip" data-active={preset === p} onClick={() => setPreset(p)}>{p}</button>)}
               </div>
-              <textarea className="pd-input h-20 py-2" placeholder={preset === "Other" ? "Explain the reason (required)" : "Add detail for the requester"} value={reason} onChange={(e) => setReason(e.target.value)} />
+              <textarea className="pd-input" placeholder={preset === "Other" ? "Explain the reason (required)" : "Add detail for the requester"} value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
           )}
-          {action === "changes" && <textarea className="pd-input h-24 py-2" placeholder="e.g. Please select the approved laptop model." value={reason} onChange={(e) => setReason(e.target.value)} />}
+          {action === "changes" && <textarea className="pd-input" placeholder="e.g. Please select the approved laptop model." value={reason} onChange={(e) => setReason(e.target.value)} />}
           {action === "delegate" && (
             <select className="pd-input" value={delegateTo} onChange={(e) => setDelegateTo(e.target.value)}>
               <option value="">Choose an approver…</option>
