@@ -286,14 +286,20 @@ function RequestTitle({ text }: { text: string }) {
     return () => ro.disconnect();
   }, [text, open]);
   useEffect(() => setOpen(false), [text]);
+  const toggle = over || open;
   return (
-    <div>
-      <h1 ref={ref} id="req-title" className={`break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"}`}>{text}</h1>
-      {(over || open) && (
-        <button type="button" aria-expanded={open} aria-controls="req-title" onClick={() => setOpen((o) => !o)} className="mt-0.5 inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline">
-          {open ? "Show less" : "Show full title"}<ChevronDown className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} />
-        </button>
-      )}
-    </div>
+    <h1
+      ref={ref}
+      id="req-title"
+      title={toggle ? (open ? "Click to collapse" : text) : undefined}
+      role={toggle ? "button" : undefined}
+      tabIndex={toggle ? 0 : undefined}
+      aria-expanded={toggle ? open : undefined}
+      onClick={toggle ? () => setOpen((o) => !o) : undefined}
+      onKeyDown={toggle ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); } } : undefined}
+      className={`break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"} ${toggle ? "cursor-pointer rounded-sm transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
+    >
+      {text}
+    </h1>
   );
 }
