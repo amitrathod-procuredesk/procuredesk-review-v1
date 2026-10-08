@@ -73,7 +73,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
     toast.success(`${c.name} added`, { description: f === "inventory" ? `From stock · ${st?.location} · no purchase needed` : `${money(c.price)} · ${db.vendors.find((v) => v.id === c.vendorId)?.name}` });
     setQ("");
   };
-  const pick = (i: number) => { if (i < results.length) addCatalog(results[i]); else { setManual(q.trim()); setFocus(false); } };
+  const pick = (i: number) => { if (i < results.length) addCatalog(results[i]); else { window.dispatchEvent(new CustomEvent("pd:additem", { detail: q.trim() })); setQ(""); setFocus(false); } };
 
   return (
     <>
@@ -144,7 +144,6 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
-      <ManualItemSheet r={r} initial={manual} onClose={() => { setManual(null); setQ(""); }} />
       <PunchOut r={r} open={punch} onOpenChange={setPunch} />
       <CatalogBrowser r={r} open={browse} onOpenChange={setBrowse} />
     </>
