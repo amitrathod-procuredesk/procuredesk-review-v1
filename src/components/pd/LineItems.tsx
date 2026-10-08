@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
-export function LineItems({ r, editable, heading }: { r: PRequest; editable: boolean; heading?: React.ReactNode }) {
+export function LineItems({ r, editable, heading }: { r: PRequest; editable: boolean; heading?: ReactNode }) {
   const db = useDB();
   const me = useMe();
   const [open, setOpen] = useState<string | null>(null);
