@@ -176,7 +176,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
   const lastReminder = (uid2: string) => [...(r.reminders ?? [])].reverse().find((x) => x.userId === uid2);
   const remind = (uid2: string) => {
     const name = db.users.find((x) => x.id === uid2)?.name ?? "approver";
-    updateRequest(r.id, (x) => { x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me!.id }]; log(x, `Reminder sent to ${name}`, "comment", me?.id); });
+    updateRequest(r.id, (x) => { x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me!.id }]; log(x, `Reminder sent to ${name}`, "system", me?.id); });
     toast.success(`Reminder sent to ${name.split(" ")[0]}`, { description: "They'll get a notification about this pending approval." });
   };
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
