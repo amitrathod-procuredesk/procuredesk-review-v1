@@ -70,6 +70,8 @@ export type Source = "confirmed" | "suggested" | "needs";
 
 export interface LineItem {
   id: string;
+  /** Set when an approver excluded this line during partial approval; excluded from totals. */
+  declined?: { by: string; at: string; reason?: string };
   description: string;
   partNumber: string;
   account: string;

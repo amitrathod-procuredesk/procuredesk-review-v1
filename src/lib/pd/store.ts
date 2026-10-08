@@ -134,7 +134,7 @@ export function submitRequest(id: string, userId: string) {
   });
 }
 
-export function decide(id: string, userId: string, decision: "approve" | "reject" | "changes", comment: string) {
+export function decide(id: string, userId: string, decision: "approve" | "reject" | "changes", comment: string, declineIds: string[] = []) {
   updateRequest(id, (r, d) => {
     const i = currentStageIndex(r);
     if (i < 0) return;
@@ -146,6 +146,12 @@ export function decide(id: string, userId: string, decision: "approve" | "reject
     const name = d.users.find((u) => u.id === userId)?.name ?? "Approver";
     if (decision === "approve") {
       a.status = "approved";
+      const toDecline = r.items.filter((l) => !l.declined && declineIds.includes(l.id));
+      if (toDecline.length && toDecline.length < r.items.filter((l) => !l.declined).length) {
+        toDecline.forEach((l) => (l.declined = { by: userId, at: nowISO(), reason: comment || undefined }));
+        const kept = r.items.filter((l) => !l.declined).length;
+        log(r, `${name} partially approved — ${kept} of ${kept + toDecline.length} items kept; declined: ${toDecline.map((l) => l.description || "Untitled").join(", ")}`, "approve", userId);
+      }
       log(r, `${name} approved${stage.approvals.length > 1 ? ` (${stage.name})` : ` — ${stage.name}`}${comment ? `: “${comment}”` : ""}`, "approve", userId);
       if (stageComplete(stage)) {
         stage.approvals.forEach((x) => x.status === "pending" && (x.status = "approved"));
@@ -180,7 +186,7 @@ export function delegate(id: string, fromId: string, toId: string) {
     a.userId = toId;
     a.delegatedFrom = fromId;
     const n = (u: string) => d.users.find((x) => x.id === u)?.name;
-    log(r, `${n(fromId)} delegated approval to ${n(toId)}`, "system", fromId);
+    log(r, `${n(fromId)} reassigned approval to ${n(toId)}`, "system", fromId);
   });
 }
 
