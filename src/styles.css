@@ -43,6 +43,12 @@
   --color-ai: var(--ai);
   --color-ai-soft: var(--ai-soft);
   --color-info-soft: var(--info-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+  --color-attention: var(--attention);
+  --color-attention-soft: var(--attention-soft);
+  --color-transit: var(--transit);
+  --color-transit-soft: var(--transit-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -90,6 +96,12 @@
   --ai: oklch(0.6 0.14 62);
   --ai-soft: oklch(0.97 0.025 75);
   --info-soft: oklch(0.955 0.03 277);
+  --pending: oklch(0.58 0.14 62);
+  --pending-soft: oklch(0.965 0.045 75);
+  --attention: oklch(0.58 0.17 42);
+  --attention-soft: oklch(0.96 0.035 45);
+  --transit: oklch(0.52 0.13 245);
+  --transit-soft: oklch(0.955 0.03 240);
   --border: oklch(0.92 0.004 270);
   --input: oklch(0.89 0.005 270);
   --ring: oklch(0.51 0.23 277);
@@ -174,13 +186,13 @@
     @apply size-1.5 rounded-full bg-current;
   }
   .st-draft { @apply bg-subtle text-muted-foreground; }
-  .st-pending { @apply bg-info-soft text-primary; }
-  .st-changes { @apply bg-warning-soft text-warning; }
+  .st-pending { @apply bg-pending-soft text-pending; }
+  .st-changes { @apply bg-attention-soft text-attention; }
   .st-approved { @apply bg-success-soft text-success; }
   .st-rejected { @apply bg-danger-soft text-destructive; }
   .st-cancelled { @apply bg-subtle text-muted-foreground line-through; }
-  .st-ordered { @apply bg-accent text-accent-foreground; }
-  .st-partial { @apply bg-accent text-accent-foreground; }
+  .st-ordered { @apply bg-transit-soft text-transit; }
+  .st-partial { @apply bg-transit-soft text-transit; }
   .st-received { @apply bg-success-soft text-success; }
   .st-closed { @apply bg-subtle text-foreground/70; }
   .ai-mark {

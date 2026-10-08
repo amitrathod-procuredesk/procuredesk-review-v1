@@ -187,9 +187,9 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
           const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : a.status;
           return (
             <div key={a.userId} title={!multi ? s.name : undefined} className={cn("flex items-center gap-2.5 rounded-md transition-colors", dense ? "px-2 py-1.5 hover:bg-subtle/70" : "min-h-6", st === "skipped" && "opacity-55")}>
-              <span className={cn("relative flex size-7 shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-foreground/70", st === "pending" && "ring-2 ring-primary/25")}>
+              <span className={cn("relative flex size-7 shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-foreground/70", st === "pending" && "ring-2 ring-pending/30")}>
                 {u?.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
-                {st === "pending" && <span className="absolute -right-0.5 -top-0.5 size-2 animate-pulse rounded-full bg-primary ring-2 ring-surface" />}
+                {st === "pending" && <span className="absolute -right-0.5 -top-0.5 size-2 animate-pulse rounded-full bg-pending ring-2 ring-surface" />}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
@@ -202,7 +202,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
           );
         };
         const marker = (
-          <span className={cn("absolute left-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium transition-colors", multi ? "top-0" : "top-0.5", done ? "border-success bg-success text-primary-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
+          <span className={cn("absolute left-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium transition-colors", multi ? "top-0" : "top-0.5", done ? "border-success bg-success text-primary-foreground" : active ? "border-pending bg-pending-soft text-pending" : "border-border bg-surface text-muted-foreground")}>
             {done ? <Check className="size-3" /> : i + 1}
           </span>
         );
@@ -221,7 +221,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                   </span>
                   {!preview && s.mode === "all" && <span className="num ml-auto text-[11px] text-muted-foreground">{approvedCount}/{s.approvals.length}</span>}
                 </div>
-                <div className={cn("mt-2 space-y-0.5 rounded-lg border p-1 transition-colors", active ? "border-primary/30" : "border-border")}>{s.approvals.map((a) => person(a, true))}</div>
+                <div className={cn("mt-2 space-y-0.5 rounded-lg border p-1 transition-colors", active ? "border-pending/40" : "border-border")}>{s.approvals.map((a) => person(a, true))}</div>
               </>
             )}
           </li>
@@ -235,8 +235,8 @@ function ApprovalState({ status, at }: { status: string; at?: string }) {
   const map: Record<string, [string, string]> = {
     approved: ["Approved", "bg-success/10 text-success"],
     rejected: ["Rejected", "bg-destructive/10 text-destructive"],
-    changes: ["Changes", "bg-warning/15 text-warning"],
-    pending: ["Awaiting", "bg-primary/10 text-primary"],
+    changes: ["Changes", "bg-attention-soft text-attention"],
+    pending: ["Awaiting", "bg-pending-soft text-pending"],
     waiting: ["Upcoming", "bg-subtle text-muted-foreground"],
     skipped: ["Not needed", "bg-transparent text-muted-foreground"],
   };
@@ -396,7 +396,7 @@ export function ActivityLog({ r }: { r: PRequest }) {
       {sorted.map((a) => (
         <li key={a.id} className="flex gap-3 text-sm">
           <span className="num w-28 shrink-0 text-[11px] leading-5 text-muted-foreground">{new Date(a.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", a.kind === "ai" ? "bg-ai" : a.kind === "approve" ? "bg-success" : a.kind === "reject" ? "bg-destructive" : a.kind === "changes" ? "bg-warning" : "bg-muted-foreground/40")} />
+          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", a.kind === "ai" ? "bg-ai" : a.kind === "approve" ? "bg-success" : a.kind === "reject" ? "bg-destructive" : a.kind === "changes" ? "bg-attention" : a.kind === "submit" ? "bg-pending" : "bg-muted-foreground/40")} />
           <span className="min-w-0">
             {a.text}
             {a.actorId && <span className="text-xs text-muted-foreground"> · {db.users.find((u) => u.id === a.actorId)?.name}</span>}
