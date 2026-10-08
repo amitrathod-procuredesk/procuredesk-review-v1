@@ -108,17 +108,17 @@ function Requests() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-64 flex-1">
           <Search className="absolute top-2 left-2.5 size-4 text-muted-foreground" />
-          <input className="pd-input h-8 pl-8" placeholder='Search or ask: "engineering requests above $5,000 awaiting approval"' value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
+          <input className="pd-input pl-8" placeholder='Search or ask: "engineering requests above $5,000 awaiting approval"' value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </div>
         {me.role !== "requestor" && (
           <div className="flex rounded-md border border-border p-0.5">
             {(["all", "mine"] as const).map((s) => <button key={s} className="rounded-sm px-2.5 py-1 text-xs data-[on=true]:bg-subtle data-[on=true]:font-medium" data-on={scope === s} onClick={() => setScope(s)}>{s === "all" ? "All" : "Mine"}</button>)}
           </div>
         )}
-        <select className="pd-input h-8 w-auto" value={status} onChange={(e) => { setStatus(e.target.value as Status | "all"); setPage(0); }}>
+        <select className="pd-input w-auto" value={status} onChange={(e) => { setStatus(e.target.value as Status | "all"); setPage(0); }}>
           <option value="all">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <select className="pd-input h-8 w-auto" value={dept} onChange={(e) => { setDept(e.target.value); setPage(0); }}>
+        <select className="pd-input w-auto" value={dept} onChange={(e) => { setDept(e.target.value); setPage(0); }}>
           <option value="all">All departments</option>{db.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         <DropdownMenu>

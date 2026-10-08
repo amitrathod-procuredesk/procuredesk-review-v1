@@ -95,7 +95,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
         ) : <SourceMark s={r.sources.budget} />}
       </div>
       {editable ? (
-        <select id="budget-select-anchor" className="pd-input h-10 rounded-lg" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
+        <select id="budget-select-anchor" className="pd-input rounded-lg" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
           <option value="">Select a budget…</option>
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
@@ -134,7 +134,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
         <DialogContent>
           <DialogHeader><DialogTitle>Request budget exception</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Explain why this purchase should proceed over budget. Approvers will see your justification.</p>
-          <textarea className="pd-input h-24 py-2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Hiring plan approved in Q3; budget top-up pending in FY26 reforecast." />
+          <textarea className="pd-input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Hiring plan approved in Q3; budget top-up pending in FY26 reforecast." />
           <DialogFooter>
             <Button variant="outline" onClick={() => setExc(false)}>Cancel</Button>
             <Button disabled={!reason.trim()} onClick={() => { updateRequest(r.id, (x) => { x.exceptionRequested = true; x.exceptionReason = reason; log(x, "Budget exception requested", "edit", me?.id); }); setExc(false); toast.success("Exception will be reviewed by approvers"); }}>Request exception</Button>
@@ -356,7 +356,7 @@ export function Comments({ r }: { r: PRequest }) {
           setText("");
         }}
       >
-        <textarea className="pd-input h-16 py-2" placeholder="Add a comment… use @ to mention" value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className="pd-input py-2" placeholder="Add a comment… use @ to mention" value={text} onChange={(e) => setText(e.target.value)} />
         <div className="flex flex-wrap items-center gap-1">
           {mentionable.map((u) => (
             <button type="button" key={u.id} className="rounded-sm px-1.5 text-[11px] text-muted-foreground hover:bg-subtle" onClick={() => setText((t) => `${t}@${u.name} `)}>@{u.name.split(" ")[0]}</button>

@@ -134,7 +134,7 @@
     @apply mb-1 block text-xs font-medium text-muted-foreground;
   }
   .pd-input {
-    @apply h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/15 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground;
+    @apply h-9 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground shadow-[0_1px_1px_rgba(16,24,40,0.03)] outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-primary focus:ring-[3px] focus:ring-primary/12 disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted-foreground aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/12;
   }
   .pd-input-bare {
     @apply h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none hover:border-input focus:border-ring focus:bg-surface;
@@ -267,3 +267,20 @@ select.pd-input-bare {
 
 .pd-scroll-hide { scrollbar-width: none; }
 .pd-scroll-hide::-webkit-scrollbar { display: none; }
+
+/* Shared form controls — single source of truth for every field in the product */
+textarea.pd-input { height: auto; min-height: 5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; resize: vertical; line-height: 1.5; }
+input[type="checkbox"], input[type="radio"] {
+  appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 1rem; height: 1rem; margin: 0;
+  border: 1px solid var(--input); background: var(--surface); cursor: pointer; display: inline-grid; place-content: center;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+input[type="checkbox"] { border-radius: 4px; }
+input[type="radio"] { border-radius: 999px; }
+input[type="checkbox"]:hover, input[type="radio"]:hover { border-color: color-mix(in oklab, var(--primary) 50%, var(--input)); }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 15%, transparent); }
+input[type="checkbox"]:checked, input[type="checkbox"]:indeterminate { background: var(--primary); border-color: var(--primary); }
+input[type="checkbox"]:checked::after { content: ""; width: .55rem; height: .3rem; border-left: 2px solid var(--primary-foreground); border-bottom: 2px solid var(--primary-foreground); transform: translateY(-1px) rotate(-45deg); }
+input[type="checkbox"]:indeterminate::after { content: ""; width: .5rem; height: 2px; background: var(--primary-foreground); border-radius: 1px; }
+input[type="radio"]:checked { border-color: var(--primary); border-width: 5px; }
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cursor: not-allowed; }

@@ -53,7 +53,7 @@ function Login() {
           </div>
           <div>
             <label className="pd-label" htmlFor="email">Work email</label>
-            <input id="email" className="pd-input h-9" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input id="email" className="pd-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {!forgot && (
             <div>
@@ -61,7 +61,7 @@ function Login() {
                 <label className="pd-label" htmlFor="pw">Password</label>
                 <button type="button" onClick={() => setForgot(true)} className="mb-1 text-xs text-primary hover:underline">Forgot password?</button>
               </div>
-              <input id="pw" className="pd-input h-9" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input id="pw" className="pd-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           )}
           {error && <p role="alert" className="text-xs text-destructive">{error}</p>}

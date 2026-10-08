@@ -86,8 +86,8 @@ export function Empty({ title, body, action }: { title: string; body?: string; a
 export function Field({ label, source, children, className }: { label: string; source?: Source; children: ReactNode; className?: string }) {
   return (
     <label className={cn("block", className)}>
-      <span className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[13px] font-medium text-foreground/80">{label}</span>
         <SourceMark s={source} />
       </span>
       {children}

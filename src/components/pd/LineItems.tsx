@@ -145,7 +145,7 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
           </label>
         )}
         {r.items.length > 10 && (
-          <input aria-label="Filter items" className="pd-input h-7 w-44 text-xs" placeholder={`Filter ${r.items.length} items…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <input aria-label="Filter items" className="pd-input w-44 text-xs" placeholder={`Filter ${r.items.length} items…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
         )}
         {view === "supplier" && groups.length > 1 && (
           <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(collapsed.length === groups.length ? [] : groups.map((g) => g.id))}>{collapsed.length === groups.length ? "Expand all" : "Collapse all"}</button>
@@ -219,40 +219,40 @@ export function LineItems({ r, editable }: { r: PRequest; editable: boolean }) {
               <div className="flex-1 overflow-y-auto px-5 py-4">
                 <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 animate-in fade-in slide-in-from-right-2 duration-300">
                   <p className="pd-drawer-sec sm:col-span-2">Item</p>
-                  <DField label="Description" req className="sm:col-span-2"><input className={cn("pd-input h-9 rounded-md bg-card text-sm", !editing.description && "border-destructive")} value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></DField>
+                  <DField label="Description" req className="sm:col-span-2"><input className={cn("pd-input text-sm", !editing.description && "border-destructive")} value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></DField>
                   <DField label="Account" req className="sm:col-span-2">
-                    <select className={cn("pd-input h-9 rounded-md bg-card text-sm", !editing.account && "border-destructive")} value={editing.account} onChange={(e) => patch(editing.id, { account: e.target.value })}>
+                    <select className={cn("pd-input text-sm", !editing.account && "border-destructive")} value={editing.account} onChange={(e) => patch(editing.id, { account: e.target.value })}>
                       <option value="">Select…</option>{ACCOUNTS.map((c, i) => <option key={c} value={c}>{10 + i * 5} · {c}</option>)}
                     </select>
                   </DField>
                   <p className="pd-drawer-sec sm:col-span-2">Pricing & supplier</p>
-                  <DField label="Quantity" req><input type="number" min={0} className="pd-input num h-9 rounded-md bg-card text-sm" value={editing.qty} onChange={(e) => patch(editing.id, { qty: Math.max(0, Number(e.target.value)) })} /></DField>
-                  <DField label="Unit price" req><input type="number" min={0} step="0.01" className="pd-input num h-9 rounded-md bg-card text-sm" value={editing.unitPrice} onChange={(e) => patch(editing.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></DField>
+                  <DField label="Quantity" req><input type="number" min={0} className="pd-input num text-sm" value={editing.qty} onChange={(e) => patch(editing.id, { qty: Math.max(0, Number(e.target.value)) })} /></DField>
+                  <DField label="Unit price" req><input type="number" min={0} step="0.01" className="pd-input num text-sm" value={editing.unitPrice} onChange={(e) => patch(editing.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></DField>
                   <DField label="Supplier">
-                    <select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.vendorId} onChange={(e) => patch(editing.id, { vendorId: e.target.value })}>
+                    <select className="pd-input text-sm" value={editing.vendorId} onChange={(e) => patch(editing.id, { vendorId: e.target.value })}>
                       <option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                     </select>
                   </DField>
-                  <DField label="Supplier item #"><input className="pd-input num h-9 rounded-md bg-card text-sm" placeholder="-" value={editing.partNumber} onChange={(e) => patch(editing.id, { partNumber: e.target.value })} /></DField>
+                  <DField label="Supplier item #"><input className="pd-input num text-sm" placeholder="-" value={editing.partNumber} onChange={(e) => patch(editing.id, { partNumber: e.target.value })} /></DField>
                   <p className="pd-drawer-sec sm:col-span-2">Classification</p>
                   <DField label="Item type">
-                    <select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.itemType ?? "Material"} onChange={(e) => patch(editing.id, { itemType: e.target.value })}>{["Material", "Service", "Software", "Asset"].map((x) => <option key={x}>{x}</option>)}</select>
+                    <select className="pd-input text-sm" value={editing.itemType ?? "Material"} onChange={(e) => patch(editing.id, { itemType: e.target.value })}>{["Material", "Service", "Software", "Asset"].map((x) => <option key={x}>{x}</option>)}</select>
                   </DField>
-                  <DField label="UOM"><select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.uom} onChange={(e) => patch(editing.id, { uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select></DField>
+                  <DField label="UOM"><select className="pd-input text-sm" value={editing.uom} onChange={(e) => patch(editing.id, { uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select></DField>
                   <DField label="Category">
-                    <select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.category} onChange={(e) => patch(editing.id, { category: e.target.value })}><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+                    <select className="pd-input text-sm" value={editing.category} onChange={(e) => patch(editing.id, { category: e.target.value })}><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
                   </DField>
                   <DField label="Class">
-                    <select className="pd-input h-9 rounded-md bg-card text-sm" value={editing.itemClass ?? ""} onChange={(e) => patch(editing.id, { itemClass: e.target.value })}><option value="">Select…</option>{["Office Supplies", "Hardware", "MRO", "Capital", "Operating"].map((c) => <option key={c}>{c}</option>)}</select>
+                    <select className="pd-input text-sm" value={editing.itemClass ?? ""} onChange={(e) => patch(editing.id, { itemClass: e.target.value })}><option value="">Select…</option>{["Office Supplies", "Hardware", "MRO", "Capital", "Operating"].map((c) => <option key={c}>{c}</option>)}</select>
                   </DField>
-                  <DField label="Project code"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="-" value={editing.projectCode ?? ""} onChange={(e) => patch(editing.id, { projectCode: e.target.value })} /></DField>
-                  <DField label="Image URL"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="https://…" value={editing.imageUrl ?? ""} onChange={(e) => patch(editing.id, { imageUrl: e.target.value })} /></DField>
-                  <DField label="Web link"><input className="pd-input h-9 rounded-md bg-card text-sm" placeholder="-" value={editing.webLink ?? ""} onChange={(e) => patch(editing.id, { webLink: e.target.value })} /></DField>
+                  <DField label="Project code"><input className="pd-input text-sm" placeholder="-" value={editing.projectCode ?? ""} onChange={(e) => patch(editing.id, { projectCode: e.target.value })} /></DField>
+                  <DField label="Image URL"><input className="pd-input text-sm" placeholder="https://…" value={editing.imageUrl ?? ""} onChange={(e) => patch(editing.id, { imageUrl: e.target.value })} /></DField>
+                  <DField label="Web link"><input className="pd-input text-sm" placeholder="-" value={editing.webLink ?? ""} onChange={(e) => patch(editing.id, { webLink: e.target.value })} /></DField>
                   <p className="pd-drawer-sec sm:col-span-2">Costs & delivery</p>
-                  <DField label="Tax"><input type="number" min={0} step="0.01" className="pd-input num h-9 rounded-md bg-card text-sm" value={editing.tax} onChange={(e) => patch(editing.id, { tax: Math.max(0, Number(e.target.value)) })} /></DField>
-                  <DField label="Shipping"><input type="number" min={0} step="0.01" className="pd-input num h-9 rounded-md bg-card text-sm" value={editing.shipping} onChange={(e) => patch(editing.id, { shipping: Math.max(0, Number(e.target.value)) })} /></DField>
-                  <DField label="Delivery date" className="sm:col-span-2"><input type="date" className="pd-input h-9 rounded-md bg-card text-sm" value={editing.deliveryDate ?? ""} onChange={(e) => patch(editing.id, { deliveryDate: e.target.value })} /></DField>
-                  <DField label="Notes" className="sm:col-span-2"><textarea className="pd-input h-16 resize-none rounded-md bg-card py-2 text-sm" placeholder="-" value={editing.notes ?? ""} onChange={(e) => patch(editing.id, { notes: e.target.value })} /></DField>
+                  <DField label="Tax"><input type="number" min={0} step="0.01" className="pd-input num text-sm" value={editing.tax} onChange={(e) => patch(editing.id, { tax: Math.max(0, Number(e.target.value)) })} /></DField>
+                  <DField label="Shipping"><input type="number" min={0} step="0.01" className="pd-input num text-sm" value={editing.shipping} onChange={(e) => patch(editing.id, { shipping: Math.max(0, Number(e.target.value)) })} /></DField>
+                  <DField label="Delivery date" className="sm:col-span-2"><input type="date" className="pd-input text-sm" value={editing.deliveryDate ?? ""} onChange={(e) => patch(editing.id, { deliveryDate: e.target.value })} /></DField>
+                  <DField label="Notes" className="sm:col-span-2"><textarea className="pd-input rounded-md bg-card py-2 text-sm" placeholder="-" value={editing.notes ?? ""} onChange={(e) => patch(editing.id, { notes: e.target.value })} /></DField>
                 </div>
               </div>
               <SheetFooter className="flex-row items-center justify-between gap-2 border-t border-border bg-card px-5 py-3 sm:justify-between">

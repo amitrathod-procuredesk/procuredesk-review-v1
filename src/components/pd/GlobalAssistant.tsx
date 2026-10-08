@@ -92,7 +92,7 @@ export function AssistantThread({ ctx, suggestions, compact }: { ctx?: PRequest;
           ask(q);
         }}
       >
-        <input className="pd-input h-9" placeholder="Ask about requests, budgets, suppliers…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="pd-input" placeholder="Ask about requests, budgets, suppliers…" value={q} onChange={(e) => setQ(e.target.value)} />
         <button type="submit" aria-label="Ask" className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-40" disabled={!q.trim()}>
           <ArrowUp className="size-4" />
         </button>

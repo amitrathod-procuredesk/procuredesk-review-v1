@@ -162,23 +162,23 @@ function ManualItemSheet({ r, initial, onClose }: { r: PRequest; initial: string
           <p className="text-xs text-muted-foreground">Not in your catalog. Procurement may review the supplier and price.</p>
         </SheetHeader>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <label className="block"><span className="pd-label">Description *</span><input autoFocus className={cn("pd-input h-9", err("description"))} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
+          <label className="block"><span className="pd-label">Description *</span><input autoFocus className={cn("pd-input", err("description"))} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="pd-label">Part number</span><input className="pd-input h-9" value={f.partNumber} onChange={(e) => setF({ ...f, partNumber: e.target.value })} /></label>
+            <label className="block"><span className="pd-label">Part number</span><input className="pd-input" value={f.partNumber} onChange={(e) => setF({ ...f, partNumber: e.target.value })} /></label>
             <label className="block"><span className="pd-label">Supplier *</span>
-              <select className={cn("pd-input h-9", err("vendorId"))} value={f.vendorId} onChange={(e) => setF({ ...f, vendorId: e.target.value })}>
+              <select className={cn("pd-input", err("vendorId"))} value={f.vendorId} onChange={(e) => setF({ ...f, vendorId: e.target.value })}>
                 <option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}{v.preferred ? " ★" : ""}</option>)}
               </select>
             </label>
-            <label className="block"><span className="pd-label">Category</span><select className="pd-input h-9" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Account</span><select className="pd-input h-9" value={f.account} onChange={(e) => setF({ ...f, account: e.target.value })}><option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Quantity *</span><input type="number" min={1} className={cn("pd-input h-9 num", err("qty"))} value={f.qty} onChange={(e) => setF({ ...f, qty: Number(e.target.value) })} /></label>
-            <label className="block"><span className="pd-label">UOM</span><select className="pd-input h-9" value={f.uom} onChange={(e) => setF({ ...f, uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select></label>
-            <label className="block"><span className="pd-label">Unit price *</span><input type="number" min={0} step="0.01" className={cn("pd-input h-9 num", err("unitPrice"))} value={f.unitPrice} onChange={(e) => setF({ ...f, unitPrice: Number(e.target.value) })} /></label>
-            <label className="block"><span className="pd-label">Need by</span><input type="date" className="pd-input h-9" value={f.deliveryDate} onChange={(e) => setF({ ...f, deliveryDate: e.target.value })} /></label>
+            <label className="block"><span className="pd-label">Category</span><select className="pd-input" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
+            <label className="block"><span className="pd-label">Account</span><select className="pd-input" value={f.account} onChange={(e) => setF({ ...f, account: e.target.value })}><option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}</select></label>
+            <label className="block"><span className="pd-label">Quantity *</span><input type="number" min={1} className={cn("pd-input num", err("qty"))} value={f.qty} onChange={(e) => setF({ ...f, qty: Number(e.target.value) })} /></label>
+            <label className="block"><span className="pd-label">UOM</span><select className="pd-input" value={f.uom} onChange={(e) => setF({ ...f, uom: e.target.value })}>{UOMS.map((u) => <option key={u}>{u}</option>)}</select></label>
+            <label className="block"><span className="pd-label">Unit price *</span><input type="number" min={0} step="0.01" className={cn("pd-input num", err("unitPrice"))} value={f.unitPrice} onChange={(e) => setF({ ...f, unitPrice: Number(e.target.value) })} /></label>
+            <label className="block"><span className="pd-label">Need by</span><input type="date" className="pd-input" value={f.deliveryDate} onChange={(e) => setF({ ...f, deliveryDate: e.target.value })} /></label>
           </div>
-          <label className="block"><span className="pd-label">Product link</span><input className="pd-input h-9" placeholder="https://" value={f.link} onChange={(e) => setF({ ...f, link: e.target.value })} /></label>
-          <label className="block"><span className="pd-label">Notes</span><textarea className="pd-input h-20 py-2" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
+          <label className="block"><span className="pd-label">Product link</span><input className="pd-input" placeholder="https://" value={f.link} onChange={(e) => setF({ ...f, link: e.target.value })} /></label>
+          <label className="block"><span className="pd-label">Notes</span><textarea className="pd-input" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
           {touched && bad && <p className="text-xs text-destructive animate-in fade-in">Fill in the required fields marked *.</p>}
         </div>
         <SheetFooter className="flex-row items-center justify-between border-t border-border">
