@@ -123,7 +123,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           )}
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="h-10 px-3.5 text-sm font-medium" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
+          <Button size="sm" variant="outline" className="h-10 border-border bg-surface px-3.5 text-sm font-medium shadow-none hover:bg-subtle" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
           <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
