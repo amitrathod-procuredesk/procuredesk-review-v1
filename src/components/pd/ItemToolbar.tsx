@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Minus, Plus, Search, ShoppingCart, Store } from "lucide-react";
+import { ArrowLeft, Check, LayoutGrid, Minus, Plus, Search, ShoppingCart, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
   const [hi, setHi] = useState(0);
   const [manual, setManual] = useState<string | null>(null);
   const [punch, setPunch] = useState(false);
+  const [browse, setBrowse] = useState(false);
   useEffect(() => { const h = () => setPunch(true); window.addEventListener("pd:punchout", h); return () => window.removeEventListener("pd:punchout", h); }, []);
   const box = useRef<HTMLDivElement>(null);
   const results = useMemo(() => match(db, q), [db, q]);
@@ -119,16 +120,21 @@ export function ItemToolbar({ r }: { r: PRequest }) {
               <button onMouseEnter={() => setHi(results.length)} onClick={() => pick(results.length)} className={cn("mt-1 flex w-full items-center gap-2 border-t border-border px-3 py-2.5 text-left text-sm text-primary transition-colors", hi === results.length && "bg-accent")}>
                 <Plus className="size-4" /> Add “{q.trim()}” manually as a non-catalog item
               </button>
+              <button onClick={() => { setBrowse(true); setFocus(false); }} className="flex w-full items-center gap-2 border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground">
+                <LayoutGrid className="size-4" /> Browse the full catalog
+              </button>
             </div>
           )}
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="h-10 border-border bg-surface px-3.5 text-sm font-medium shadow-none hover:bg-subtle" onClick={() => setBrowse(true)}><LayoutGrid /> Browse</Button>
           <Button size="sm" variant="outline" className="h-10 border-border bg-surface px-3.5 text-sm font-medium shadow-none hover:bg-subtle" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
           <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
       <ManualItemSheet r={r} initial={manual} onClose={() => { setManual(null); setQ(""); }} />
       <PunchOut r={r} open={punch} onOpenChange={setPunch} />
+      <CatalogBrowser r={r} open={browse} onOpenChange={setBrowse} />
     </>
   );
 }
