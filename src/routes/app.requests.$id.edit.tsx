@@ -96,11 +96,10 @@ function EditRequest() {
 
           <MoreDetails r={r} set={set} />
 
-          <Section title="Comments"><Comments r={r} /></Section>
         </div>
 
         <aside id="rail-budget" className="border-t border-border bg-subtle/50 p-4 lg:border-t-0 lg:border-l">
-          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable onCheckAction={onCheck} extra={<div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div>} /></div>
+          <div className="lg:sticky lg:top-[73px]"><SummaryRail r={r} editable hideChecks onCheckAction={onCheck} extra={<><div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div><Section title="Comments"><Comments r={r} /></Section></>} /></div>
         </aside>
       </div>
 
