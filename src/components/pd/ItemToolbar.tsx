@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, LayoutGrid, Minus, Plus, Search, ShoppingCart, Store } from "lucide-react";
+import { ArrowLeft, Check, LayoutGrid, Warehouse, Minus, Plus, Search, ShoppingCart, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,10 @@ import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type CatalogItem, type DB, type LineItem, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 import { QuoteImport } from "./QuoteImport";
+import { stockFor } from "@/lib/pd/inventory";
 
-export const fromCatalog = (c: CatalogItem, qty = 1): LineItem => ({
+export const fromCatalog = (c: CatalogItem, qty = 1, fulfillment: "purchase" | "inventory" = "purchase"): LineItem => ({
+  fulfillment,
   id: uid("li"), description: c.name, partNumber: c.partNumber, account: c.account, vendorId: c.vendorId,
   uom: "EACH", qty, unitPrice: c.price, tax: 0, shipping: 0, category: c.category, catalogId: c.id, source: "manual",
 });
@@ -61,13 +63,14 @@ export function ItemToolbar({ r }: { r: PRequest }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const addCatalog = (c: CatalogItem) => {
+  const addCatalog = (c: CatalogItem, f: "purchase" | "inventory" = "purchase") => {
+    const st = stockFor(c.id);
     updateRequest(r.id, (x) => {
-      const ex = x.items.find((i) => i.catalogId === c.id);
-      if (ex) ex.qty += 1; else x.items.push(fromCatalog(c));
-      log(x, `Catalog item “${c.name}” added`, "edit", me?.id);
+      const ex = x.items.find((i) => i.catalogId === c.id && (i.fulfillment ?? "purchase") === f && !i.declined);
+      if (ex) ex.qty += 1; else x.items.push(fromCatalog(c, 1, f));
+      log(x, `Catalog item “${c.name}” added${f === "inventory" ? ` from stock (${st?.location})` : ""}`, "edit", me?.id);
     });
-    toast.success(`${c.name} added`, { description: `${money(c.price)} · ${db.vendors.find((v) => v.id === c.vendorId)?.name}` });
+    toast.success(`${c.name} added`, { description: f === "inventory" ? `From stock · ${st?.location} · no purchase needed` : `${money(c.price)} · ${db.vendors.find((v) => v.id === c.vendorId)?.name}` });
     setQ("");
   };
   const pick = (i: number) => { if (i < results.length) addCatalog(results[i]); else { setManual(q.trim()); setFocus(false); } };
@@ -101,17 +104,23 @@ export function ItemToolbar({ r }: { r: PRequest }) {
               <ul role="listbox">
                 {results.map((c, i) => {
                   const v = db.vendors.find((x) => x.id === c.vendorId);
+                  const st = stockFor(c.id);
                   return (
-                    <li key={c.id} role="option" aria-selected={hi === i}>
-                      <button onMouseEnter={() => setHi(i)} onClick={() => pick(i)} className={cn("flex w-full items-center gap-3 px-3 py-2 text-left transition-colors", hi === i && "bg-accent")}>
+                    <li key={c.id} role="option" aria-selected={hi === i} className="group/opt relative">
+                      <button onMouseEnter={() => setHi(i)} onClick={() => pick(i)} title="Order from supplier" className={cn("flex w-full items-center gap-3 px-3 py-2 text-left transition-colors", hi === i && "bg-accent")}>
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle text-[10px] font-semibold text-muted-foreground">{c.category.slice(0, 2).toUpperCase()}</span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium"><Highlight text={c.name} q={q} /></span>
-                          <span className="block truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}{st && <span className="text-success"> · {st.onHand} in stock</span>}</span>
                         </span>
-                        <span className="num text-sm">{money(c.price)}</span>
+                        <span className={cn("num text-sm", st && "mr-[92px]")}>{money(c.price)}</span>
                         <Plus className={cn("size-4 text-primary transition-opacity", hi === i ? "opacity-100" : "opacity-0")} />
                       </button>
+                      {st && (
+                        <button onMouseEnter={() => setHi(i)} onClick={() => addCatalog(c, "inventory")} title={`Issue from ${st.location} — no purchase`} className="absolute right-10 top-1/2 inline-flex h-7 -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-surface px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-success/50 hover:text-success">
+                          <Warehouse className="size-3.5" /> From stock
+                        </button>
+                      )}
                     </li>
                   );
                 })}
@@ -284,7 +293,8 @@ function CatalogBrowser({ r, open, onOpenChange }: { r: PRequest; open: boolean;
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("All");
   const [cart, setCart] = useState<Record<string, number>>({});
-  useEffect(() => { if (!open) { setQ(""); setCat("All"); setCart({}); } }, [open]);
+  const [src, setSrc] = useState<Record<string, "purchase" | "inventory">>({});
+  useEffect(() => { if (!open) { setQ(""); setCat("All"); setCart({}); setSrc({}); } }, [open]);
   const cats = useMemo(() => ["All", ...Array.from(new Set(db.catalog.map((c) => c.category)))], [db.catalog]);
   const list = useMemo(() => {
     const t = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -297,18 +307,20 @@ function CatalogBrowser({ r, open, onOpenChange }: { r: PRequest; open: boolean;
     });
   }, [db, q, cat]);
   const picked = Object.entries(cart).filter(([, n]) => n > 0);
-  const total = picked.reduce((s, [id, n]) => s + (db.catalog.find((c) => c.id === id)?.price ?? 0) * n, 0);
+  const total = picked.reduce((s, [id, n]) => s + (src[id] === "inventory" ? 0 : (db.catalog.find((c) => c.id === id)?.price ?? 0) * n), 0);
+  const stockN = picked.filter(([id]) => src[id] === "inventory").length;
   const set = (id: string, n: number) => setCart({ ...cart, [id]: Math.max(0, n) });
   const add = () => {
     updateRequest(r.id, (x) => {
       picked.forEach(([id, n]) => {
         const c = db.catalog.find((k) => k.id === id); if (!c) return;
-        const ex = x.items.find((i) => i.catalogId === c.id);
-        if (ex) ex.qty += n; else x.items.push(fromCatalog(c, n));
+        const f = src[id] ?? "purchase";
+        const ex = x.items.find((i) => i.catalogId === c.id && (i.fulfillment ?? "purchase") === f && !i.declined);
+        if (ex) ex.qty += n; else x.items.push(fromCatalog(c, n, f));
       });
       log(x, `${picked.length} catalog item${picked.length === 1 ? "" : "s"} added from catalog browser`, "edit", me?.id);
     });
-    toast.success(`${picked.length} item${picked.length === 1 ? "" : "s"} added`, { description: money(total) });
+    toast.success(`${picked.length} item${picked.length === 1 ? "" : "s"} added`, { description: `${money(total)} to purchase${stockN ? ` · ${stockN} from stock` : ""}` });
     onOpenChange(false);
   };
   return (
@@ -333,21 +345,32 @@ function CatalogBrowser({ r, open, onOpenChange }: { r: PRequest; open: boolean;
               const v = db.vendors.find((x) => x.id === c.vendorId);
               const n = cart[c.id] ?? 0;
               const inReq = r.items.some((i) => i.catalogId === c.id);
+              const st = stockFor(c.id);
+              const f = src[c.id] ?? "purchase";
               return (
                 <li key={c.id} className={cn("flex items-center gap-3 px-4 py-2.5 transition-colors", n > 0 && "bg-accent/40")}>
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle text-[10px] font-semibold text-muted-foreground">{c.category.slice(0, 2).toUpperCase()}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{c.partNumber} · {v?.name}{v?.preferred && " · Preferred"}{!c.available && " · Backordered"}{inReq && " · In request"}</p>
+                    {st && (
+                      <div role="radiogroup" aria-label="Source" className="mt-1.5 inline-flex rounded-md bg-subtle p-0.5 text-[11px]">
+                        {(["purchase", "inventory"] as const).map((k) => (
+                          <button key={k} role="radio" aria-checked={f === k} onClick={() => setSrc({ ...src, [c.id]: k })} className={cn("inline-flex items-center gap-1 rounded px-2 py-0.5 font-medium transition-colors", f === k ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                            {k === "purchase" ? <><ShoppingCart className="size-3" /> Buy</> : <><Warehouse className="size-3" /> Stock · {st.onHand}</>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <span className="num shrink-0 text-sm">{money(c.price)}</span>
+                  <span className={cn("num shrink-0 text-sm", f === "inventory" && "text-muted-foreground line-through")}>{money(c.price)}</span>
                   {n === 0 ? (
                     <button aria-label={`Add ${c.name}`} onClick={() => set(c.id, 1)} className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-primary hover:bg-subtle"><Plus className="size-4" /></button>
                   ) : (
                     <div className="flex shrink-0 items-center rounded-md border border-primary/40 animate-in zoom-in-95">
                       <button aria-label="Decrease" className="p-1.5" onClick={() => set(c.id, n - 1)}><Minus className="size-3.5" /></button>
                       <span className="num w-6 text-center text-sm">{n}</span>
-                      <button aria-label="Increase" className="p-1.5" onClick={() => set(c.id, n + 1)}><Plus className="size-3.5" /></button>
+                      <button aria-label="Increase" disabled={f === "inventory" && !!st && n >= st.onHand} className="p-1.5 disabled:opacity-40" onClick={() => set(c.id, n + 1)}><Plus className="size-3.5" /></button>
                     </div>
                   )}
                 </li>
