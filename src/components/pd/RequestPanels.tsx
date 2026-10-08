@@ -236,13 +236,16 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
               person(s.approvals[0])
             ) : (
               <>
-                <div className="flex min-h-6 items-center gap-2">
-                  <p className="text-[13px] font-semibold text-foreground/85">{s.mode === "all" ? "Parallel approval" : "Group approval"}</p>
-                  <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", s.mode === "all" ? "bg-primary/10 text-primary" : "bg-subtle text-foreground/70")}>
-                    {s.mode === "all" ? <><GitFork className="size-3" /> All must approve</> : <><Users className="size-3" /> Any one</>}
+                <div className="flex min-h-6 min-w-0 items-center gap-1.5">
+                  <p className="truncate whitespace-nowrap text-[13px] font-semibold text-foreground/85">{s.mode === "all" ? "Parallel approval" : "Group approval"}</p>
+                  {(() => { const tip = s.mode === "all" ? "All approvers must approve" : "Any one approver can approve"; return (
+                    <span tabIndex={0} role="img" aria-label={tip} title={tip} className="inline-flex shrink-0 cursor-help items-center rounded text-muted-foreground/70 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                      {s.mode === "all" ? <GitFork className="size-3.5" /> : <Users className="size-3.5" />}
+                    </span>); })()}
+                  <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                    {isNext && <span className="whitespace-nowrap rounded-full bg-transit-soft px-1.5 py-px text-[10.5px] font-medium text-transit">Up next</span>}
+                    {!preview && s.mode === "all" && <span className="num text-[11px] text-muted-foreground" title={`${approvedCount} of ${s.approvals.length} approved`}>{approvedCount}/{s.approvals.length}</span>}
                   </span>
-                  {isNext && <span className="rounded-full bg-transit-soft px-2 py-0.5 text-[11px] font-medium text-transit">Up next</span>}
-                  {!preview && s.mode === "all" && <span className="num ml-auto text-[11px] text-muted-foreground">{approvedCount}/{s.approvals.length}</span>}
                 </div>
                 <div className={cn("mt-2 space-y-0.5 rounded-lg border p-1 transition-colors", active ? "border-pending/40" : "border-border")}>{s.approvals.map((a) => person(a, true))}</div>
               </>
