@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { budgetStatus, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartDate, smartTime, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
+import { budgetStatus, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartDate, smartTime, stageComplete, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
@@ -173,49 +173,61 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
   const cur = currentStageIndex(r);
   if (!stages.length) return <p className="text-xs text-muted-foreground">Route will be calculated from your organization's approval rules.</p>;
-  const par = stages.map((s, i) => ({ s, i })).filter(({ s }) => s.approvals.length > 1);
   return (
-    <div>
-      <ol>
-        {stages.map((s, i) => {
-          const done = !preview && s.approvals.every((a) => a.status === "approved");
-          const active = !preview && i === cur;
-          const last = i === stages.length - 1;
-          const multi = s.approvals.length > 1;
-          const rows = s.approvals.map((a) => {
-            const u = db.users.find((x) => x.id === a.userId);
-            return (
-              <li key={a.userId} className="flex items-center gap-2.5">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-[11px] font-semibold text-foreground/70">{u?.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{u?.title}</p>
-                  {a.comment && <p className="text-xs text-muted-foreground">“{a.comment}”</p>}
-                  {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
-                </div>
-                <ApprovalState status={preview ? "waiting" : a.status} at={a.at} />
-              </li>
-            );
-          });
+    <ol>
+      {stages.map((s, i) => {
+        const done = !preview && stageComplete(s);
+        const active = !preview && i === cur;
+        const last = i === stages.length - 1;
+        const multi = s.approvals.length > 1;
+        const anyDone = s.mode === "any" && done;
+        const approvedCount = s.approvals.filter((a) => a.status === "approved").length;
+        const person = (a: (typeof s.approvals)[number], dense?: boolean) => {
+          const u = db.users.find((x) => x.id === a.userId);
+          const st = preview ? "waiting" : anyDone && a.status !== "approved" ? "skipped" : a.status;
           return (
-            <li key={s.id} className="relative pb-4 pl-9 last:pb-0">
-              {!last && <span className={cn("absolute left-[11px] top-6 bottom-0 w-px", done ? "bg-success/50" : "bg-border")} />}
-              <span className={cn("absolute left-0 top-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium", done ? "border-success bg-success text-primary-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
-                {done ? <Check className="size-3" /> : i + 1}
+            <div key={a.userId} title={!multi ? s.name : undefined} className={cn("flex items-center gap-2.5 rounded-md transition-colors", dense ? "px-2 py-1.5 hover:bg-subtle/70" : "min-h-6", st === "skipped" && "opacity-55")}>
+              <span className={cn("relative flex size-7 shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-foreground/70", st === "pending" && "ring-2 ring-primary/25")}>
+                {u?.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
+                {st === "pending" && <span className="absolute -right-0.5 -top-0.5 size-2 animate-pulse rounded-full bg-primary ring-2 ring-surface" />}
               </span>
-              <div className="flex min-h-6 flex-wrap items-center gap-2">
-                <p className="text-[13px] font-semibold text-foreground/85">{s.name}</p>
-                {multi && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"><GitFork className="size-3" /> Parallel</span>}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
+                <p className="truncate text-xs leading-4 text-muted-foreground">{u?.title}</p>
+                {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
+                {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
-              <ul className={cn("mt-2 space-y-2.5", multi && "rounded-lg border border-border p-2.5")}>{rows}</ul>
-            </li>
+              <ApprovalState status={st} at={a.at} />
+            </div>
           );
-        })}
-      </ol>
-      {par.map(({ s, i }) => (
-        <p key={s.id} className="mt-3 text-xs text-muted-foreground">Step {i + 1} approvers review at the same time. {s.mode === "all" ? `All ${s.approvals.length} must approve.` : "Any one can approve."}</p>
-      ))}
-    </div>
+        };
+        const marker = (
+          <span className={cn("absolute left-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium transition-colors", multi ? "top-0" : "top-0.5", done ? "border-success bg-success text-primary-foreground" : active ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
+            {done ? <Check className="size-3" /> : i + 1}
+          </span>
+        );
+        return (
+          <li key={s.id} className="relative pb-4 pl-9 last:pb-0 animate-in fade-in" style={{ animationDelay: `${i * 40}ms` }}>
+            {!last && <span className={cn("absolute bottom-0 left-[11px] top-7 w-px", done ? "bg-success/50" : "bg-border")} />}
+            {marker}
+            {!multi ? (
+              person(s.approvals[0])
+            ) : (
+              <>
+                <div className="flex min-h-6 items-center gap-2">
+                  <p className="text-[13px] font-semibold text-foreground/85">{s.mode === "all" ? "Parallel approval" : "Group approval"}</p>
+                  <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", s.mode === "all" ? "bg-primary/10 text-primary" : "bg-subtle text-foreground/70")}>
+                    {s.mode === "all" ? <><GitFork className="size-3" /> All must approve</> : <><Users className="size-3" /> Any one</>}
+                  </span>
+                  {!preview && s.mode === "all" && <span className="num ml-auto text-[11px] text-muted-foreground">{approvedCount}/{s.approvals.length}</span>}
+                </div>
+                <div className={cn("mt-2 space-y-0.5 rounded-lg border p-1 transition-colors", active ? "border-primary/30" : "border-border")}>{s.approvals.map((a) => person(a, true))}</div>
+              </>
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -226,6 +238,7 @@ function ApprovalState({ status, at }: { status: string; at?: string }) {
     changes: ["Changes", "bg-warning/15 text-warning"],
     pending: ["Awaiting", "bg-primary/10 text-primary"],
     waiting: ["Upcoming", "bg-subtle text-muted-foreground"],
+    skipped: ["Not needed", "bg-transparent text-muted-foreground"],
   };
   const [l, c] = map[status];
   return (
