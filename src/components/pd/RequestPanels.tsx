@@ -330,7 +330,9 @@ export function Comments({ r }: { r: PRequest }) {
   const [text, setText] = useState("");
   const render = (t: string) =>
     t.split(/(@[A-Z][a-z]+(?: [A-Z][a-z]+)?)/g).map((p, i) => (p.startsWith("@") ? <span key={i} className="font-medium text-primary">{p}</span> : p));
-  const mentionable = db.users.filter((u) => u.role !== "admin" || u.id === me?.id).slice(0, 6);
+  const mentionable = db.users.filter((u) => u.id !== me?.id);
+  const mq = /@(\w*)$/.exec(text)?.[1] ?? null;
+  const matches = mq === null ? [] : mentionable.filter((u) => u.name.toLowerCase().startsWith(mq.toLowerCase()) || u.name.toLowerCase().includes(" " + mq.toLowerCase())).slice(0, 5);
   return (
     <div className="space-y-3">
       {r.comments.length === 0 && <p className="text-xs text-muted-foreground">No comments yet. Mention a teammate to loop them in.</p>}
@@ -357,12 +359,15 @@ export function Comments({ r }: { r: PRequest }) {
         }}
       >
         <textarea rows={1} className="block max-h-32 min-h-9 w-full resize-none bg-transparent px-3 pt-2 text-sm outline-none placeholder:text-muted-foreground/70" placeholder="Add a comment…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); } }} />
-        <div className="flex items-center gap-1 px-1.5 pb-1.5">
-          <div className="pd-scroll-hide flex min-w-0 flex-1 gap-0.5 overflow-x-auto">
-            {mentionable.map((u) => (
-              <button type="button" key={u.id} title={`Mention ${u.name}`} className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" onClick={() => setText((t) => `${t}@${u.name} `)}>@{u.name.split(" ")[0]}</button>
+        {mq !== null && matches.length > 0 && (
+          <ul className="mx-1.5 mb-1 rounded-md border border-border bg-popover p-1 shadow-sm">
+            {matches.map((u) => (
+              <li key={u.id}><button type="button" onMouseDown={(e) => { e.preventDefault(); setText(text.replace(/@(\w*)$/, `@${u.name} `)); }} className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-subtle"><UserAvatar user={u} /> {u.name}</button></li>
             ))}
-          </div>
+          </ul>
+        )}
+        <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5">
+          <span className="pl-1.5 text-[11px] text-muted-foreground/70">Type @ to mention</span>
           <Button type="submit" size="sm" className="h-7 shrink-0 px-2.5 text-xs" disabled={!text.trim()}>Send</Button>
         </div>
       </form>
