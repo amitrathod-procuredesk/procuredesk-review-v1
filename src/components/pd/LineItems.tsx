@@ -287,7 +287,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <div className="leading-tight"><p className="text-[11px] text-muted-foreground">Line total</p><Money v={lineTotal(editing)} className="text-base font-semibold" /></div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { del([editing.id]); setEdit(null); }}><Trash2 /> Delete</Button>
-                  <Button size="sm" className="px-5" onClick={() => setEdit(null)}>Done</Button>
+                  <Button size="sm" className="px-5" onClick={() => { fresh.current = null; setEdit(null); }}>Done</Button>
                 </div>
               </SheetFooter>
             </>
