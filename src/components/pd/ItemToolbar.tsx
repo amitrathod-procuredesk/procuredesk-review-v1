@@ -118,7 +118,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
                       <div className="flex shrink-0 items-center gap-1.5">
                         {st && (
                           <button onClick={() => addCatalog(c, "inventory")} title={`Take from ${st.location} — no purchase, no cost`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-foreground transition-colors hover:border-success/60 hover:bg-success-soft hover:text-success">
-                            <Warehouse className="size-3.5 text-success" /> Take from stock <span className="num text-muted-foreground">({st.onHand})</span>
+                            <Warehouse className="size-3.5 text-success" /><span className="hidden sm:inline">Take from stock</span><span className="sm:hidden">Stock</span> <span className="num text-muted-foreground">({st.onHand})</span>
                           </button>
                         )}
                         <button onClick={() => addCatalog(c, "purchase")} title={`Buy from ${v?.name}`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-surface px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
