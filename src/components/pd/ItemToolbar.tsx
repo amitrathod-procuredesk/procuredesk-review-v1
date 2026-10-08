@@ -75,7 +75,7 @@ export function ItemToolbar({ r }: { r: PRequest }) {
     <>
       <div className="mb-3 flex flex-wrap gap-2">
         <div ref={box} className="relative min-w-0 flex-1 basis-[260px]">
-          <div className={cn("flex h-10 items-center gap-2 rounded-lg border px-3 transition-all", focus ? "border-primary bg-surface ring-4 ring-primary/10" : "border-transparent bg-subtle hover:bg-subtle/70")}>
+          <div className={cn("flex h-10 items-center gap-2 rounded-lg border px-3 transition-all", focus ? "border-primary bg-surface ring-4 ring-primary/10" : "border-border bg-surface hover:border-input")}>
             <Search className={cn("size-4 transition-colors", focus ? "text-primary" : "text-muted-foreground")} />
             <input
               aria-label="Search catalog"
@@ -123,8 +123,8 @@ export function ItemToolbar({ r }: { r: PRequest }) {
           )}
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" className="h-10 px-3.5 text-sm font-medium" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
-          <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-transparent [&_button]:bg-transparent [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
+          <Button size="sm" variant="outline" className="h-10 px-3.5 text-sm font-medium" onClick={() => setPunch(true)}><Store /> Punch-out</Button>
+          <span className="[&_button]:h-10 [&_button]:px-3.5 [&_button]:text-sm [&_button]:font-medium [&_button]:border-border [&_button]:bg-surface [&_button]:shadow-none [&_button:hover]:bg-subtle"><QuoteImport r={r} label="Import" /></span>
         </div>
       </div>
       <ManualItemSheet r={r} initial={manual} onClose={() => { setManual(null); setQ(""); }} />
