@@ -100,7 +100,8 @@ export type Status =
   | "cancelled"
   | "ordered"
   | "partial"
-  | "received";
+  | "received"
+  | "closed";
 
 export interface Approval {
   userId: string;
@@ -189,6 +190,8 @@ export interface PRequest {
   exceptionRequested: boolean;
   exceptionReason?: string;
   duplicateAcknowledged?: boolean;
+  tags?: string[];
+  rfqs?: { id: string; at: string; vendorIds: string[] }[];
   createdAt: string;
   updatedAt: string;
   submittedAt?: string;

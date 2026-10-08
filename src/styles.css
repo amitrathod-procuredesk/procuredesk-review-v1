@@ -182,6 +182,7 @@
   .st-ordered { @apply bg-accent text-accent-foreground; }
   .st-partial { @apply bg-accent text-accent-foreground; }
   .st-received { @apply bg-success-soft text-success; }
+  .st-closed { @apply bg-subtle text-foreground/70; }
   .ai-mark {
     @apply inline-flex items-center gap-1 text-[11px] text-ai;
   }
@@ -288,3 +289,8 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
 /* Submit-time validation: required fields only turn red after a submit attempt */
 .pd-validate [aria-invalid="true"] { border-color: var(--destructive) !important; border-style: solid !important; background-color: var(--danger-soft); color: var(--destructive); }
 .pd-validate [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 14%, transparent); }
+
+@media print {
+  aside, header nav, .no-print, [data-sonner-toaster] { display: none !important; }
+  body { background: white !important; }
+}

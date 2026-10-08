@@ -124,7 +124,7 @@ export function findDuplicates(r: PRequest, db: DB) {
   return db.requests.filter(
     (o) =>
       o.id !== r.id &&
-      !["draft", "cancelled", "rejected"].includes(o.status) &&
+      !["draft", "cancelled", "rejected", "closed"].includes(o.status) &&
       new Date(o.submittedAt ?? o.createdAt).getTime() > cutoff &&
       o.items.some((i) => i.description.toLowerCase().split(/[^a-z0-9]+/).some((w) => words.has(w))),
   );
@@ -224,4 +224,5 @@ export const STATUS_LABEL: Record<string, string> = {
   ordered: "Ordered",
   partial: "Partially received",
   received: "Received",
+  closed: "Closed",
 };
