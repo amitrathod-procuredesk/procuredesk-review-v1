@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { AlarmClock, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { AlarmClock, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -87,7 +87,7 @@ function AppShell() {
 
       <div className="flex min-h-0 flex-1">
         <SideNav collapsed={collapsed} setCollapsed={setCollapsed} pendingCount={pendingCount} role={me.role} onChat={() => setAssistant(true)} />
-        <div className="flex min-w-0 flex-1 flex-col border-l border-border pb-16 md:pb-0">
+        <div className="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
           <main className="min-w-0 flex-1">
             <Outlet />
           </main>
@@ -163,7 +163,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
                 {!collapsed && <><span className="flex-1 truncate text-left">{g.label}</span><ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} /></>}
               </button>
               {isOpen && (
-                <div className="animate-in fade-in slide-in-from-top-1 mb-1 ml-[11px] mt-1 space-y-1 border-l border-border pl-[11px]">
+                <div className="animate-in fade-in slide-in-from-top-1 mb-1 ml-[17px] mt-0.5 space-y-0.5 border-l border-border pl-2">
                   {g.children.map((c) =>
                     c.to ? (
                       <Link key={c.label} to={c.to} className="flex h-8 items-center rounded-md px-2.5 text-[13px] text-muted-foreground data-[status=active]:text-primary text-foreground transition-colors hover:bg-sidebar-accent data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium">
