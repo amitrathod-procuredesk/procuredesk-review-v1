@@ -116,8 +116,8 @@ function Requests() {
   return (
     <div className="space-y-4 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">{tabs}<h1 className="pd-h1">Purchase requests</h1></div>
-        {newBtn}
+        <h1 className="pd-h1">Purchase requests</h1>
+        <div className="flex items-center gap-2">{tabs}{newBtn}</div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
