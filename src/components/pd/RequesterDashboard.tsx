@@ -157,7 +157,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                   <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
-                    <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · Updated {smartDate(r.updatedAt)}</span>
+                    <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
                   </span>
                   <span className="hidden truncate text-[13px] text-foreground/80 md:block">{r.businessUnit || "—"}</span>
                   <span className="hidden min-w-0 sm:block" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
