@@ -68,10 +68,12 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const shown = listed.slice(0, 6);
   const [sel, setSel] = useState<string[]>([]);
-  const cancelSelected = () => {
-    let n = 0;
-    mutate((d) => d.requests.forEach((r) => { if (sel.includes(r.id) && ["draft", "pending", "changes"].includes(r.status)) { r.status = "cancelled"; log(r, "Request cancelled", "system", me.id); n++; } }));
-    toast(n ? `${n} request${n === 1 ? "" : "s"} cancelled` : "None of the selected requests can be cancelled", { description: n < sel.length ? `${sel.length - n} skipped — already approved or ordered` : undefined });
+  const eligible = sel.filter((id) => db.requests.find((r) => r.id === id)?.status === "approved");
+  const createOrders = () => {
+    if (!eligible.length) return;
+    mutate((d) => d.requests.forEach((r) => { if (eligible.includes(r.id) && r.status === "approved") { r.status = "ordered"; r.updatedAt = new Date().toISOString(); log(r, "Purchase order created", "system", me.id); } }));
+    const skipped = sel.length - eligible.length;
+    toast.success(`${eligible.length} order${eligible.length === 1 ? "" : "s"} created`, { description: skipped ? `${skipped} skipped — only approved requests can be ordered` : undefined });
     setSel([]);
   };
   const drafts = mine.filter((r) => ["draft", "changes"].includes(r.status)).length;
@@ -157,7 +159,8 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
           {sel.length > 0 ? (
             <div className="mx-4 mt-3 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
               <span className="font-medium text-primary">{sel.length} selected</span>
-              <button className="ml-2 rounded px-2 py-1 font-medium text-destructive hover:bg-destructive/10" onClick={cancelSelected}>Cancel eligible</button>
+              <button disabled={!eligible.length} title={eligible.length ? undefined : "Only approved requests can be ordered"} className="ml-2 rounded px-2 py-1 font-medium text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent" onClick={createOrders}>Create order{eligible.length ? ` (${eligible.length})` : ""}</button>
+              {eligible.length < sel.length && <span className="text-xs text-muted-foreground">{sel.length - eligible.length} not approved</span>}
               <button className="ml-auto text-xs text-muted-foreground hover:text-foreground" onClick={() => setSel([])}>Clear</button>
             </div>
           ) : null}
