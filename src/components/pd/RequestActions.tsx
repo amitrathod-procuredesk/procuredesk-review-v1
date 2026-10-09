@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Search, Send, Tag, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox, TextArea, TextInput } from "@/components/pd/form";
 import { ActivityLog } from "@/components/pd/RequestPanels";
-import { smartTime, supplierBreakdown } from "@/lib/pd/engine";
+import { supplierBreakdown } from "@/lib/pd/engine";
 import { copyRequest, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
@@ -75,9 +75,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   ].filter((i) => i.show);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const shown = items.filter((i) => i.label.toLowerCase().includes(q.trim().toLowerCase()));
-  const lastEvent = r.activity.reduce<(typeof r.activity)[number] | undefined>((a, e) => (!a || e.at > a.at ? e : a), undefined);
+  const shown = items;
 
   const run = (key: string) => {
     setOpen(false);
@@ -130,33 +128,17 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
         <PopoverTrigger asChild>
           <Button size="sm" className="gap-1.5" aria-haspopup="menu"><MoreHorizontal className="size-4" /> Actions</Button>
         </PopoverTrigger>
-        <PopoverContent align="end" sideOffset={6} className="w-64 p-1.5" onOpenAutoFocus={(e) => { e.preventDefault(); searchRef.current?.focus(); }}>
-          <div className="relative mb-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              ref={searchRef}
-              value={q}
-              onChange={(e) => { setQ(e.target.value); setActive(0); }}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, shown.length - 1)); }
-                else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-                else if (e.key === "Enter" && shown[active]) { e.preventDefault(); run(shown[active].key); }
-              }}
-              placeholder="Search actions…"
-              aria-label="Search actions"
-              className="h-8 w-full rounded-md bg-subtle pl-8 pr-2 text-[13px] outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
+        <PopoverContent align="end" sideOffset={6} className="w-56 p-1">
           <ul role="menu" aria-label={`Actions for ${r.id}`}>
             {shown.map((i, idx) => (
               <li key={i.key} role="none">
-                {idx > 0 && shown[idx - 1].group !== i.group && <div className="mx-1 my-1 h-px bg-border" />}
+                {idx > 0 && shown[idx - 1].group !== i.group && <div className="-mx-1 my-1 h-px bg-border/70" />}
                 <button
                   role="menuitem"
                   title={i.hint}
-                  onMouseEnter={() => setActive(idx)}
+                  
                   onClick={() => run(i.key)}
-                  className={cn("flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] transition-colors", idx === active && "bg-subtle", i.danger ? "text-destructive" : "text-foreground")}
+                  className={cn("flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] transition-colors", "hover:bg-subtle focus-visible:bg-subtle focus-visible:outline-none", i.danger ? "text-destructive" : "text-foreground")}
                 >
                   <i.icon className={cn("size-4 shrink-0", i.danger ? "text-destructive" : "text-muted-foreground")} strokeWidth={1.7} />
                   <span className="min-w-0 flex-1 truncate">{i.label}</span>
@@ -164,9 +146,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
                 </button>
               </li>
             ))}
-            {!shown.length && <li className="px-2 py-3 text-center text-xs text-muted-foreground">No matching actions</li>}
-          </ul>
-          {lastEvent && <p className="mt-1 truncate border-t border-border px-2 pb-0.5 pt-1.5 text-[11px] text-muted-foreground">Last updated {smartTime(lastEvent.at)}</p>}
+                      </ul>
         </PopoverContent>
       </Popover>
 
