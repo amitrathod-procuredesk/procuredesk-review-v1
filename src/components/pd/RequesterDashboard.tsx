@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, AtSign, Stamp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ export function RequesterDashboard({ onOpenList }: { onOpenList: (status?: Statu
     .filter((r) => active.statuses.includes(r.status))
     .filter((r) => !q || `${r.id} ${r.title}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const drafts = mine.filter((r) => r.status === "draft").length;
+  const drafts = mine.filter((r) => ["draft", "changes"].includes(r.status)).length;
 
   const open = (r: PRequest) => ["draft", "changes"].includes(r.status)
     ? nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })
@@ -210,7 +210,6 @@ export function RequesterDashboard({ onOpenList }: { onOpenList: (status?: Statu
           </ul>
         </section>
       </div>
-      <p className="text-center text-xs text-muted-foreground"><Link to="/app/requests" className="hover:text-foreground" onClick={(e) => { e.preventDefault(); onOpenList(); }}>Open the full request list</Link></p>
     </div>
   );
 }
