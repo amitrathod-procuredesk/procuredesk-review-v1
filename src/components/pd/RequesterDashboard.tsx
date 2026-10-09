@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, AtSign, Stamp } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
@@ -29,23 +29,41 @@ const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] ite
 const PIN = "sticky right-0 -my-2.5 -mr-4 flex min-w-0 items-center self-stretch border-l border-border/60 py-2.5 pl-4 pr-4";
 
 /** Who the request is currently waiting on, derived from status and the live approval route. */
-function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean } {
+function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean; ids?: string[]; kind?: "team" | "supplier" | "none" } {
   const name = (id: string) => (id === meId ? "You" : users.find((u) => u.id === id)?.name ?? "Approver");
   const mine = r.requesterId === meId;
   switch (r.status) {
-    case "draft": return mine ? { who: "You", what: "Complete & submit", you: true } : { who: name(r.requesterId), what: "Completing draft" };
-    case "changes": return mine ? { who: "You", what: "Address requested changes", you: true } : { who: name(r.requesterId), what: "Making changes" };
+    case "draft": return mine ? { who: "You", what: "Complete & submit", you: true, ids: [meId] } : { who: name(r.requesterId), what: "Completing draft", ids: [r.requesterId] };
+    case "changes": return mine ? { who: "You", what: "Address requested changes", you: true, ids: [meId] } : { who: name(r.requesterId), what: "Making changes", ids: [r.requesterId] };
     case "pending": {
       const stage = r.route.find((s) => s.approvals.some((a) => a.status === "pending"));
       const ids = stage?.approvals.filter((a) => a.status === "pending").map((a) => a.userId) ?? [];
       if (!ids.length) return { who: "Approvers", what: "Approval" };
-      return { who: ids.length > 1 ? `${name(ids[0])} +${ids.length - 1}` : name(ids[0]), what: `${stage?.name ?? "Approval"}${ids.length > 1 ? (stage?.mode === "any" ? " · any one" : " · all") : ""}`, you: ids.includes(meId) };
+      return { who: ids.length > 1 ? `${name(ids[0])} +${ids.length - 1}` : name(ids[0]), what: `${stage?.name ?? "Approval"}${ids.length > 1 ? (stage?.mode === "any" ? " · any one" : " · all") : ""}`, you: ids.includes(meId), ids };
     }
-    case "approved": return { who: "Procurement", what: "Create purchase order" };
-    case "ordered": return { who: "Supplier", what: "Delivery" };
-    case "partial": return { who: "Supplier", what: "Remaining delivery" };
-    default: return { who: "—", what: "Nothing pending" };
+    case "approved": return { who: "Procurement", what: "Create purchase order", kind: "team" };
+    case "ordered": return { who: "Supplier", what: "Delivery", kind: "supplier" };
+    case "partial": return { who: "Supplier", what: "Remaining delivery", kind: "supplier" };
+    default: return { who: "—", what: "Nothing pending", kind: "none" };
   }
+}
+
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || "?";
+const AV = "grid size-6 shrink-0 place-items-center overflow-hidden rounded-full text-[10px] font-semibold ring-2 ring-card";
+/** Small avatar(s) for who a request waits on — photo when available, initials otherwise, icon for teams. */
+function WaitAvatar({ w, users }: { w: ReturnType<typeof waitingOn>; users: { id: string; name: string; avatar?: string }[] }) {
+  if (!w.ids?.length) {
+    const Icon = w.kind === "supplier" ? Truck : w.kind === "team" ? Building2 : Minus;
+    return <span aria-hidden className={cn(AV, "bg-subtle text-muted-foreground")}><Icon className="size-3" /></span>;
+  }
+  const list = w.ids.slice(0, 2).map((id) => users.find((u) => u.id === id)).filter(Boolean) as { id: string; name: string; avatar?: string }[];
+  return (
+    <span aria-hidden className="flex shrink-0 -space-x-1.5">
+      {list.map((u) => u.avatar
+        ? <img key={u.id} src={u.avatar} alt="" className={cn(AV, "object-cover")} />
+        : <span key={u.id} className={cn(AV, w.you ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary")}>{initials(u.name)}</span>)}
+    </span>
+  );
 }
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
@@ -199,9 +217,12 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                           </span>
                         )}
                       </span>
-                      <span className="min-w-0">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <WaitAvatar w={w} users={db.users} />
+                        <span className="min-w-0">
                         <span className={cn("block truncate text-[13px]", w.you ? "font-medium text-primary" : "text-foreground/85")} title={w.who}>{w.who}</span>
                         {w.what && <span className="block truncate text-[11px] text-muted-foreground" title={w.what}>{w.what}</span>}
+                        </span>
                       </span>
                       <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
                       <span className={cn(PIN, "bg-card text-[13px] text-foreground/80 group-hover:bg-subtle")} title={r.businessUnit}><span className="truncate">{r.businessUnit || "—"}</span></span>
