@@ -24,7 +24,29 @@ const KPIS: Kpi[] = [
   { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
 ];
 
-const GRID = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-4 sm:grid-cols-[16px_minmax(0,1fr)_190px_96px] md:grid-cols-[16px_minmax(0,1fr)_100px_190px_96px]";
+const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] items-center gap-x-4";
+/** Pinned last column; a soft left edge signals rows scroll beneath it. */
+const PIN = "sticky right-0 -my-2.5 -mr-4 flex min-w-0 items-center self-stretch border-l border-border/60 py-2.5 pl-4 pr-4";
+
+/** Who the request is currently waiting on, derived from status and the live approval route. */
+function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean } {
+  const name = (id: string) => (id === meId ? "You" : users.find((u) => u.id === id)?.name ?? "Approver");
+  const mine = r.requesterId === meId;
+  switch (r.status) {
+    case "draft": return mine ? { who: "You", what: "Complete & submit", you: true } : { who: name(r.requesterId), what: "Completing draft" };
+    case "changes": return mine ? { who: "You", what: "Address requested changes", you: true } : { who: name(r.requesterId), what: "Making changes" };
+    case "pending": {
+      const stage = r.route.find((s) => s.approvals.some((a) => a.status === "pending"));
+      const ids = stage?.approvals.filter((a) => a.status === "pending").map((a) => a.userId) ?? [];
+      if (!ids.length) return { who: "Approvers", what: "Approval" };
+      return { who: ids.length > 1 ? `${name(ids[0])} +${ids.length - 1}` : name(ids[0]), what: `${stage?.name ?? "Approval"}${ids.length > 1 ? (stage?.mode === "any" ? " · any one" : " · all") : ""}`, you: ids.includes(meId) };
+    }
+    case "approved": return { who: "Procurement", what: "Create purchase order" };
+    case "ordered": return { who: "Supplier", what: "Delivery" };
+    case "partial": return { who: "Supplier", what: "Remaining delivery" };
+    default: return { who: "—", what: "Nothing pending" };
+  }
+}
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 
@@ -139,37 +161,54 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
               <button className="ml-auto text-xs text-muted-foreground hover:text-foreground" onClick={() => setSel([])}>Clear</button>
             </div>
           ) : null}
-          {/* Column labels make each value self-explanatory */}
-          <div className={cn(GRID, "mt-3 border-y border-border/60 bg-subtle/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
-            <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
-            <span>Request</span>
-            <span className="hidden md:block">Business unit</span>
-            <span className="hidden sm:block">Status & step</span>
-            <span className="text-right">Total</span>
+          {/* Scrolls horizontally when space is short; Business unit stays pinned on the right */}
+          <div className="mt-3 overflow-x-auto">
+            <div className="min-w-[780px]">
+              <div className={cn(GRID, "border-y border-border/60 bg-subtle px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
+                <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
+                <span>Request</span>
+                <span>Progress</span>
+                <span>Waiting on</span>
+                <span className="text-right">Total</span>
+                <span className={cn(PIN, "-my-1.5 py-1.5 bg-subtle")}>Business unit</span>
+              </div>
+              <ul className="divide-y divide-border/60">
+                {shown.map((r) => {
+                  const step = STEP_OF[r.status] ?? 0;
+                  const pct = Math.round((step / STEPS.length) * 100);
+                  const n = r.items.filter((i) => !i.declined).length;
+                  const picked = sel.includes(r.id);
+                  const w = waitingOn(r, me.id, db.users);
+                  const tone = r.status === "changes" ? "bg-attention" : r.status === "pending" ? "bg-pending" : step >= 3 ? "bg-success" : "bg-primary";
+                  return (
+                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group cursor-pointer bg-card px-4 py-2.5 transition-colors hover:bg-subtle")}>
+                      <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
+                        <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
+                      </span>
+                      <span className="min-w-0" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
+                        <StatusBadge status={r.status} />
+                        {step > 0 && (
+                          <span className="mt-1.5 flex items-center gap-2" aria-label={`${pct}% complete`}>
+                            <span className="h-1 flex-1 overflow-hidden rounded-full bg-border"><span className={cn("block h-full rounded-full", tone)} style={{ width: `${pct}%` }} /></span>
+                            <span className="num w-7 text-right text-[11px] text-muted-foreground">{pct}%</span>
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <span className={cn("block truncate text-[13px]", w.you ? "font-medium text-primary" : "text-foreground/85")} title={w.who}>{w.who}</span>
+                        {w.what && <span className="block truncate text-[11px] text-muted-foreground" title={w.what}>{w.what}</span>}
+                      </span>
+                      <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
+                      <span className={cn(PIN, "bg-card text-[13px] text-foreground/80 group-hover:bg-subtle")} title={r.businessUnit}><span className="truncate">{r.businessUnit || "—"}</span></span>
+                    </li>
+                  );
+                })}
+                {!listed.length && <li className="px-4 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
+              </ul>
+            </div>
           </div>
-          <ul className="divide-y divide-border/60">
-            {shown.map((r) => {
-              const step = STEP_OF[r.status] ?? 0;
-              const n = r.items.filter((i) => !i.declined).length;
-              const picked = sel.includes(r.id);
-              return (
-                <li key={r.id} onClick={() => open(r)} className={cn(GRID, "cursor-pointer px-4 py-2.5 transition-colors hover:bg-subtle", picked && "bg-primary/[0.03]")}>
-                  <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
-                    <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
-                  </span>
-                  <span className="hidden truncate text-[13px] text-foreground/80 md:block">{r.businessUnit || "—"}</span>
-                  <span className="hidden min-w-0 sm:block" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
-                    <StatusBadge status={r.status} />
-                    {step > 0 && <span className="mt-1.5 flex items-center gap-2" aria-label={`Step ${step} of 5: ${STEPS[step - 1]}`}><span className="flex flex-1 gap-0.5">{STEPS.map((s, i) => <span key={s} className={cn("h-1 flex-1 rounded-full", i < step ? (r.status === "changes" ? "bg-attention" : "bg-primary") : "bg-border")} />)}</span><span className="whitespace-nowrap text-[11px] text-muted-foreground">Step {step}/5</span></span>}
-                  </span>
-                  <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
-                </li>
-              );
-            })}
-            {!listed.length && <li className="px-4 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
-          </ul>
           {listed.length > 0 && (
             <button onClick={() => onOpenList(active.key === "open" ? undefined : active.statuses[0])} className="flex w-full items-center justify-center gap-1 border-t border-border/70 py-2.5 text-xs font-medium text-primary hover:bg-subtle">
               View all {listed.length} in list <ArrowRight className="size-3.5" />
