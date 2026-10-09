@@ -1,0 +1,253 @@
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, AtSign, Stamp } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Money, StatusBadge } from "@/components/pd/bits";
+import { Select } from "@/components/pd/form";
+import { smartDate, totals } from "@/lib/pd/engine";
+import { stockFor } from "@/lib/pd/inventory";
+import { createDraft, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
+import type { LineItem, PRequest, Status } from "@/lib/pd/types";
+import { cn } from "@/lib/utils";
+
+/** Lifecycle used for the progress meter: Draft → Approval → Approved → Ordered → Received. */
+const STEPS = ["Draft", "Approval", "Approved", "Ordered", "Received"];
+const STEP_OF: Partial<Record<Status, number>> = { draft: 1, changes: 1, pending: 2, approved: 3, ordered: 4, partial: 4, received: 5, closed: 5 };
+const OPEN: Status[] = ["draft", "changes", "pending", "approved", "ordered", "partial"];
+
+type Kpi = { key: string; label: string; statuses: Status[]; dot: string };
+const KPIS: Kpi[] = [
+  { key: "open", label: "Open requests", statuses: OPEN, dot: "bg-muted-foreground/50" },
+  { key: "draft", label: "Drafts", statuses: ["draft", "changes"], dot: "bg-muted-foreground/50" },
+  { key: "pending", label: "Pending approval", statuses: ["pending"], dot: "bg-pending" },
+  { key: "approved", label: "Approved", statuses: ["approved"], dot: "bg-success" },
+  { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
+];
+
+const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
+
+export function RequesterDashboard({ onOpenList }: { onOpenList: (status?: Status) => void }) {
+  const db = useDB();
+  const me = useMe()!;
+  const nav = useNavigate();
+  const [unit, setUnit] = useState("all");
+  const [kpi, setKpi] = useState("open");
+  const [q, setQ] = useState("");
+  const [vq, setVq] = useState("");
+  const [bq, setBq] = useState("");
+
+  const mine = useMemo(() => db.requests.filter((r) => r.requesterId === me.id && (unit === "all" || r.businessUnit === unit)), [db, me.id, unit]);
+  const active = KPIS.find((k) => k.key === kpi)!;
+  const listed = mine
+    .filter((r) => active.statuses.includes(r.status))
+    .filter((r) => !q || `${r.id} ${r.title}`.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const drafts = mine.filter((r) => r.status === "draft").length;
+
+  const open = (r: PRequest) => ["draft", "changes"].includes(r.status)
+    ? nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })
+    : nav({ to: "/app/requests/$id", params: { id: r.id } });
+
+  // Needs attention — derived from my requests and mentions.
+  const attention = useMemo(() => {
+    const out: { id: string; r: PRequest; icon: typeof Undo2; text: string; tone: string }[] = [];
+    db.requests.forEach((r) => {
+      if (r.requesterId === me.id && r.status === "changes") out.push({ id: r.id + "c", r, icon: Undo2, text: "Returned for changes", tone: "text-attention" });
+      if (r.requesterId === me.id && ["ordered", "partial"].includes(r.status)) out.push({ id: r.id + "d", r, icon: PackageCheck, text: "Delivery needs a receipt", tone: "text-transit" });
+      if (r.route.some((s) => s.approvals.some((a) => a.userId === me.id && a.status === "pending")) && r.status === "pending") out.push({ id: r.id + "a", r, icon: Stamp, text: "Needs your approval", tone: "text-pending" });
+      if (r.requesterId !== me.id && r.comments.some((c) => c.text.toLowerCase().includes(`@${me.name.split(" ")[0].toLowerCase()}`))) out.push({ id: r.id + "m", r, icon: AtSign, text: "You were mentioned", tone: "text-primary" });
+    });
+    return out.slice(0, 6);
+  }, [db, me]);
+
+  // Vendors I buy from, with catalog item counts.
+  const vendors = useMemo(() => {
+    const used = new Map<string, number>();
+    mine.forEach((r) => r.items.forEach((i) => used.set(i.vendorId, (used.get(i.vendorId) ?? 0) + 1)));
+    return db.vendors
+      .filter((v) => used.has(v.id) || v.preferred)
+      .map((v) => ({ v, items: db.catalog.filter((c) => c.vendorId === v.id).length, used: used.get(v.id) ?? 0 }))
+      .filter((x) => x.v.name.toLowerCase().includes(vq.toLowerCase()))
+      .sort((a, b) => b.used - a.used);
+  }, [db, mine, vq]);
+
+  // Buy again — distinct items from my past requests, latest first.
+  const buyAgain = useMemo(() => {
+    const seen = new Map<string, { line: LineItem; at: string }>();
+    [...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).forEach((r) => r.items.forEach((l) => {
+      const k = l.catalogId ?? l.description.toLowerCase();
+      if (!seen.has(k)) seen.set(k, { line: l, at: r.createdAt });
+    }));
+    return [...seen.values()].filter(({ line }) => `${line.name ?? ""} ${line.description}`.toLowerCase().includes(bq.toLowerCase()));
+  }, [mine, bq]);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="pd-h1">{greet()}, {me.name.split(" ")[0]}</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{drafts ? <>You have <button className="font-medium text-primary hover:underline" onClick={() => setKpi("draft")}>{drafts} draft{drafts === 1 ? "" : "s"}</button> to submit.</> : "All your drafts are submitted."}</p>
+        </div>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">Business unit
+          <Select className="w-44" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+        </label>
+      </div>
+
+      {/* KPI tiles — each one filters the request list below */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {KPIS.map((k) => {
+          const rs = mine.filter((r) => k.statuses.includes(r.status));
+          const amt = k.key === "pending" ? rs.reduce((s, r) => s + totals(r).total, 0) : 0;
+          return (
+            <button key={k.key} onClick={() => setKpi(k.key)} aria-pressed={kpi === k.key}
+              className={cn("rounded-lg border bg-surface px-4 py-3 text-left transition-all hover:border-primary/40", kpi === k.key ? "border-primary/50 ring-2 ring-primary/10" : "border-border")}>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className={cn("size-1.5 rounded-full", k.dot)} />{k.label}</span>
+              <span className="mt-1 flex items-baseline gap-2"><span className="num text-2xl font-semibold">{rs.length}</span>{amt > 0 && <Money v={amt} className="truncate text-xs text-muted-foreground" />}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Requests */}
+        <section className="pd-panel min-w-0">
+          <header className="flex flex-wrap items-center gap-2 px-4 pt-4">
+            <h2 className="text-sm font-semibold">{active.label}</h2>
+            <span className="num rounded-full bg-subtle px-1.5 text-[11px] text-muted-foreground">{listed.length}</span>
+            <div className="relative ml-auto w-full sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+          </header>
+          <ul className="mt-2 divide-y divide-border/70 px-2 pb-1">
+            {listed.slice(0, 6).map((r) => {
+              const step = STEP_OF[r.status] ?? 0;
+              const n = r.items.filter((i) => !i.declined).length;
+              return (
+                <li key={r.id}>
+                  <button onClick={() => open(r)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-subtle sm:grid-cols-[minmax(0,1fr)_150px_110px]">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{r.title || "Untitled request"}</span>
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="num">{r.id}</span>·<span>{smartDate(r.updatedAt)}</span></span>
+                    </span>
+                    <span className="hidden sm:block" title={`${STEPS[step - 1] ?? "—"} · step ${step} of 5`}>
+                      <span className="flex gap-0.5">{STEPS.map((s, i) => <span key={s} className={cn("h-1 flex-1 rounded-full", i < step ? (r.status === "changes" ? "bg-attention" : "bg-primary") : "bg-border")} />)}</span>
+                      <span className="mt-1.5 flex items-center gap-1.5"><StatusBadge status={r.status} /></span>
+                    </span>
+                    <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
+                  </button>
+                </li>
+              );
+            })}
+            {!listed.length && <li className="px-2 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
+          </ul>
+          {listed.length > 0 && (
+            <button onClick={() => onOpenList(active.key === "open" ? undefined : active.statuses[0])} className="flex w-full items-center justify-center gap-1 border-t border-border/70 py-2.5 text-xs font-medium text-primary hover:bg-subtle">
+              View all {listed.length} in list <ArrowRight className="size-3.5" />
+            </button>
+          )}
+        </section>
+
+        {/* Needs attention */}
+        <section className="pd-panel">
+          <h2 className="px-4 pt-4 text-sm font-semibold">Needs your attention</h2>
+          {attention.length ? (
+            <ul className="mt-2 px-2 pb-2">
+              {attention.map((a) => (
+                <li key={a.id}>
+                  <button onClick={() => open(a.r)} className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-subtle">
+                    <a.icon className={cn("size-4 shrink-0", a.tone)} />
+                    <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium">{a.r.title || "Untitled request"}</span><span className="block text-xs text-muted-foreground">{a.text}</span></span>
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-4 pb-5 pt-6 text-center">
+              <CheckCircle2 className="mx-auto size-8 text-success" strokeWidth={1.5} />
+              <p className="mt-2 text-sm font-medium">You're all caught up</p>
+              <p className="text-xs text-muted-foreground">Nothing needs you right now.</p>
+              <ul className="mt-4 space-y-1.5 rounded-md bg-subtle px-3 py-3 text-left text-xs text-muted-foreground">
+                <li className="text-[11px] font-medium">Items show here when:</li>
+                <li className="flex items-center gap-2"><Stamp className="size-3.5" />Something needs your approval</li>
+                <li className="flex items-center gap-2"><AtSign className="size-3.5" />Someone mentions you</li>
+                <li className="flex items-center gap-2"><Undo2 className="size-3.5" />A request of yours is returned</li>
+                <li className="flex items-center gap-2"><PackageCheck className="size-3.5" />A delivery needs a receipt</li>
+              </ul>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+        {/* Vendors */}
+        <section className="pd-panel">
+          <header className="flex items-center gap-2 px-4 pt-4">
+            <h2 className="text-sm font-semibold">Your vendors</h2>
+            <div className="relative ml-auto w-36"><Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" /><input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search" value={vq} onChange={(e) => setVq(e.target.value)} /></div>
+          </header>
+          <ul className="mt-2 max-h-80 overflow-y-auto px-2 pb-2">
+            {vendors.map(({ v, items }) => (
+              <li key={v.id} className="flex items-center gap-3 rounded-md px-2 py-2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-subtle text-[11px] font-semibold text-foreground/70">{v.name.slice(0, 2).toUpperCase()}</span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium">{v.name}</span><span className="block text-xs text-muted-foreground">Catalog · {items} item{items === 1 ? "" : "s"}{v.preferred && " · Preferred"}</span></span>
+              </li>
+            ))}
+            {!vendors.length && <li className="px-2 py-6 text-center text-xs text-muted-foreground">No vendors found.</li>}
+          </ul>
+        </section>
+
+        {/* Buy again */}
+        <section className="pd-panel min-w-0">
+          <header className="flex items-center gap-2 px-4 pt-4">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold"><RotateCcw className="size-3.5 text-muted-foreground" />Buy again</h2>
+            <div className="relative ml-auto w-44"><Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" /><input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search items" value={bq} onChange={(e) => setBq(e.target.value)} /></div>
+          </header>
+          <ul className="mt-2 max-h-80 divide-y divide-border/70 overflow-y-auto px-2 pb-2">
+            {buyAgain.map(({ line, at }) => <BuyAgainRow key={line.id} line={line} at={at} />)}
+            {!buyAgain.length && <li className="px-2 py-8 text-center text-xs text-muted-foreground">Items from your past requests show here.</li>}
+          </ul>
+        </section>
+      </div>
+      <p className="text-center text-xs text-muted-foreground"><Link to="/app/requests" className="hover:text-foreground" onClick={(e) => { e.preventDefault(); onOpenList(); }}>Open the full request list</Link></p>
+    </div>
+  );
+}
+
+function BuyAgainRow({ line, at }: { line: LineItem; at: string }) {
+  const db = useDB();
+  const me = useMe()!;
+  const nav = useNavigate();
+  const [qty, setQty] = useState(line.qty);
+  const vendor = db.vendors.find((v) => v.id === line.vendorId)?.name;
+  const stock = stockFor(line.catalogId);
+  const reorder = () => {
+    const id = createDraft(me.id, true);
+    updateRequest(id, (r) => {
+      r.title = line.name ?? line.description;
+      r.items.push({ ...line, id: `l_${Date.now()}`, qty, declined: undefined, fulfillment: "purchase" });
+      log(r, `Reordered "${line.name ?? line.description}" × ${qty}`, "create", me.id);
+    });
+    toast.success("Draft created", { description: "Review the details, then submit." });
+    nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } });
+  };
+  return (
+    <li className="flex flex-wrap items-center gap-3 px-2 py-2.5 sm:flex-nowrap">
+      <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-subtle text-muted-foreground">
+        {line.imageUrl ? <img src={line.imageUrl} alt="" className="size-full object-cover" /> : <Package className="size-4" strokeWidth={1.5} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-medium">{line.name ?? line.description}</span>
+        <span className="block truncate text-xs text-muted-foreground">{stock && stock.onHand > 0 && <span className="text-success">{stock.onHand} in stock · </span>}{vendor} · {smartDate(at)}</span>
+      </span>
+      <Money v={line.unitPrice} className="w-20 text-right text-[13px]" />
+      <span className="inline-flex h-8 items-center rounded-md border border-border">
+        <button aria-label="Decrease" disabled={qty <= 1} onClick={() => setQty((x) => Math.max(1, x - 1))} className="grid size-7 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40"><Minus className="size-3" /></button>
+        <span className="num w-7 text-center text-[13px]">{qty}</span>
+        <button aria-label="Increase" onClick={() => setQty((x) => x + 1)} className="grid size-7 place-items-center text-muted-foreground hover:text-foreground"><Plus className="size-3" /></button>
+      </span>
+      <button onClick={reorder} className="h-8 rounded-md border border-border px-3 text-[13px] font-medium text-primary transition-colors hover:border-primary/40 hover:bg-primary/5">Reorder</button>
+    </li>
+  );
+}
