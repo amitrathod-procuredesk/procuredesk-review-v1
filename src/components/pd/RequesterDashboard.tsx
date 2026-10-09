@@ -6,7 +6,7 @@ import { Money, StatusBadge } from "@/components/pd/bits";
 import { Select } from "@/components/pd/form";
 import { smartDate, totals } from "@/lib/pd/engine";
 import { stockFor } from "@/lib/pd/inventory";
-import { createDraft, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
+import { createDraft, log, mutate, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { LineItem, PRequest, Status } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,8 @@ const KPIS: Kpi[] = [
   { key: "approved", label: "Approved", statuses: ["approved"], dot: "bg-success" },
   { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
 ];
+
+const GRID = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-4 sm:grid-cols-[16px_minmax(0,1fr)_190px_96px] md:grid-cols-[16px_minmax(0,1fr)_100px_190px_96px]";
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 
@@ -42,6 +44,14 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
     .filter((r) => active.statuses.includes(r.status))
     .filter((r) => !q || `${r.id} ${r.title}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const shown = listed.slice(0, 6);
+  const [sel, setSel] = useState<string[]>([]);
+  const cancelSelected = () => {
+    let n = 0;
+    mutate((d) => d.requests.forEach((r) => { if (sel.includes(r.id) && ["draft", "pending", "changes"].includes(r.status)) { r.status = "cancelled"; log(r, "Request cancelled", "system", me.id); n++; } }));
+    toast(n ? `${n} request${n === 1 ? "" : "s"} cancelled` : "None of the selected requests can be cancelled", { description: n < sel.length ? `${sel.length - n} skipped — already approved or ordered` : undefined });
+    setSel([]);
+  };
   const drafts = mine.filter((r) => ["draft", "changes"].includes(r.status)).length;
 
   const open = (r: PRequest) => ["draft", "changes"].includes(r.status)
@@ -122,27 +132,43 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
               <input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
           </header>
-          <ul className="mt-2 divide-y divide-border/70 px-2 pb-1">
-            {listed.slice(0, 6).map((r) => {
+          {sel.length > 0 ? (
+            <div className="mx-4 mt-3 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
+              <span className="font-medium text-primary">{sel.length} selected</span>
+              <button className="ml-2 rounded px-2 py-1 font-medium text-destructive hover:bg-destructive/10" onClick={cancelSelected}>Cancel eligible</button>
+              <button className="ml-auto text-xs text-muted-foreground hover:text-foreground" onClick={() => setSel([])}>Clear</button>
+            </div>
+          ) : null}
+          {/* Column labels make each value self-explanatory */}
+          <div className={cn(GRID, "mt-3 border-y border-border/60 bg-subtle/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
+            <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
+            <span>Request</span>
+            <span className="hidden md:block">Business unit</span>
+            <span className="hidden sm:block">Status & step</span>
+            <span className="text-right">Total</span>
+          </div>
+          <ul className="divide-y divide-border/60">
+            {shown.map((r) => {
               const step = STEP_OF[r.status] ?? 0;
               const n = r.items.filter((i) => !i.declined).length;
+              const picked = sel.includes(r.id);
               return (
-                <li key={r.id}>
-                  <button onClick={() => open(r)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-subtle sm:grid-cols-[minmax(0,1fr)_150px_110px]">
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">{r.title || "Untitled request"}</span>
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="num">{r.id}</span>·<span>{smartDate(r.updatedAt)}</span></span>
-                    </span>
-                    <span className="hidden sm:block" title={`${STEPS[step - 1] ?? "—"} · step ${step} of 5`}>
-                      <span className="flex gap-0.5">{STEPS.map((s, i) => <span key={s} className={cn("h-1 flex-1 rounded-full", i < step ? (r.status === "changes" ? "bg-attention" : "bg-primary") : "bg-border")} />)}</span>
-                      <span className="mt-1.5 flex items-center gap-1.5"><StatusBadge status={r.status} /></span>
-                    </span>
-                    <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
-                  </button>
+                <li key={r.id} onClick={() => open(r)} className={cn(GRID, "cursor-pointer px-4 py-2.5 transition-colors hover:bg-subtle", picked && "bg-primary/[0.03]")}>
+                  <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
+                    <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
+                  </span>
+                  <span className="hidden truncate text-[13px] text-foreground/80 md:block">{r.businessUnit || "—"}</span>
+                  <span className="hidden min-w-0 sm:block" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
+                    <StatusBadge status={r.status} />
+                    {step > 0 && <span className="mt-1.5 flex items-center gap-2" aria-label={`Step ${step} of 5: ${STEPS[step - 1]}`}><span className="flex flex-1 gap-0.5">{STEPS.map((s, i) => <span key={s} className={cn("h-1 flex-1 rounded-full", i < step ? (r.status === "changes" ? "bg-attention" : "bg-primary") : "bg-border")} />)}</span><span className="whitespace-nowrap text-[11px] text-muted-foreground">Step {step}/5</span></span>}
+                  </span>
+                  <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
                 </li>
               );
             })}
-            {!listed.length && <li className="px-2 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
+            {!listed.length && <li className="px-4 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
           </ul>
           {listed.length > 0 && (
             <button onClick={() => onOpenList(active.key === "open" ? undefined : active.statuses[0])} className="flex w-full items-center justify-center gap-1 border-t border-border/70 py-2.5 text-xs font-medium text-primary hover:bg-subtle">
