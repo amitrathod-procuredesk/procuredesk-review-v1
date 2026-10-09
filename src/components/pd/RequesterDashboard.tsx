@@ -24,7 +24,7 @@ const KPIS: Kpi[] = [
   { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
 ];
 
-const GRID = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-4 sm:grid-cols-[16px_minmax(0,1fr)_150px_100px] md:grid-cols-[16px_minmax(0,1fr)_130px_150px_100px]";
+const GRID = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-4 sm:grid-cols-[16px_minmax(0,1fr)_190px_96px] md:grid-cols-[16px_minmax(0,1fr)_100px_190px_96px]";
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 
@@ -144,7 +144,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
             <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
             <span>Request</span>
             <span className="hidden md:block">Business unit</span>
-            <span className="hidden sm:block">Progress</span>
+            <span className="hidden sm:block">Status & step</span>
             <span className="text-right">Total</span>
           </div>
           <ul className="divide-y divide-border/60">
@@ -157,11 +157,11 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                   <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="num">{r.id}</span>·<span>Updated {smartDate(r.updatedAt)}</span></span>
+                    <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · Updated {smartDate(r.updatedAt)}</span>
                   </span>
                   <span className="hidden truncate text-[13px] text-foreground/80 md:block">{r.businessUnit || "—"}</span>
                   <span className="hidden min-w-0 sm:block" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
-                    <span className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="num text-[11px] text-muted-foreground">{step ? `${step}/5` : ""}</span></span>
+                    <span className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="num text-[11px] text-muted-foreground">{step ? `Step ${step} of 5` : ""}</span></span>
                     {step > 0 && <span className="mt-1.5 flex gap-0.5" aria-label={`Step ${step} of 5: ${STEPS[step - 1]}`}>{STEPS.map((s, i) => <span key={s} className={cn("h-1 flex-1 rounded-full", i < step ? (r.status === "changes" ? "bg-attention" : "bg-primary") : "bg-border")} />)}</span>}
                   </span>
                   <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
