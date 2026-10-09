@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote, Users, FolderKanban } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -108,7 +108,6 @@ function Detail() {
             <RequestTitle text={r.title || "Untitled request"} />
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge status={r.status} />
-              <span>· {dept?.name ?? "—"}</span><span>· {r.project || "No project"}</span>
               {r.urgent && <span className="pd-badge st-rejected">Urgent</span>}
               {r.tags?.map((t) => <span key={t} className="inline-flex h-5 items-center rounded-full bg-subtle px-2 text-[11px] font-medium text-foreground/70">{t}</span>)}
             </p>
@@ -145,7 +144,7 @@ function Detail() {
             {(() => {
               type Fact = [typeof Building2, string, string | undefined, string?];
               const opts: Fact[] = ([[r.urgent, "Urgent", "text-destructive"], [r.delayed, "Delayed release", ""], [r.blanket, "Blanket order", ""]] as const).filter(([on]) => on).map(([, t, c]) => [Zap, "Option", t, c]);
-              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? `Needed by ${smartDate(r.requiredBy)}` : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo && `Quote ${r.quoteNo}`], ...opts];
+              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [Users, "Department", dept?.name], [FolderKanban, "Project", r.project], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? `Needed by ${smartDate(r.requiredBy)}` : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo && `Quote ${r.quoteNo}`], ...opts];
               const shown = facts.filter(([, , v]) => v);
               return (
                 <>
