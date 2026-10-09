@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, Money, StatusBadge } from "@/components/pd/bits";
+import { RequesterDashboard } from "@/components/pd/RequesterDashboard";
 import { budgetStatus, smartDate, STATUS_LABEL, supplierBreakdown, totals } from "@/lib/pd/engine";
 import { createDraft, log, mutate, useDB, useMe } from "@/lib/pd/store";
 import type { DB, PRequest, Status } from "@/lib/pd/types";
@@ -57,6 +58,7 @@ function Requests() {
   const [sel, setSel] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const PER = 15;
+  const [view, setView] = useState<"dashboard" | "list">(search.q ? "list" : "dashboard");
 
   const rows = useMemo(() => {
     const f = nlFilter(db, q);
@@ -98,11 +100,25 @@ function Requests() {
     setSel([]);
   };
 
+  const tabs = (
+    <div className="flex rounded-md bg-subtle p-0.5" role="tablist">
+      {(["dashboard", "list"] as const).map((v) => <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={"rounded-[5px] px-3 py-1 text-[13px] capitalize transition-colors " + (view === v ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>{v}</button>)}
+    </div>
+  );
+  const newBtn = me.role !== "approver" && <Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button>;
+
+  if (view === "dashboard") return (
+    <div className="space-y-4 p-4 md:p-8">
+      <div className="flex items-center justify-between gap-3">{tabs}{newBtn}</div>
+      <RequesterDashboard onOpenList={(st) => { setStatus(st ?? "all"); setScope("mine"); setPage(0); setView("list"); }} />
+    </div>
+  );
+
   return (
     <div className="space-y-4 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="pd-h1">Purchase requests</h1>
-        {me.role !== "approver" && <Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button>}
+        <div className="flex items-center gap-3">{tabs}<h1 className="pd-h1">Purchase requests</h1></div>
+        {newBtn}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
