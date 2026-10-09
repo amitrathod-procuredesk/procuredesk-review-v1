@@ -1,13 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
-import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Search, Send, Tag, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox, TextArea, TextInput } from "@/components/pd/form";
 import { ActivityLog } from "@/components/pd/RequestPanels";
-import { supplierBreakdown } from "@/lib/pd/engine";
+import { smartTime, supplierBreakdown } from "@/lib/pd/engine";
 import { copyRequest, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
@@ -65,16 +66,22 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   const tags = r.tags ?? [];
 
   const items = [
-    { key: "copy", label: "Copy request", hint: "Start a new draft with the same items", icon: Copy, show: true },
-    { key: "print", label: "Print", hint: "Print or save as PDF", icon: Printer, show: true },
-    { key: "rfq", label: "Create RFQ", hint: r.rfqs?.length ? `${r.rfqs.length} sent` : "Request quotes from suppliers", icon: Send, show: canRfq },
-    { key: "tags", label: "Manage tags", hint: tags.length ? tags.join(", ") : "Organise and find requests faster", icon: Tag, show: true },
-    { key: "close", label: "Mark as closed", hint: "Fulfilled — no further action", icon: CircleCheck, show: canClose },
-    { key: "cancel", label: "Cancel request", hint: "Release the approved budget", icon: CircleX, show: canCancel, danger: true },
+    { key: "copy", group: 1, label: "Copy request", hint: "Start a new draft with the same items", icon: Copy, show: true },
+    { key: "print", group: 1, label: "Print", hint: "Print or save as PDF", icon: Printer, show: true },
+    { key: "rfq", group: 2, label: "Create RFQ", hint: "Request quotes from suppliers", meta: r.rfqs?.length ? `${r.rfqs.length} sent` : undefined, icon: Send, show: canRfq },
+    { key: "tags", group: 2, label: "Manage tags", hint: tags.length ? tags.join(", ") : "Organise and find requests faster", meta: tags.length ? String(tags.length) : undefined, icon: Tag, show: true },
+    { key: "close", group: 3, label: "Mark as closed", hint: "Fulfilled — no further action", icon: CircleCheck, show: canClose },
+    { key: "cancel", group: 3, label: "Cancel request", hint: "Release the approved budget", icon: CircleX, show: canCancel, danger: true },
   ].filter((i) => i.show);
+  const [q, setQ] = useState("");
+  const [active, setActive] = useState(0);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const shown = items.filter((i) => i.label.toLowerCase().includes(q.trim().toLowerCase()));
+  const lastEvent = r.activity.reduce<(typeof r.activity)[number] | undefined>((a, e) => (!a || e.at > a.at ? e : a), undefined);
 
   const run = (key: string) => {
     setOpen(false);
+    setQ("");
     if (key === "copy") {
       const id = copyRequest(r.id, me.id);
       toast.success(`Copied to ${id}`, { description: "Opening the new draft…" });
@@ -119,33 +126,49 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5"><MoreHorizontal className="size-4" /> Actions</Button>
-
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full bg-surface p-0 sm:max-w-[360px] [&>button]:hidden">
-          <SheetHeader className="flex-row items-center justify-between space-y-0 px-5 pb-2 pt-5 text-left">
-            <SheetTitle className="text-base">Actions</SheetTitle>
-            <button onClick={() => setOpen(false)} aria-label="Close" className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><X className="size-4" /></button>
-          </SheetHeader>
-          <SheetDescription className="sr-only">Actions for {r.id}</SheetDescription>
-          <ul className="space-y-0.5 px-3 pb-5 pt-1">
-            {items.map((i, idx) => (
-              <li key={i.key} className="animate-in fade-in slide-in-from-right-2 fill-mode-both" style={{ animationDelay: `${idx * 30}ms` }}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(""); }}>
+        <PopoverTrigger asChild>
+          <Button size="sm" className="gap-1.5" aria-haspopup="menu"><MoreHorizontal className="size-4" /> Actions</Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" sideOffset={6} className="w-64 p-1.5" onOpenAutoFocus={(e) => { e.preventDefault(); searchRef.current?.focus(); }}>
+          <div className="relative mb-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={searchRef}
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setActive(0); }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, shown.length - 1)); }
+                else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+                else if (e.key === "Enter" && shown[active]) { e.preventDefault(); run(shown[active].key); }
+              }}
+              placeholder="Search actions…"
+              aria-label="Search actions"
+              className="h-8 w-full rounded-md bg-subtle pl-8 pr-2 text-[13px] outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <ul role="menu" aria-label={`Actions for ${r.id}`}>
+            {shown.map((i, idx) => (
+              <li key={i.key} role="none">
+                {idx > 0 && shown[idx - 1].group !== i.group && <div className="mx-1 my-1 h-px bg-border" />}
                 <button
+                  role="menuitem"
+                  title={i.hint}
+                  onMouseEnter={() => setActive(idx)}
                   onClick={() => run(i.key)}
-                  className={cn("group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-subtle focus-visible:bg-subtle focus-visible:outline-none", i.danger && "text-destructive")}
+                  className={cn("flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] transition-colors", idx === active && "bg-subtle", i.danger ? "text-destructive" : "text-foreground")}
                 >
-                  <i.icon className={cn("size-[18px] shrink-0 text-muted-foreground transition-colors group-hover:text-foreground", i.danger && "text-destructive group-hover:text-destructive")} strokeWidth={1.6} />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{i.label}</span>
-                    <span className={cn("block truncate text-xs text-muted-foreground", i.danger && "text-destructive/70")}>{i.hint}</span>
-                  </span>
+                  <i.icon className={cn("size-4 shrink-0", i.danger ? "text-destructive" : "text-muted-foreground")} strokeWidth={1.7} />
+                  <span className="min-w-0 flex-1 truncate">{i.label}</span>
+                  {i.meta && <span className="num shrink-0 text-[11px] text-muted-foreground">{i.meta}</span>}
                 </button>
               </li>
             ))}
+            {!shown.length && <li className="px-2 py-3 text-center text-xs text-muted-foreground">No matching actions</li>}
           </ul>
-        </SheetContent>
-      </Sheet>
+          {lastEvent && <p className="mt-1 truncate border-t border-border px-2 pb-0.5 pt-1.5 text-[11px] text-muted-foreground">Last updated {smartTime(lastEvent.at)}</p>}
+        </PopoverContent>
+      </Popover>
 
       <Dialog open={!!dialog} onOpenChange={(o) => !o && setDialog(null)}>
         <DialogContent className="sm:max-w-md">
