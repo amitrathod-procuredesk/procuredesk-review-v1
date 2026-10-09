@@ -108,9 +108,8 @@ function Requests() {
   const newBtn = me.role !== "approver" && <Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button>;
 
   if (view === "dashboard") return (
-    <div className="space-y-4 p-4 md:p-8">
-      <div className="flex items-center justify-between gap-3">{tabs}{newBtn}</div>
-      <RequesterDashboard onOpenList={(st) => { setStatus(st ?? "all"); setScope("mine"); setPage(0); setView("list"); }} />
+    <div className="p-4 md:px-8 md:py-6">
+      <RequesterDashboard tabs={tabs} action={newBtn} onOpenList={(st) => { setStatus(st ?? "all"); setScope("mine"); setPage(0); setView("list"); }} />
     </div>
   );
 

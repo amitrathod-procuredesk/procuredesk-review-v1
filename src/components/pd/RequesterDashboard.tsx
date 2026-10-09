@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, AtSign, Stamp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
 import { Select } from "@/components/pd/form";
@@ -26,7 +26,7 @@ const KPIS: Kpi[] = [
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 
-export function RequesterDashboard({ onOpenList }: { onOpenList: (status?: Status) => void }) {
+export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (status?: Status) => void; tabs?: ReactNode; action?: ReactNode }) {
   const db = useDB();
   const me = useMe()!;
   const nav = useNavigate();
@@ -82,30 +82,33 @@ export function RequesterDashboard({ onOpenList }: { onOpenList: (status?: Statu
   }, [mine, bq]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="pd-h1">{greet()}, {me.name.split(" ")[0]}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{drafts ? <>You have <button className="font-medium text-primary hover:underline" onClick={() => setKpi("draft")}>{drafts} draft{drafts === 1 ? "" : "s"}</button> to submit.</> : "All your drafts are submitted."}</p>
+    <div className="space-y-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold tracking-tight">{greet()}, {me.name.split(" ")[0]}</h1>
+          <p className="truncate text-[13px] text-muted-foreground">{drafts ? <>You have <button className="font-medium text-primary hover:underline" onClick={() => setKpi("draft")}>{drafts} draft{drafts === 1 ? "" : "s"}</button> to submit</> : "All your drafts are submitted"}</p>
         </div>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">Business unit
-          <Select className="w-44" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
-        </label>
+        <div className="flex items-center gap-2">{tabs}{action}</div>
       </div>
 
-      {/* KPI tiles — each one filters the request list below */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Stat strip — one surface, each segment filters the list below */}
+      <div className="pd-panel grid grid-cols-2 overflow-hidden sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
         {KPIS.map((k) => {
           const rs = mine.filter((r) => k.statuses.includes(r.status));
           const amt = k.key === "pending" ? rs.reduce((s, r) => s + totals(r).total, 0) : 0;
+          const on = kpi === k.key;
           return (
-            <button key={k.key} onClick={() => setKpi(k.key)} aria-pressed={kpi === k.key}
-              className={cn("rounded-lg border bg-surface px-4 py-3 text-left transition-all hover:border-primary/40", kpi === k.key ? "border-primary/50 ring-2 ring-primary/10" : "border-border")}>
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className={cn("size-1.5 rounded-full", k.dot)} />{k.label}</span>
-              <span className="mt-1 flex items-baseline gap-2"><span className="num text-2xl font-semibold">{rs.length}</span>{amt > 0 && <Money v={amt} className="truncate text-xs text-muted-foreground" />}</span>
+            <button key={k.key} onClick={() => setKpi(k.key)} aria-pressed={on}
+              className={cn("relative border-b border-r border-border/60 px-4 py-2.5 text-left transition-colors hover:bg-subtle lg:border-b-0", on && "bg-primary/[0.04]")}>
+              {on && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className={cn("size-1.5 rounded-full", k.dot)} /><span className="truncate">{k.label}</span></span>
+              <span className="flex items-baseline gap-1.5"><span className={cn("num text-xl font-semibold", on && "text-primary")}>{rs.length}</span>{amt > 0 && <Money v={amt} className="truncate text-[11px] text-muted-foreground" />}</span>
             </button>
           );
         })}
+        <div className="col-span-full flex items-center px-3 py-2 lg:col-span-1">
+          <Select aria-label="Business unit" className="h-8 w-full text-[13px] lg:w-36" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -246,7 +249,7 @@ function BuyAgainRow({ line, at }: { line: LineItem; at: string }) {
         <span className="num w-7 text-center text-[13px]">{qty}</span>
         <button aria-label="Increase" onClick={() => setQty((x) => x + 1)} className="grid size-7 place-items-center text-muted-foreground hover:text-foreground"><Plus className="size-3" /></button>
       </span>
-      <button onClick={reorder} className="h-8 rounded-md border border-border px-3 text-[13px] font-medium text-primary transition-colors hover:border-primary/40 hover:bg-primary/5">Reorder</button>
+      <button onClick={reorder} className="h-8 shrink-0 rounded-md border border-border px-3 text-[13px] font-medium text-primary transition-colors hover:border-primary/40 hover:bg-primary/5">Reorder</button>
     </li>
   );
 }
