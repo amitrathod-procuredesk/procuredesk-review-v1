@@ -158,9 +158,10 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
             </button>
           );
         })}
-        <div className="col-span-full flex items-center px-3 py-2 lg:col-span-1">
-          <Select aria-label="Business unit" className="h-8 w-full text-[13px] lg:w-36" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
-        </div>
+        <label className="col-span-full flex flex-col justify-center gap-1 px-3 py-2 lg:col-span-1">
+          <span className="text-[11px] font-medium text-muted-foreground">Business unit</span>
+          <Select className={cn("h-8 w-full text-[13px] lg:w-40", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+        </label>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
