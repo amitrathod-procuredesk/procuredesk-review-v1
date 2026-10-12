@@ -129,7 +129,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <p className="num text-[11.5px] text-muted-foreground">{l.qty} × <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></p>
               )}
               {fromStock(l) ? <span className="text-sm font-semibold text-muted-foreground sm:mt-0.5 sm:block" title="Issued from internal stock — not added to the total">No cost</span> : <Money v={lineTotal(l)} className={cn("text-sm font-semibold sm:mt-0.5 sm:block", l.declined && "text-muted-foreground line-through decoration-muted-foreground/60")} />}
-              {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${l.tax || 0} · Shipping ${l.shipping || 0}`}>incl. {[l.tax ? <>tax <Money key="t" v={l.tax} /></> : null, l.shipping ? <>shipping <Money key="s" v={l.shipping} /></> : null].filter(Boolean).map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>}
+              {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>incl. other <Money v={other} /></p>}
             </div>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">{actions(l, isOpen)}</div>
