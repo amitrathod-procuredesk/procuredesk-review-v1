@@ -70,7 +70,8 @@ function say(r: PRequest, text: string, extra: Partial<PRequest["ai"]["messages"
 function addCatalogLine(db: DB, r: PRequest, c: CatalogItem) {
   r.items.push({
     id: uid("li"),
-    description: c.name,
+    name: c.name,
+    description: c.description,
     partNumber: c.partNumber,
     account: c.account,
     vendorId: c.vendorId,

@@ -13,13 +13,31 @@ export function hydrate() {
   if (hydrated) return;
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) state = JSON.parse(raw);
+    if (raw) state = migrate(JSON.parse(raw));
   } catch {
     /* corrupted storage: fall back to seed */
   }
   hydrated = true;
   emit();
 }
+/** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
+function migrate(d: DB): DB {
+  const seed = seedDB();
+  d.catalog.forEach((c) => {
+    const s = seed.catalog.find((x) => x.id === c.id);
+    if (s && (!c.description || c.name === c.description)) { c.name = s.name; c.description = s.description; }
+    c.description ??= "";
+  });
+  d.requests.forEach((r) => r.items.forEach((l) => {
+    const c = d.catalog.find((x) => x.id === l.catalogId) ?? d.catalog.find((x) => x.name === l.description || x.name === l.name);
+    const dup = !l.name || l.name.trim().toLowerCase() === l.description.trim().toLowerCase() || l.description.toLowerCase().startsWith(l.name.toLowerCase());
+    if (c && dup && (l.description === l.name || !l.name || seed.catalog.some((x) => x.id === c.id))) {
+      if (!l.name || l.description.trim().toLowerCase() === (l.name ?? "").trim().toLowerCase() || l.description === c.name) { l.name = c.name; l.description = c.description || l.description; }
+    }
+  }));
+  return d;
+}
+
 export const isHydrated = () => hydrated;
 export const getDB = () => state;
 

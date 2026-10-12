@@ -241,7 +241,7 @@ function VendorTab() {
           <select className="pd-input" value={c.category} onChange={(e) => setC({ ...c, category: e.target.value })}>{CATEGORIES.map((x) => <option key={x}>{x}</option>)}</select>
           <input className="pd-input" placeholder="Keywords, comma separated" value={c.keywords} onChange={(e) => setC({ ...c, keywords: e.target.value })} />
         </div>
-        <Button size="sm" className="mt-3" disabled={!c.name || !c.vendorId || c.price <= 0} onClick={() => { mutate((d) => d.catalog.push({ id: uid("c"), name: c.name, partNumber: c.partNumber, vendorId: c.vendorId, price: c.price, category: c.category, account: "", keywords: c.keywords.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean).concat(c.name.toLowerCase()), available: true })); setC({ ...c, name: "", partNumber: "", price: 0, keywords: "" }); toast.success("Catalog item added"); }}>Add catalog item</Button>
+        <Button size="sm" className="mt-3" disabled={!c.name || !c.vendorId || c.price <= 0} onClick={() => { mutate((d) => d.catalog.push({ id: uid("c"), name: c.name, description: "", partNumber: c.partNumber, vendorId: c.vendorId, price: c.price, category: c.category, account: "", keywords: c.keywords.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean).concat(c.name.toLowerCase()), available: true })); setC({ ...c, name: "", partNumber: "", price: 0, keywords: "" }); toast.success("Catalog item added"); }}>Add catalog item</Button>
       </Panel>
     </div>
   );

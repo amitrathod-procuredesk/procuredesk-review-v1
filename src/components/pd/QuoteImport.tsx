@@ -8,7 +8,7 @@ import { getDB, log, updateRequest, useMe } from "@/lib/pd/store";
 import type { LineItem, PRequest } from "@/lib/pd/types";
 import { AiGlyph } from "./bits";
 
-interface Extracted { supplier: string; vendorId: string; quoteNo: string; date: string; validUntil: string; tax: number; shipping: number; items: { description: string; partNumber: string; qty: number; unitPrice: number; keep: boolean }[]; demo: boolean }
+interface Extracted { supplier: string; vendorId: string; quoteNo: string; date: string; validUntil: string; tax: number; shipping: number; items: { name?: string; description: string; partNumber: string; qty: number; unitPrice: number; keep: boolean }[]; demo: boolean }
 
 function parseCSV(text: string): Extracted["items"] {
   const rows = text.trim().split(/\r?\n/).map((l) => l.split(",").map((c) => c.trim().replace(/^"|"$/g, "")));
@@ -40,9 +40,9 @@ export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
       const demo = !isCsv;
       if (demo)
         items = [
-          { description: "Wireless mouse, ergonomic", partNumber: "LG M220 · Logitech Mouse", qty: 25, unitPrice: 18.5, keep: true },
-          { description: "USB-C docking station", partNumber: "CALDIGIT TS4", qty: 4, unitPrice: 189, keep: true },
-          { description: '27" monitor, 4K IPS panel', partNumber: "DL U270 · Dell UltraSharp", qty: 4, unitPrice: 310, keep: true },
+          { name: "Logitech Lift ergonomic mouse", description: "Vertical grip, Bluetooth + receiver", partNumber: "LG M220 · Logitech Mouse", qty: 25, unitPrice: 18.5, keep: true },
+          { name: "CalDigit TS4 dock", description: "Thunderbolt 4, dual 4K, 98W charging", partNumber: "CALDIGIT TS4", qty: 4, unitPrice: 189, keep: true },
+          { name: 'Dell UltraSharp 27" 4K monitor', description: "4K IPS, USB-C 90W, adjustable stand", partNumber: "DL U270 · Dell UltraSharp", qty: 4, unitPrice: 310, keep: true },
         ];
       if (!items.length) { setPhase("error"); return; }
       const v = db.vendors.find((x) => f.name.toLowerCase().includes(x.name.split(" ")[0].toLowerCase())) ?? db.vendors.find((x) => x.id === "v_phoenix")!;
@@ -56,8 +56,8 @@ export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
     const keep = ex.items.filter((i) => i.keep);
     updateRequest(r.id, (x, d) => {
       keep.forEach((i, idx) => {
-        const cat = d.catalog.find((c) => c.name === i.description);
-        const li: LineItem = { id: uid("li"), description: i.description, partNumber: i.partNumber, account: cat?.account ?? "", vendorId: ex.vendorId, uom: "EACH", qty: i.qty, unitPrice: i.unitPrice, tax: 0, shipping: idx === 0 ? ex.shipping : 0, category: cat?.category ?? "", catalogId: cat?.id, source: "quote" };
+        const cat = d.catalog.find((c) => c.name === (i.name ?? i.description));
+        const li: LineItem = { id: uid("li"), name: i.name ?? cat?.name, description: i.description, partNumber: i.partNumber, account: cat?.account ?? "", vendorId: ex.vendorId, uom: "EACH", qty: i.qty, unitPrice: i.unitPrice, tax: 0, shipping: idx === 0 ? ex.shipping : 0, category: cat?.category ?? "", catalogId: cat?.id, source: "quote" };
         x.items.push(li);
       });
       x.quoteNo = ex.quoteNo;
@@ -119,7 +119,7 @@ export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
                 <tbody>
                   {ex.items.map((i, idx) => (
                     <tr key={idx} className={i.keep ? "" : "opacity-40"}>
-                      <td>{i.description}</td>
+                      <td><span className="block font-medium">{i.name ?? i.description}</span>{i.name && <span className="block text-xs text-muted-foreground">{i.description}</span>}</td>
                       <td className="text-xs text-muted-foreground">{i.partNumber || "—"}</td>
                       <td className="num text-right">{i.qty}</td>
                       <td className="num text-right">{money(i.unitPrice)}</td>
