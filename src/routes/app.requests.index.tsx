@@ -172,7 +172,7 @@ function Requests() {
                     <tr key={r.id} className="cursor-pointer" onClick={() => (target ? nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } }) : nav({ to: "/app/requests/$id", params: { id: r.id } }))}>
                       <td onClick={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${r.id}`} checked={sel.includes(r.id)} onChange={() => setSel((s) => (s.includes(r.id) ? s.filter((x) => x !== r.id) : [...s, r.id]))} /></td>
                       <td className="num text-xs text-muted-foreground">{r.id}</td>
-                      <td className="max-w-72 truncate font-medium">{r.title || "Untitled request"}</td>
+                      <td className="min-w-64 max-w-96 font-medium"><span className="line-clamp-2 break-words leading-5" title={r.title}>{r.title || "Untitled request"}</span></td>
                       {show("Requestor") && <td>{db.users.find((u) => u.id === r.requesterId)?.name}</td>}
                       {show("Department") && <td>{db.departments.find((d) => d.id === r.departmentId)?.name ?? "—"}</td>}
                       {show("Supplier") && <td>{sup[0]?.name ?? "—"}{sup.length > 1 && <span className="text-xs text-muted-foreground"> +{sup.length - 1}</span>}</td>}
@@ -188,7 +188,7 @@ function Requests() {
           </div>
           <ul className="space-y-2 md:hidden">
             {pageRows.map((r) => (
-              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="truncate text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge status={r.status} /></div></Link></li>
+              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="line-clamp-2 min-w-0 break-words text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge status={r.status} /></div></Link></li>
             ))}
           </ul>
           <div className="flex items-center justify-between text-xs text-muted-foreground">

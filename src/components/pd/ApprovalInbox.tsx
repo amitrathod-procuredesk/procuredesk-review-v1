@@ -42,7 +42,7 @@ export function ApprovalInbox() {
             {history.map((r) => {
               const a = r.route.flatMap((s) => s.approvals).find((x) => x.userId === me.id)!;
               return (
-                <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-subtle"><span className="min-w-0 flex-1 truncate">{r.title}</span><span className="text-xs capitalize text-muted-foreground">{a.status === "changes" ? "Changes requested" : a.status} {a.at && smartTime(a.at)}</span><Money v={totals(r).total} /></Link></li>
+                <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-subtle"><span className="line-clamp-2 min-w-0 flex-1 break-words" title={r.title}>{r.title}</span><span className="text-xs capitalize text-muted-foreground">{a.status === "changes" ? "Changes requested" : a.status} {a.at && smartTime(a.at)}</span><Money v={totals(r).total} /></Link></li>
               );
             })}
           </ul>
