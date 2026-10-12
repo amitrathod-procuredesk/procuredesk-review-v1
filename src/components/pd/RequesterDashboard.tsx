@@ -1,11 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2, XCircle } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
 import { Select } from "@/components/pd/form";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { smartDate, totals } from "@/lib/pd/engine";
+import { smartDate, totals, viewStatus, type ViewStatus } from "@/lib/pd/engine";
 import { stockFor } from "@/lib/pd/inventory";
 import { copyRequest, createDraft, log, mutate, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { LineItem, PRequest, Status } from "@/lib/pd/types";
