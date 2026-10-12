@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
@@ -87,14 +87,9 @@ function RowActions({ r, onOpen }: { r: PRequest; onOpen: () => void }) {
   const isDraft = ["draft", "changes"].includes(r.status);
   const cancellable = r.status === "pending";
   const remove = () => {
-    if (!window.confirm(`Delete draft ${r.id}? This can't be undone.`)) return;
+    if (!window.confirm(isDraft ? `Delete draft ${r.id}? This can't be undone.` : `Delete ${r.id}? It will be withdrawn from approvers and removed. This can't be undone.`)) return;
     mutate((d) => { d.requests = d.requests.filter((x) => x.id !== r.id); });
-    toast.success("Draft deleted");
-  };
-  const cancel = () => {
-    if (!window.confirm(`Cancel ${r.id}? Approvers will no longer see it.`)) return;
-    updateRequest(r.id, (x) => { x.status = "cancelled"; log(x, "Request cancelled", "system", me.id); });
-    toast.success("Request cancelled");
+    toast.success(isDraft ? "Draft deleted" : `${r.id} deleted`);
   };
   return (
     <DropdownMenu>
@@ -106,8 +101,7 @@ function RowActions({ r, onOpen }: { r: PRequest; onOpen: () => void }) {
         <DropdownMenuItem onSelect={() => { const id = copyRequest(r.id, me.id); toast.success("Copied as new draft"); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Copy className="size-3.5" />Duplicate</DropdownMenuItem>
         <DropdownMenuItem onSelect={() => { nav({ to: "/app/requests/$id", params: { id: r.id } }).then(() => setTimeout(() => window.print(), 300)); }}><Printer className="size-3.5" />Print</DropdownMenuItem>
         {(isDraft || cancellable) && <DropdownMenuSeparator />}
-        {cancellable && <DropdownMenuItem onSelect={cancel} className="text-destructive focus:text-destructive"><XCircle className="size-3.5" />Cancel request</DropdownMenuItem>}
-        {isDraft && <DropdownMenuItem onSelect={remove} className="text-destructive focus:text-destructive"><Trash2 className="size-3.5" />Delete draft</DropdownMenuItem>}
+        {(isDraft || cancellable) && <DropdownMenuItem onSelect={remove} className="text-destructive focus:text-destructive"><Trash2 className="size-3.5" />{isDraft ? "Delete draft" : "Delete request"}</DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );

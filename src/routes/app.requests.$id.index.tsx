@@ -115,7 +115,7 @@ function Detail() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex gap-2 md:hidden">
               <AuditTrailButton r={r} compact />
-              {(POST_APPROVAL as readonly string[]).includes(r.status) && <RequestActionsButton r={r} />}
+              {(r.status === "pending" || (POST_APPROVAL as readonly string[]).includes(r.status)) && <RequestActionsButton r={r} />}
             </div>
             <div className="hidden gap-2 md:flex">
               <AuditTrailButton r={r} />
@@ -126,13 +126,12 @@ function Detail() {
               </>}
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
               {isOwner && r.status === "pending" && <Button size="sm" variant="outline" onClick={() => setWithdrawOpen(true)}>Withdraw request</Button>}
-              {(isOwner || me.role === "admin") && ["draft", "pending", "changes"].includes(r.status) && <Button size="sm" variant="ghost" onClick={() => { advance("cancelled", "Request cancelled"); toast("Request cancelled"); }}>Cancel request</Button>}
               {me.role === "admin" && ["approved", "order_deleted", "part_ordered"].includes(r.status) && <Button size="sm" variant="outline" onClick={() => advance("ordered", r.status === "part_ordered" ? "Remaining items ordered" : "Purchase order created")}>{r.status === "order_deleted" ? "Re-create order" : r.status === "part_ordered" ? "Order remaining" : "Create order"}</Button>}
               {me.role === "admin" && r.status === "approved" && <Button size="sm" variant="outline" onClick={() => advance("part_ordered", "Purchase order created for some items")}>Partially order</Button>}
               {me.role === "admin" && ["ordered", "part_ordered"].includes(r.status) && <Button size="sm" variant="ghost" onClick={() => { if (window.confirm("Delete this purchase order? The request stays approved and can be re-ordered.")) advance("order_deleted", "Purchase order deleted"); }}>Delete order</Button>}
               {me.role === "admin" && r.status === "ordered" && <><Button size="sm" variant="outline" onClick={() => advance("partial", "Partially received")}>Partially received</Button><Button size="sm" variant="outline" onClick={() => advance("received", "All items received")}>Mark received</Button></>}
               {me.role === "admin" && r.status === "partial" && <Button size="sm" variant="outline" onClick={() => advance("received", "All items received")}>Mark received</Button>}
-              {(POST_APPROVAL as readonly string[]).includes(r.status) && <RequestActionsButton r={r} />}
+              {(r.status === "pending" || (POST_APPROVAL as readonly string[]).includes(r.status)) && <RequestActionsButton r={r} />}
             </div>
           </div>
         </div>

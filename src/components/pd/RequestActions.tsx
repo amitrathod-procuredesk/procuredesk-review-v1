@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, X } from "lucide-react";
+import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -9,9 +9,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Checkbox, TextArea, TextInput } from "@/components/pd/form";
 import { ActivityLog } from "@/components/pd/RequestPanels";
 import { supplierBreakdown } from "@/lib/pd/engine";
-import { copyRequest, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
+import { copyRequest, log, mutate, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /** Statuses after approval where the post-approval action menu applies. */
 export const POST_APPROVAL = ["approved", "ordered", "part_ordered", "order_deleted", "partial", "received", "closed"] as const;
@@ -22,10 +23,14 @@ export function AuditTrailButton({ r, compact }: { r: PRequest; compact?: boolea
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button size="icon" variant="outline" onClick={() => setOpen(true)} aria-label={`Audit trail, ${r.activity.length} events`} title="Audit trail" className="relative size-8">
-        <History className="size-4" />
-        <span className="num absolute -right-1.5 -top-1.5 min-w-4 rounded-full border border-background bg-subtle px-1 text-center text-[10px] leading-4 text-muted-foreground">{r.activity.length > 99 ? "99+" : r.activity.length}</span>
-      </Button>
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="icon" variant="outline" onClick={() => setOpen(true)} aria-label="Audit trail" className="size-8"><History className="size-4" /></Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Audit trail</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 bg-surface p-0 sm:max-w-[420px]">
           <SheetHeader className="border-b border-border px-5 py-4 text-left">
@@ -43,7 +48,7 @@ export function AuditTrailButton({ r, compact }: { r: PRequest; compact?: boolea
 
 /* ---------------- Post-approval actions ---------------- */
 
-type Confirm = null | "cancel" | "close" | "rfq" | "tags";
+type Confirm = null | "cancel" | "close" | "rfq" | "tags" | "delete";
 
 export function RequestActionsButton({ r }: { r: PRequest }) {
   const db = useDB();
@@ -60,16 +65,19 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   const closed = r.status === "closed";
   const canCancel = r.status === "approved" && (isOwner || isOps);
   const canClose = !closed && (isOwner || isOps);
+  const pending = r.status === "pending";
+  const canDelete = pending && (isOwner || isOps);
   const canRfq = r.status === "approved" && (isOps || isOwner);
   const suppliers = useMemo(() => supplierBreakdown(r, db), [r, db]);
   const tags = r.tags ?? [];
 
   const items = [
     { key: "copy", group: 1, label: "Copy request", hint: "Start a new draft with the same items", icon: Copy, show: true },
-    { key: "print", group: 1, label: "Print", hint: "Print or save as PDF", icon: Printer, show: true },
+    { key: "print", group: 1, label: "Print", hint: "Print or save as PDF", icon: Printer, show: !pending },
     { key: "rfq", group: 2, label: "Create RFQ", hint: "Request quotes from suppliers", meta: r.rfqs?.length ? `${r.rfqs.length} sent` : undefined, icon: Send, show: canRfq },
     { key: "tags", group: 2, label: "Manage tags", hint: tags.length ? tags.join(", ") : "Organise and find requests faster", meta: tags.length ? String(tags.length) : undefined, icon: Tag, show: true },
-    { key: "close", group: 3, label: "Mark as closed", hint: "Fulfilled — no further action", icon: CircleCheck, show: canClose },
+    { key: "close", group: 3, label: "Mark as closed", hint: "Fulfilled — no further action", icon: CircleCheck, show: canClose && !pending },
+    { key: "delete", group: 3, label: "Delete request", hint: "Withdraw from approvers and remove it", icon: Trash2, show: canDelete, danger: true },
     { key: "cancel", group: 3, label: "Cancel request", hint: "Release the approved budget", icon: CircleX, show: canCancel, danger: true },
   ].filter((i) => i.show);
   const [q, setQ] = useState("");
@@ -97,6 +105,13 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
     if (dialog === "cancel") {
       updateRequest(r.id, (x) => { x.status = "cancelled"; log(x, `Request cancelled after approval${reason.trim() ? ` — ${reason.trim()}` : ""}`, "system", me.id); });
       toast("Request cancelled", { description: "Approved budget has been released." });
+    } else if (dialog === "delete") {
+      const id = r.id;
+      mutate((d) => { d.requests = d.requests.filter((x) => x.id !== id); });
+      toast.success(`${id} deleted`);
+      setDialog(null);
+      nav({ to: "/app/requests" });
+      return;
     } else if (dialog === "close") {
       updateRequest(r.id, (x) => { x.status = "closed"; log(x, `Request closed${reason.trim() ? ` — ${reason.trim()}` : ""}`, "system", me.id); });
       toast.success("Request closed");
@@ -156,6 +171,11 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
             <p className="text-sm text-muted-foreground">The approval stays in the audit trail, the committed budget is released and no order will be placed. This can't be undone.</p>
             <TextArea placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
             <DialogFooter><Button variant="outline" onClick={() => setDialog(null)}>Keep request</Button><Button variant="destructive" onClick={confirm}>Cancel request</Button></DialogFooter>
+          </>}
+          {dialog === "delete" && <>
+            <DialogHeader><DialogTitle>Delete this request?</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">It will be withdrawn from approvers and permanently removed, including comments and attachments. This can't be undone.</p>
+            <DialogFooter><Button variant="outline" onClick={() => setDialog(null)}>Keep request</Button><Button variant="destructive" onClick={confirm}>Delete request</Button></DialogFooter>
           </>}
           {dialog === "close" && <>
             <DialogHeader><DialogTitle>Mark as closed?</DialogTitle></DialogHeader>
