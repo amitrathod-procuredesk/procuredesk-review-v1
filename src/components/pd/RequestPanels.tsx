@@ -22,8 +22,10 @@ export function TotalsBlock({ r }: { r: PRequest }) {
     <div>
       <p className="text-xs text-muted-foreground">Request total</p>
       <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
-      <p className="mt-1.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
-        {parts.map(([k, v]) => <span key={k} className="min-w-0 truncate">{k} <Money v={v} className={cn("num", v ? "text-foreground/80" : "text-muted-foreground/70")} /></span>)}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {t.shipping || t.tax
+          ? <>Subtotal <Money v={t.subtotal} className="num text-foreground/80" />{t.shipping > 0 && <> + shipping <Money v={t.shipping} className="num text-foreground/80" /></>}{t.tax > 0 && <> + tax <Money v={t.tax} className="num text-foreground/80" /></>}</>
+          : "No shipping or tax added"}
       </p>
       {sup.length > 1 && t.total > 0 && (
         <div className="mt-3 border-t border-border/60 pt-3">
@@ -96,7 +98,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
       ) : (
-        <p className="truncate text-sm text-foreground/80">{b?.budget.name ?? "No budget selected"}</p>
+        <p className="flex items-baseline justify-between gap-3 text-sm text-foreground/80"><span className="min-w-0 truncate">{b?.budget.name ?? "No budget selected"}</span>{b && <Money v={b.budget.total} className="num shrink-0 text-xs text-muted-foreground" />}</p>
       )}
       {b && (
         <>
@@ -115,10 +117,11 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
                   <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
                   <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(b.over ? Math.max(0, b.available) : b.request) }} />
                 </div>
-                <p className="mt-1.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
-                  <span className="truncate">{b.over ? <><Money v={-b.remaining} className="num font-medium text-destructive" /> over</> : <><Money v={b.remaining} className="num font-medium text-success" /> left after this request</>}</span>
-                  <span className="num">{usedPct}% of <Money v={b.budget.total} /></span>
-                </p>
+                <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-muted-foreground/35" />Used <Money v={used} className="num text-foreground/80" /></li>
+                  <li className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", b.over ? "bg-destructive" : "bg-primary")} />This request <Money v={b.request} className="num text-foreground/80" /></li>
+                  <li className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", b.over ? "bg-destructive/30" : "bg-success/40")} />{b.over ? "Over by" : "Left"} <Money v={Math.abs(b.remaining)} className={cn("num font-medium", b.over ? "text-destructive" : "text-success")} /></li>
+                </ul>
               </div>
             );
           })()}
