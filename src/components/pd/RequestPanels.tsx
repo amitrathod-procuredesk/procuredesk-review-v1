@@ -16,7 +16,6 @@ const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15",
 export function TotalsBlock({ r }: { r: PRequest }) {
   const db = useDB();
   const t = totals(r);
-  const sup = supplierBreakdown(r, db);
   const parts = ([["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]] as const);
   return (
     <div>
@@ -27,22 +26,6 @@ export function TotalsBlock({ r }: { r: PRequest }) {
           ? <>Subtotal <Money v={t.subtotal} className="num text-foreground/80" />{t.shipping > 0 && <> + shipping <Money v={t.shipping} className="num text-foreground/80" /></>}{t.tax > 0 && <> + tax <Money v={t.tax} className="num text-foreground/80" /></>}</>
           : "No shipping or tax added"}
       </p>
-      {sup.length > 1 && t.total > 0 && (
-        <div className="mt-3 border-t border-border/60 pt-3">
-          <div className="flex h-1 gap-0.5 overflow-hidden rounded-full">
-            {sup.map((s, i) => <div key={s.vendorId} className={cn("h-full transition-all duration-500", SHADES[i % SHADES.length])} style={{ width: `${(s.amount / t.total) * 100}%` }} title={s.name} />)}
-          </div>
-          <ul className="mt-2 space-y-1 text-xs">
-            {sup.map((s, i) => (
-              <li key={s.vendorId} className="flex items-center gap-2">
-                <span className={cn("size-2 shrink-0 rounded-[2px]", SHADES[i % SHADES.length])} />
-                <span className="min-w-0 flex-1 truncate text-foreground/80">{s.name}</span>
-                <Money v={s.amount} className="num" />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
