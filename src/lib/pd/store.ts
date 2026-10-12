@@ -23,16 +23,20 @@ export function hydrate() {
 /** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
 function migrate(d: DB): DB {
   const seed = seedDB();
+  const oldNames = new Map<string, string>();
   d.catalog.forEach((c) => {
+    oldNames.set(c.id, c.name);
     const s = seed.catalog.find((x) => x.id === c.id);
-    if (s && (!c.description || c.name === c.description)) { c.name = s.name; c.description = s.description; }
+    if (s && !c.description) { c.name = s.name; c.description = s.description; }
     c.description ??= "";
   });
+  const same = (a?: string, b?: string) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
   d.requests.forEach((r) => r.items.forEach((l) => {
-    const c = d.catalog.find((x) => x.id === l.catalogId) ?? d.catalog.find((x) => x.name === l.description || x.name === l.name);
-    const dup = !l.name || l.name.trim().toLowerCase() === l.description.trim().toLowerCase() || l.description.toLowerCase().startsWith(l.name.toLowerCase());
-    if (c && dup && (l.description === l.name || !l.name || seed.catalog.some((x) => x.id === c.id))) {
-      if (!l.name || l.description.trim().toLowerCase() === (l.name ?? "").trim().toLowerCase() || l.description === c.name) { l.name = c.name; l.description = c.description || l.description; }
+    const c = d.catalog.find((x) => x.id === l.catalogId);
+    if (!c) return;
+    if (!l.name || same(l.name, l.description) || same(l.description, oldNames.get(c.id)) || same(l.description, c.name)) {
+      l.name = c.name;
+      if (c.description) l.description = c.description;
     }
   }));
   return d;
