@@ -55,7 +55,12 @@ function Hub({ recent, connected, open }: { recent: string[]; connected: string[
     return () => window.removeEventListener("keydown", h);
   }, []);
   const term = q.trim().toLowerCase();
-  const results = useMemo(() => (term ? CONFIG_ITEMS.filter((x) => `${x.label} ${x.hint} ${x.group.label}`.toLowerCase().includes(term)) : []), [term]);
+  const results = useMemo(() => {
+    if (!term) return [];
+    const inLabel = CONFIG_ITEMS.filter((x) => x.label.toLowerCase().includes(term));
+    const inHint = CONFIG_ITEMS.filter((x) => !inLabel.includes(x) && x.hint.toLowerCase().includes(term));
+    return [...inLabel, ...inHint];
+  }, [term]);
   const recentItems = recent.map(findConfig).filter(Boolean) as (typeof CONFIG_ITEMS)[number][];
   const groups = CONFIG_GROUPS.filter((g) => g.kind !== "integrations");
   const integrations = CONFIG_GROUPS.find((g) => g.kind === "integrations")!;
