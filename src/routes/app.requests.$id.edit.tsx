@@ -15,6 +15,7 @@ import { budgetStatus, canSubmit, computeRoute, money, runChecks, smartDate, sma
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
+import { RailToggle, useRailHidden } from "@/components/pd/RailToggle";
 
 export const Route = createFileRoute("/app/requests/$id/edit")({
   validateSearch: (s: Record<string, unknown>): { prompt?: string } => (typeof s.prompt === "string" ? { prompt: s.prompt } : {}),
@@ -80,10 +81,11 @@ function EditRequest() {
           <Copilot r={r} initialPrompt={prompt} />
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
           <Button size="sm" onClick={trySubmit}>Submit</Button>
+          <RailToggle hidden={railHidden} onToggle={toggleRail} />
         </div>
       </header>
 
-      <div className="grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_320px]">
+      <div className={cn("grid flex-1 gap-0 lg:min-h-0", railHidden ? "lg:grid-cols-[1fr] lg:[&>aside]:hidden" : "lg:grid-cols-[1fr_320px]")}>
 
         <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
           {r.status === "changes" && r.decisionReason && (
