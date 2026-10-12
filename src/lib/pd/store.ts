@@ -13,13 +13,35 @@ export function hydrate() {
   if (hydrated) return;
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) state = JSON.parse(raw);
+    if (raw) state = migrate(JSON.parse(raw));
   } catch {
     /* corrupted storage: fall back to seed */
   }
   hydrated = true;
   emit();
 }
+/** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
+function migrate(d: DB): DB {
+  const seed = seedDB();
+  const oldNames = new Map<string, string>();
+  d.catalog.forEach((c) => {
+    oldNames.set(c.id, c.name);
+    const s = seed.catalog.find((x) => x.id === c.id);
+    if (s && !c.description) { c.name = s.name; c.description = s.description; }
+    c.description ??= "";
+  });
+  const same = (a?: string, b?: string) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+  d.requests.forEach((r) => r.items.forEach((l) => {
+    const c = d.catalog.find((x) => x.id === l.catalogId);
+    if (!c) return;
+    if (!l.name || same(l.name, l.description) || same(l.description, oldNames.get(c.id)) || same(l.description, c.name)) {
+      l.name = c.name;
+      if (c.description) l.description = c.description;
+    }
+  }));
+  return d;
+}
+
 export const isHydrated = () => hydrated;
 export const getDB = () => state;
 

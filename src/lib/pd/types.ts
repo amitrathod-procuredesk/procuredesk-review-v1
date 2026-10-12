@@ -39,7 +39,10 @@ export interface Vendor {
 
 export interface CatalogItem {
   id: string;
+  /** Short product name (e.g. "MacBook Pro 14-inch"). */
   name: string;
+  /** Spec/purpose detail shown as the line-item description; must not repeat the name. */
+  description: string;
   partNumber: string;
   vendorId: string;
   price: number;
