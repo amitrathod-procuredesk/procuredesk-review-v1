@@ -40,9 +40,9 @@ export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {
       const demo = !isCsv;
       if (demo)
         items = [
-          { name: "Logitech Lift ergonomic mouse", description: "Vertical grip, Bluetooth + receiver", partNumber: "LG M220 · Logitech Mouse", qty: 25, unitPrice: 18.5, keep: true },
-          { name: "CalDigit TS4 dock", description: "Thunderbolt 4, dual 4K, 98W charging", partNumber: "CALDIGIT TS4", qty: 4, unitPrice: 189, keep: true },
-          { name: 'Dell UltraSharp 27" 4K monitor', description: "4K IPS, USB-C 90W, adjustable stand", partNumber: "DL U270 · Dell UltraSharp", qty: 4, unitPrice: 310, keep: true },
+          { name: "Logitech Lift ergonomic mouse", description: "Vertical grip, Bluetooth + receiver", partNumber: "200341", qty: 25, unitPrice: 18.5, keep: true },
+          { name: "CalDigit TS4 dock", description: "Thunderbolt 4, dual 4K, 98W charging", partNumber: "100829", qty: 4, unitPrice: 189, keep: true },
+          { name: 'Dell UltraSharp 27" 4K monitor', description: "4K IPS, USB-C 90W, adjustable stand", partNumber: "100736", qty: 4, unitPrice: 310, keep: true },
         ];
       if (!items.length) { setPhase("error"); return; }
       const v = db.vendors.find((x) => f.name.toLowerCase().includes(x.name.split(" ")[0].toLowerCase())) ?? db.vendors.find((x) => x.id === "v_phoenix")!;
