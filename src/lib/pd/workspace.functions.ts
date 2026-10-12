@@ -17,7 +17,7 @@ export const getWorkspace = createServerFn({ method: "GET" }).handler(async (): 
 });
 
 export const saveWorkspace = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => {
+  .validator((d: unknown) => {
     const x = d as { data?: unknown; version?: unknown };
     if (!x || typeof x.data !== "object" || x.data === null || Array.isArray(x.data)) throw new Error("Invalid workspace data");
     if (typeof x.version !== "number" || !Number.isInteger(x.version) || x.version < 0) throw new Error("Invalid version");
