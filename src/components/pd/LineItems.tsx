@@ -199,7 +199,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
-                    : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-auto resize-none overflow-hidden py-1 font-medium leading-snug focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
+                    : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                 </td>
                 <td>{ro ? <span className="num block truncate px-1.5">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
