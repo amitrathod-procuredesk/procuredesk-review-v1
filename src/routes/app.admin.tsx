@@ -177,7 +177,7 @@ function OrgTab() {
   const db = useDB();
   const [o, setO] = useState(db.org);
   return (
-    <Panel title="Organization" desc="Basic settings used across every request.">
+    <section className="pd-panel p-4">
       <div className="grid gap-4 sm:grid-cols-3">
         <label><span className="pd-label">Name</span><input className="pd-input" value={o.name} onChange={(e) => setO({ ...o, name: e.target.value })} /></label>
         <label><span className="pd-label">Currency</span><input className="pd-input" value={o.currency} disabled /></label>
@@ -187,7 +187,7 @@ function OrgTab() {
         <label className="sm:col-span-3"><span className="pd-label">Projects</span><input className="pd-input" value={o.projects.join(", ")} onChange={(e) => setO({ ...o, projects: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></label>
       </div>
       <Button className="mt-4" size="sm" onClick={() => { mutate((d) => (d.org = o)); toast.success("Organization saved"); }}>Save</Button>
-    </Panel>
+    </section>
   );
 }
 
