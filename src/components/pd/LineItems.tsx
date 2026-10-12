@@ -71,7 +71,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     const other = (l.tax || 0) + (l.shipping || 0);
     const sup = vendorName(l.vendorId);
     const v = db.vendors.find((x) => x.id === l.vendorId);
-    // Card subtext order: Item # · Account · Supplier (clickable) · UOM. Prices live in the right column.
+    // Card subtext order: Item # · Account · Supplier (clickable); UOM shows once, beside the unit price. Prices live in the right column.
     const meta: ReactNode[] = [
       <span key="p" className={cn("num", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #">{l.partNumber || "No item #"}</span>,
       <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
@@ -86,7 +86,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </PopoverContent>
         </Popover>
       ) : <span key="s" className="text-warning">No supplier</span>),
-      <span key="u" title="Unit of measure">{l.uom}</span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
