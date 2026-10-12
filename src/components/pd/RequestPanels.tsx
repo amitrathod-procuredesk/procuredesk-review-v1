@@ -12,38 +12,36 @@ import { cn } from "@/lib/utils";
 
 const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15", "bg-muted-foreground/30"];
 
+/** Requester's first question: "how much?" — one big number, its make-up as quiet subtext, suppliers only when there's more than one. */
 export function TotalsBlock({ r }: { r: PRequest }) {
   const db = useDB();
   const t = totals(r);
   const sup = supplierBreakdown(r, db);
+  const parts = ([["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]] as const);
   return (
     <div>
       <p className="text-xs text-muted-foreground">Request total</p>
       <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
-      <p className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"} · {sup.length} supplier{sup.length === 1 ? "" : "s"}</p>
-      <dl className="mt-3 space-y-1 border-y border-border py-2.5 text-xs">
-        {([["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]] as const).map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between">
-            <dt className="text-muted-foreground">{k}</dt>
-            <dd><Money v={v} className={cn("num", v === 0 && k !== "Subtotal" && "text-muted-foreground")} /></dd>
-          </div>
+      <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+        {parts.map(([k, v], i) => (
+          <span key={k} className="whitespace-nowrap">{i > 0 && <span aria-hidden className="mr-2 text-border">·</span>}{k} <Money v={v} className={cn("num", v ? "text-foreground/80" : "text-muted-foreground/70")} /></span>
         ))}
-      </dl>
-      {sup.length > 0 && t.total > 0 && (
-        <>
-          <div className="mt-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+      </p>
+      {sup.length > 1 && t.total > 0 && (
+        <div className="mt-3 border-t border-border/60 pt-3">
+          <div className="flex h-1 gap-0.5 overflow-hidden rounded-full">
             {sup.map((s, i) => <div key={s.vendorId} className={cn("h-full transition-all duration-500", SHADES[i % SHADES.length])} style={{ width: `${(s.amount / t.total) * 100}%` }} title={s.name} />)}
           </div>
-          <ul className="mt-3 space-y-1.5 text-sm">
+          <ul className="mt-2 space-y-1 text-xs">
             {sup.map((s, i) => (
               <li key={s.vendorId} className="flex items-center gap-2">
-                <span className={cn("size-2.5 rounded-[3px]", SHADES[i % SHADES.length])} />
-                <span className="flex-1 truncate">{s.name}</span>
-                <Money v={s.amount} />
+                <span className={cn("size-2 shrink-0 rounded-[2px]", SHADES[i % SHADES.length])} />
+                <span className="min-w-0 flex-1 truncate text-foreground/80">{s.name}</span>
+                <Money v={s.amount} className="num" />
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
     </div>
   );
@@ -91,27 +89,29 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-semibold">Budget</span>
         {b ? (
-          <span className={cn("num text-xs font-medium", b.over ? "text-destructive" : "text-success")}>{b.over ? `Over by ${money(-b.remaining)}` : `${money(b.remaining)} left after`}</span>
+          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", b.over ? "bg-danger-soft text-destructive" : "bg-success-soft text-success")}>{b.over ? "Over budget" : "Within budget"}</span>
         ) : <SourceMark s={r.sources.budget} />}
       </div>
       {editable ? (
-        <select id="budget-select-anchor" aria-invalid={!r.budgetId || undefined} className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
+        <select id="budget-select-anchor" aria-label="Budget" aria-invalid={!r.budgetId || undefined} className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
           <option value="">Select a budget…</option>
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
       ) : (
-        <p className="rounded-lg border border-border px-3 py-2 text-sm">{b?.budget.name ?? "No budget selected"}</p>
+        <p className="truncate text-sm text-foreground/80">{b?.budget.name ?? "No budget selected"}</p>
       )}
       {b && (
         <>
-          <div className="flex h-1.5 overflow-hidden rounded-full bg-subtle">
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-subtle" title={`Already used ${money(b.budget.total - b.available)} · This request ${money(b.request)}`}>
             <div className="h-full bg-muted-foreground/30 transition-all duration-500" style={{ width: `${Math.min(100, ((b.budget.total - b.available) / b.budget.total) * 100)}%` }} />
             <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: `${Math.max(1, Math.min(100, (b.request / b.budget.total) * 100))}%` }} />
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span><Money v={Math.max(0, b.available)} /> available</span>
-            <span><Money v={b.budget.total} /> total</span>
-          </div>
+          {!b.over && (
+            <p className="flex justify-between gap-2 text-xs text-muted-foreground">
+              <span><Money v={b.remaining} className="num font-medium text-foreground" /> left after this request</span>
+              <span className="whitespace-nowrap">of <Money v={b.budget.total} className="num" /></span>
+            </p>
+          )}
           {b.over ? (
             <div className="rounded-md bg-danger-soft p-3 text-xs">
               <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>
@@ -125,9 +125,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
               )}
               {r.exceptionRequested && r.exceptionReason && <p className="mt-1 italic text-muted-foreground">“{r.exceptionReason}”</p>}
             </div>
-          ) : (
-            <p className="text-xs text-success">Within budget · {money(b.remaining)} remains after this request</p>
-          )}
+          ) : null}
         </>
       )}
       <Dialog open={exc} onOpenChange={setExc}>
@@ -455,10 +453,8 @@ export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChec
   const db = useDB();
   return (
     <div className="space-y-4">
-      <div className="pd-panel rounded-xl p-4">
-        <TotalsBlock r={r} />
-        <div className="mt-4 border-t border-border pt-4"><BudgetBlock r={r} editable={editable} /></div>
-      </div>
+      <div className="pd-panel rounded-xl p-4"><TotalsBlock r={r} /></div>
+      <section className="pd-panel rounded-xl p-4"><BudgetBlock r={r} editable={editable} /></section>
       {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
       <section className="pd-panel p-4">
