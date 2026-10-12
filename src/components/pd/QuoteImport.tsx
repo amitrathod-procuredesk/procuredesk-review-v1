@@ -16,7 +16,7 @@ function parseCSV(text: string): Extracted["items"] {
   const col = (...names: string[]) => head.findIndex((h) => names.some((n) => h.includes(n)));
   const d = col("desc", "item", "name"), q = col("qty", "quantity"), p = col("price", "unit"), pn = col("part", "sku");
   if (d < 0 || q < 0 || p < 0) return [];
-  return rows.slice(1).filter((r) => r[d]).map((r) => ({ description: r[d], partNumber: pn >= 0 ? r[pn] : "", qty: Number(r[q]) || 1, unitPrice: Number((r[p] || "0").replace(/[$,]/g, "")) || 0, keep: true }));
+  return rows.slice(1).filter((r) => r[d]).map((r) => ({ description: r[d], partNumber: pn >= 0 ? r[pn].replace(/\D/g, "") : "", qty: Number(r[q]) || 1, unitPrice: Number((r[p] || "0").replace(/[$,]/g, "")) || 0, keep: true }));
 }
 
 export function QuoteImport({ r, label }: { r: PRequest; label?: string }) {

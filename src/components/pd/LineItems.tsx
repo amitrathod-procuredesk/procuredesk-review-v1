@@ -272,7 +272,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                       <option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                     </select>
                   </DField>
-                  <DField label="Supplier item #"><input className="pd-input num text-sm" placeholder="-" value={editing.partNumber} onChange={(e) => patch(editing.id, { partNumber: e.target.value })} /></DField>
+                  <DField label="Supplier item #"><input className="pd-input num text-sm" placeholder="-" value={editing.partNumber} inputMode="numeric" onChange={(e) => patch(editing.id, { partNumber: e.target.value.replace(/\D/g, "") })} /></DField>
                   <p className="pd-drawer-sec sm:col-span-2">Classification</p>
                   <DField label="Item type">
                     <select className="pd-input text-sm" value={editing.itemType ?? "Material"} onChange={(e) => patch(editing.id, { itemType: e.target.value })}>{["Material", "Service", "Software", "Asset"].map((x) => <option key={x}>{x}</option>)}</select>

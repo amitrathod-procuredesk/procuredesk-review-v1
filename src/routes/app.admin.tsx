@@ -235,7 +235,7 @@ function VendorTab() {
         </tbody></table></div>
         <div className="grid gap-2 sm:grid-cols-3">
           <input className="pd-input" placeholder="Item name" value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
-          <input className="pd-input" placeholder="Part number" value={c.partNumber} onChange={(e) => setC({ ...c, partNumber: e.target.value })} />
+          <input className="pd-input" placeholder="Item number" inputMode="numeric" value={c.partNumber} onChange={(e) => setC({ ...c, partNumber: e.target.value.replace(/\D/g, "") })} />
           <select className="pd-input" value={c.vendorId} onChange={(e) => setC({ ...c, vendorId: e.target.value })}><option value="">Supplier</option>{db.vendors.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}</select>
           <input type="number" className="pd-input num" placeholder="Price" value={c.price || ""} onChange={(e) => setC({ ...c, price: Number(e.target.value) })} />
           <select className="pd-input" value={c.category} onChange={(e) => setC({ ...c, category: e.target.value })}>{CATEGORIES.map((x) => <option key={x}>{x}</option>)}</select>
