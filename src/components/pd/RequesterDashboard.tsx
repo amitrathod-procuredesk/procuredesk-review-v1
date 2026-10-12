@@ -103,7 +103,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
   // Needs attention — derived from my requests and mentions.
   const attention = useMemo(() => {
     const out: { id: string; r: PRequest; icon: typeof Undo2; text: string; tone: string }[] = [];
-    db.requests.forEach((r) => {
+    db.requests.filter((r) => unit === "all" || r.businessUnit === unit).forEach((r) => {
       if (r.requesterId === me.id && r.status === "changes") out.push({ id: r.id + "c", r, icon: Undo2, text: "Returned for changes", tone: "text-attention" });
       if (r.requesterId === me.id && ["ordered", "partial"].includes(r.status)) out.push({ id: r.id + "d", r, icon: PackageCheck, text: "Delivery needs a receipt", tone: "text-transit" });
       if (r.route.some((s) => s.approvals.some((a) => a.userId === me.id && a.status === "pending")) && r.status === "pending") out.push({ id: r.id + "a", r, icon: Stamp, text: "Needs your approval", tone: "text-pending" });
