@@ -1,5 +1,5 @@
 import { INVENTORY, fromStock, stockFor } from "@/lib/pd/inventory";
-import { Package, ChevronDown, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
+import { Package, ChevronDown, LayoutList, Table2, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -59,6 +59,9 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const vendorName = (id: string) => db.vendors.find((v) => v.id === id)?.name ?? "";
   const allSel = r.items.length > 0 && sel.length === r.items.length;
   const [view, setView] = useState<"list" | "supplier">("list");
+  const [layout, setLayoutState] = useState<"cards" | "table">("cards");
+  useEffect(() => { try { if (localStorage.getItem("pd.items.layout") === "table") setLayoutState("table"); } catch { /* ignore */ } }, []);
+  const setLayout = (v: "cards" | "table") => { setLayoutState(v); try { localStorage.setItem("pd.items.layout", v); } catch { /* ignore */ } };
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState("");
@@ -155,6 +158,57 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
       )}
     </>
   );
+  const cell = "h-7 w-full min-w-0 rounded border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
+  const table = (items: LineItem[], hideSupplier = false) => (
+    <div className="pd-scroll overflow-x-auto rounded-lg border border-border bg-surface">
+      <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
+        <thead className="bg-subtle/60 text-left text-[11px] font-medium text-muted-foreground">
+          <tr className="[&>th]:h-8 [&>th]:px-2 [&>th]:font-medium">
+            {editable && <th className="w-8" />}
+            <th className="min-w-[260px]">Description</th>
+            <th className="w-24">Item #</th>
+            <th className="w-44">Account</th>
+            {!hideSupplier && <th className="w-40">Supplier</th>}
+            <th className="w-16 text-right">Qty</th>
+            <th className="w-14">UOM</th>
+            <th className="w-24 text-right">Unit price</th>
+            <th className="w-20 text-right" title="Tax + shipping">Other</th>
+            <th className="w-24 text-right">Total</th>
+            <th className="sticky right-0 w-16 bg-subtle" aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((l) => {
+            const isOpen = open === l.id;
+            const ro = !editable || !!l.declined;
+            const other = (l.tax || 0) + (l.shipping || 0);
+            return [
+              <tr key={l.id} className={cn("group border-t border-border align-top transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-1.5", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
+                {editable && <td className="pt-2.5"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
+                <td>
+                  {ro ? <p className={cn("line-clamp-2 px-1.5 py-1 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
+                    : <textarea rows={2} aria-label="Description" className={cn(cell, "h-auto resize-none py-1 font-medium leading-snug", !l.description && "border-destructive/60")} value={l.description} onChange={(e) => patch(l.id, { description: e.target.value })} />}
+                  {(fromStock(l) || l.declined) && <span className="ml-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined" : "From stock · no cost"}</span>}
+                </td>
+                <td>{ro ? <span className="num px-1.5 leading-7">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
+                <td>{ro ? <span className="block truncate px-1.5 leading-7">{l.account || "—"}</span> : (
+                  <select aria-label="Account" className={cn(cell, "pr-5", !l.account && "text-warning")} value={l.account} onChange={(e) => patch(l.id, { account: e.target.value })}><option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}</select>)}</td>
+                {!hideSupplier && <td>{ro ? <span className="block truncate px-1.5 leading-7">{vendorName(l.vendorId) || "—"}</span> : (
+                  <select aria-label="Supplier" className={cn(cell, "pr-5", !l.vendorId && "text-warning")} value={l.vendorId} onChange={(e) => patch(l.id, { vendorId: e.target.value })}><option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>)}</td>}
+                <td className="text-right">{ro ? <span className="num px-1.5 leading-7">{l.qty}</span> : <input type="number" min={1} aria-label="Quantity" className={cn(cell, "num text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none")} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />}</td>
+                <td className="leading-7 text-muted-foreground">{l.uom}</td>
+                <td className="text-right">{ro ? <Money v={l.unitPrice} className="px-1.5 leading-7" /> : <input type="number" min={0} step="0.01" aria-label="Unit price" className={cn(cell, "num text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none")} value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} />}</td>
+                <td className="num text-right leading-7 text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
+                <td className="num text-right font-semibold leading-7">{fromStock(l) ? <span className="text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
+                <td className="sticky right-0 bg-surface group-hover:bg-subtle"><div className="flex justify-end gap-0.5 pt-0.5">{actions(l, isOpen)}</div></td>
+              </tr>,
+              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={20} className="px-4 py-3"><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></td></tr>,
+            ];
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
   const LIMIT = 8;
   const q = filter.trim().toLowerCase();
   const visibleItems = q ? r.items.filter((l) => [l.name ?? "", l.description, l.partNumber, vendorName(l.vendorId), l.account].join(" ").toLowerCase().includes(q)) : r.items;
@@ -191,7 +245,12 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
         {view === "supplier" && groups.length > 1 && (
           <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(collapsed.length === groups.length ? [] : groups.map((g) => g.id))}>{collapsed.length === groups.length ? "Expand all" : "Collapse all"}</button>
         )}
-        {r.items.length > 0 && <div role="tablist" aria-label="Item view" className="ml-auto inline-flex rounded-md border border-border bg-subtle/60 p-0.5 text-xs">
+        {r.items.length > 0 && <div role="group" aria-label="Layout" className="ml-auto inline-flex rounded-md border border-border bg-subtle/60 p-0.5">
+          {([["cards", "Card view", LayoutList], ["table", "Table view", Table2]] as const).map(([k, l, I]) => (
+            <button key={k} aria-label={l} title={l} aria-pressed={layout === k} onClick={() => setLayout(k)} className={cn("grid size-6 place-items-center rounded transition-colors", layout === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}><I className="size-3.5" /></button>
+          ))}
+        </div>}
+        {r.items.length > 0 && <div role="tablist" aria-label="Item view" className=" inline-flex rounded-md border border-border bg-subtle/60 p-0.5 text-xs">
           {([["list", "List"], ["supplier", "By supplier"]] as const).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={cn("rounded px-2.5 py-1 font-medium transition-colors", view === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{l}</button>
           ))}
@@ -210,7 +269,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
 
       {view === "list" ? (
         <div>
-          <ul className="space-y-2">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>
+          {layout === "table" ? table(cap(visibleItems, "_list")) : <ul className="space-y-2">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>}
           {!q && more(visibleItems.length, "_list")}
         </div>
       ) : (
@@ -229,7 +288,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
-                    <ul className="space-y-2">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>
+                    {layout === "table" ? table(cap(items, g.id), true) : <ul className="space-y-2">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>}
                     {!q && more(items.length, g.id)}
                   </div>
                 )}
