@@ -26,7 +26,7 @@ const KPIS: Kpi[] = [
 
 const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
-const PIN = "sticky -right-4 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
+const PIN = "sticky right-0 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
 
 /** Who the request is currently waiting on, derived from status and the live approval route. */
 function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean; ids?: string[]; kind?: "team" | "supplier" | "none" } {
