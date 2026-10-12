@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/com
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
 import type { CatalogItem } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
@@ -69,11 +70,23 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     const isOpen = open === l.id;
     const other = (l.tax || 0) + (l.shipping || 0);
     const sup = vendorName(l.vendorId);
+    const v = db.vendors.find((x) => x.id === l.vendorId);
+    // Card subtext order: Item # · Account · Supplier (clickable) · UOM. Prices live in the right column.
     const meta: ReactNode[] = [
-      l.name?.trim() && <span key="n" className="text-foreground/70">{l.name.trim()}</span>,
-      !hideSupplier && (sup ? <span key="s" className="font-medium text-foreground/80">{sup}</span> : <span key="s" className="text-warning">No supplier</span>),
+      <span key="p" className={cn("num", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #">{l.partNumber || "No item #"}</span>,
       <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
-      l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
+      !hideSupplier && (v ? (
+        <Popover key="s">
+          <PopoverTrigger asChild><button type="button" className="font-medium text-primary hover:underline">{sup}</button></PopoverTrigger>
+          <PopoverContent align="start" className="w-60 p-3 text-xs">
+            <p className="text-sm font-medium">{v.name}</p>
+            <p className="mt-1 text-muted-foreground">{[v.preferred && "Preferred", v.verified && "Verified", v.contractActive ? "Active contract" : "No contract"].filter(Boolean).join(" · ")}</p>
+            {v.categories.length > 0 && <p className="mt-1 text-muted-foreground">{v.categories.join(", ")}</p>}
+            <p className="mt-2 border-t border-border pt-2 text-muted-foreground">{r.items.filter((x) => x.vendorId === v.id).length} line(s) from this supplier</p>
+          </PopoverContent>
+        </Popover>
+      ) : <span key="s" className="text-warning">No supplier</span>),
+      <span key="u" title="Unit of measure">{l.uom}</span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
