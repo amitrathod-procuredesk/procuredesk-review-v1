@@ -198,7 +198,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
         <section className="pd-panel min-w-0">
           {/* One quiet row: status tabs filter the table, search on the right */}
           <header className="flex items-end gap-3 border-b border-border/60 px-4 pt-2">
-            <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide flex min-w-0 flex-1 gap-5 overflow-x-auto">
+            <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide flex min-w-0 flex-1 gap-4 overflow-x-auto">
               {PRIMARY_TABS.map((k) => {
                 const n = mine.filter((r) => inTab(r, k.key)).length;
                 const on = kpi === k.key;
@@ -233,7 +233,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                 );
               })()}
             </div>
-            <div className="relative mb-1.5 w-40 shrink-0 lg:w-48">
+            <div className="relative mb-1.5 w-32 shrink-0 xl:w-44">
               <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <input className="pd-input h-7 pl-8 text-[13px]" placeholder="Search" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
