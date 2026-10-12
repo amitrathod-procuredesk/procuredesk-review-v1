@@ -122,6 +122,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
   const [unit, setUnit] = useState("all");
   const [kpi, setKpi] = useState<Tab["key"]>("all");
   const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [vq, setVq] = useState("");
   const [bq, setBq] = useState("");
 
@@ -233,10 +234,15 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                 );
               })()}
             </div>
-            <div className="relative mb-1.5 w-32 shrink-0 xl:w-44">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input className="pd-input h-7 pl-8 text-[13px]" placeholder="Search" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
+            {/* Search collapses to an icon so all status tabs stay visible */}
+            {searchOpen || q ? (
+              <div className="relative mb-1.5 w-40 shrink-0 animate-in fade-in">
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input autoFocus className="pd-input h-7 pl-8 text-[13px]" placeholder="Search requests" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => setSearchOpen(false)} onKeyDown={(e) => { if (e.key === "Escape") { setQ(""); setSearchOpen(false); } }} />
+              </div>
+            ) : (
+              <button type="button" aria-label="Search requests" title="Search requests" onClick={() => setSearchOpen(true)} className="mb-1.5 grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><Search className="size-4" /></button>
+            )}
           </header>
           {sel.length > 0 ? (
             <div className="mx-4 mt-2 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
