@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/com
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
 import type { CatalogItem } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
@@ -69,11 +70,23 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     const isOpen = open === l.id;
     const other = (l.tax || 0) + (l.shipping || 0);
     const sup = vendorName(l.vendorId);
+    const v = db.vendors.find((x) => x.id === l.vendorId);
+    // Card subtext order: Item # · Account · Supplier (clickable) · UOM. Prices live in the right column.
     const meta: ReactNode[] = [
-      l.name?.trim() && <span key="n" className="text-foreground/70">{l.name.trim()}</span>,
-      !hideSupplier && (sup ? <span key="s" className="font-medium text-foreground/80">{sup}</span> : <span key="s" className="text-warning">No supplier</span>),
+      <span key="p" className={cn("num", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #">{l.partNumber || "No item #"}</span>,
       <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
-      l.partNumber && <span key="p" className="num">{l.partNumber}</span>,
+      !hideSupplier && (v ? (
+        <Popover key="s">
+          <PopoverTrigger asChild><button type="button" className="font-medium text-primary hover:underline">{sup}</button></PopoverTrigger>
+          <PopoverContent align="start" className="w-60 p-3 text-xs">
+            <p className="text-sm font-medium">{v.name}</p>
+            <p className="mt-1 text-muted-foreground">{[v.preferred && "Preferred", v.verified && "Verified", v.contractActive ? "Active contract" : "No contract"].filter(Boolean).join(" · ")}</p>
+            {v.categories.length > 0 && <p className="mt-1 text-muted-foreground">{v.categories.join(", ")}</p>}
+            <p className="mt-2 border-t border-border pt-2 text-muted-foreground">{r.items.filter((x) => x.vendorId === v.id).length} line(s) from this supplier</p>
+          </PopoverContent>
+        </Popover>
+      ) : <span key="s" className="text-warning">No supplier</span>),
+      <span key="u" title="Unit of measure">{l.uom}</span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
@@ -116,7 +129,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <p className="num text-[11.5px] text-muted-foreground">{l.qty} × <Money v={l.unitPrice} /><span className="text-muted-foreground/70"> /{l.uom.toLowerCase()}</span></p>
               )}
               {fromStock(l) ? <span className="text-sm font-semibold text-muted-foreground sm:mt-0.5 sm:block" title="Issued from internal stock — not added to the total">No cost</span> : <Money v={lineTotal(l)} className={cn("text-sm font-semibold sm:mt-0.5 sm:block", l.declined && "text-muted-foreground line-through decoration-muted-foreground/60")} />}
-              {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${l.tax || 0} · Shipping ${l.shipping || 0}`}>incl. {[l.tax ? <>tax <Money key="t" v={l.tax} /></> : null, l.shipping ? <>shipping <Money key="s" v={l.shipping} /></> : null].filter(Boolean).map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>}
+              {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>incl. other <Money v={other} /></p>}
             </div>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">{actions(l, isOpen)}</div>
