@@ -1,12 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2, XCircle } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
 import { Select } from "@/components/pd/form";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { smartDate, totals } from "@/lib/pd/engine";
 import { stockFor } from "@/lib/pd/inventory";
-import { createDraft, log, mutate, updateRequest, useDB, useMe } from "@/lib/pd/store";
+import { copyRequest, createDraft, log, mutate, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { LineItem, PRequest, Status } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +25,9 @@ const KPIS: Kpi[] = [
   { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
 ];
 
-const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_170px_104px_128px] items-center gap-x-4";
+const GRID = "grid grid-cols-[16px_minmax(280px,1fr)_140px_170px_104px_120px_44px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
-const PIN = "sticky right-0 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
+const PIN = "sticky right-0 z-[1] -mr-4 flex items-center justify-center self-stretch border-l border-border/60 pr-4 pl-2";
 
 /** Who the request is currently waiting on, derived from status and the live approval route. */
 function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean; ids?: string[]; kind?: "team" | "supplier" | "none" } {
@@ -63,6 +64,39 @@ function WaitAvatar({ w, users }: { w: ReturnType<typeof waitingOn>; users: { id
         ? <img key={u.id} src={u.avatar} alt="" className={cn(AV, "object-cover")} />
         : <span key={u.id} className={cn(AV, w.you ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground")}>{initials(u.name)}</span>)}
     </span>
+  );
+}
+
+/** Per-row actions; only actions valid for the request's status are offered. */
+function RowActions({ r, onOpen }: { r: PRequest; onOpen: () => void }) {
+  const me = useMe()!;
+  const nav = useNavigate();
+  const isDraft = ["draft", "changes"].includes(r.status);
+  const cancellable = r.status === "pending";
+  const remove = () => {
+    if (!window.confirm(`Delete draft ${r.id}? This can't be undone.`)) return;
+    mutate((d) => { d.requests = d.requests.filter((x) => x.id !== r.id); });
+    toast.success("Draft deleted");
+  };
+  const cancel = () => {
+    if (!window.confirm(`Cancel ${r.id}? Approvers will no longer see it.`)) return;
+    updateRequest(r.id, (x) => { x.status = "cancelled"; log(x, "Request cancelled", "system", me.id); });
+    toast.success("Request cancelled");
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger aria-label={`Actions for ${r.id}`} className="grid size-7 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/30 data-[state=open]:bg-background data-[state=open]:text-foreground">
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44 text-[13px]">
+        <DropdownMenuItem onSelect={onOpen}><ExternalLink className="size-3.5" />{isDraft ? "Continue editing" : "Open"}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => { const id = copyRequest(r.id, me.id); toast.success("Copied as new draft"); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Copy className="size-3.5" />Duplicate</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => { nav({ to: "/app/requests/$id", params: { id: r.id } }).then(() => setTimeout(() => window.print(), 300)); }}><Printer className="size-3.5" />Print</DropdownMenuItem>
+        {(isDraft || cancellable) && <DropdownMenuSeparator />}
+        {cancellable && <DropdownMenuItem onSelect={cancel} className="text-destructive focus:text-destructive"><XCircle className="size-3.5" />Cancel request</DropdownMenuItem>}
+        {isDraft && <DropdownMenuItem onSelect={remove} className="text-destructive focus:text-destructive"><Trash2 className="size-3.5" />Delete draft</DropdownMenuItem>}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -157,7 +191,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                 const on = kpi === k.key;
                 return (
                   <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }}
-                    className={cn("relative flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                    className={cn("relative flex h-10 shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30 gap-1.5 whitespace-nowrap text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
                     {k.key === "open" ? "All open" : k.label}
                     <span className={cn("num text-[11px]", on ? "text-primary" : "text-muted-foreground/70")}>{n}</span>
                     {on && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
@@ -187,7 +221,8 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                 <span>Progress</span>
                 <span>Waiting on</span>
                 <span className="text-right">Total</span>
-                <span className={cn(PIN, "bg-subtle")}>Business unit</span>
+                <span>Business unit</span>
+                <span className={cn(PIN, "bg-subtle")}><span className="sr-only">Actions</span></span>
               </div>
               <ul className="divide-y divide-border/60">
                 {shown.map((r) => {
@@ -198,10 +233,10 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                   const w = waitingOn(r, me.id, db.users);
                   const tone = r.status === "changes" ? "bg-attention" : r.status === "pending" ? "bg-pending" : step >= 3 ? "bg-success" : "bg-primary";
                   return (
-                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group min-h-[58px] cursor-pointer bg-card px-4 transition-colors hover:bg-subtle")}>
+                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group min-h-[60px] cursor-pointer bg-card px-4 py-2 transition-colors hover:bg-subtle")}>
                       <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
+                        <span className="line-clamp-2 break-words text-sm font-medium leading-5" title={r.title}>{r.title || "Untitled request"}</span>
                         <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
                       </span>
                       <span className="min-w-0" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
@@ -221,7 +256,8 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                         </span>
                       </span>
                       <span className="text-right"><Money v={totals(r).total} className="text-sm font-medium" /><span className="block text-[11px] text-muted-foreground">{n} item{n === 1 ? "" : "s"}</span></span>
-                      <span className={cn(PIN, "bg-card text-[13px] text-foreground/80 group-hover:bg-subtle")} title={r.businessUnit}><span className="truncate">{r.businessUnit || "—"}</span></span>
+                      <span className="truncate text-[13px] text-foreground/80" title={r.businessUnit}>{r.businessUnit || "—"}</span>
+                      <span className={cn(PIN, "bg-card group-hover:bg-subtle")} onClick={(e) => e.stopPropagation()}><RowActions r={r} onOpen={() => open(r)} /></span>
                     </li>
                   );
                 })}
