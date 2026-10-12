@@ -29,7 +29,12 @@ function migrate(d: DB): DB {
     const s = seed.catalog.find((x) => x.id === c.id);
     if (s && !c.description) { c.name = s.name; c.description = s.description; }
     c.description ??= "";
+    if (s && !/^\d+$/.test(c.partNumber)) c.partNumber = s.partNumber; // item numbers are numeric-only
   });
+  d.requests.forEach((r) => r.items.forEach((l) => {
+    const c = d.catalog.find((x) => x.id === l.catalogId);
+    if (c && l.partNumber && !/^\d+$/.test(l.partNumber)) l.partNumber = c.partNumber;
+  }));
   const same = (a?: string, b?: string) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
   d.requests.forEach((r) => r.items.forEach((l) => {
     const c = d.catalog.find((x) => x.id === l.catalogId);
