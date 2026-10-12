@@ -38,6 +38,7 @@ function EditRequest() {
   const r = db.requests.find((x) => x.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [tried, setTried] = useState(false);
+  const [railHidden, toggleRail] = useRailHidden();
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   if (r.requesterId !== me.id && me.role !== "admin")
