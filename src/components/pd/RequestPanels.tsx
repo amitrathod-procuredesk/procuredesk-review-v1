@@ -22,14 +22,9 @@ export function TotalsBlock({ r }: { r: PRequest }) {
     <div>
       <p className="text-xs text-muted-foreground">Request total</p>
       <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
-      <dl className="mt-3 grid grid-cols-3 divide-x divide-border/70 rounded-lg bg-subtle/70 py-2">
-        {parts.map(([k, v]) => (
-          <div key={k} className="min-w-0 px-2.5 first:pl-3">
-            <dt className="text-[11px] leading-4 text-muted-foreground">{k}</dt>
-            <dd className={cn("num truncate text-xs leading-5 font-medium", v ? "text-foreground" : "text-muted-foreground/70")}><Money v={v} /></dd>
-          </div>
-        ))}
-      </dl>
+      <p className="mt-1.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
+        {parts.map(([k, v]) => <span key={k} className="min-w-0 truncate">{k} <Money v={v} className={cn("num", v ? "text-foreground/80" : "text-muted-foreground/70")} /></span>)}
+      </p>
       {sup.length > 1 && t.total > 0 && (
         <div className="mt-3 border-t border-border/60 pt-3">
           <div className="flex h-1 gap-0.5 overflow-hidden rounded-full">
@@ -115,26 +110,16 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
             ];
             const usedPct = Math.round(((used + b.request) / b.budget.total) * 100);
             return (
-              <>
-                <div>
-                  <div className="mb-1.5 flex items-baseline justify-between text-xs">
-                    <span className="text-muted-foreground"><span className={cn("num font-medium", b.over ? "text-destructive" : "text-foreground")}>{usedPct}%</span> used after this request</span>
-                    <span className="num text-muted-foreground">of <Money v={b.budget.total} /></span>
-                  </div>
-                  <div className="flex h-2 gap-px overflow-hidden rounded-full bg-success/20" role="img" aria-label={`${usedPct}% of budget used after this request`}>
-                    <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
-                    <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(b.over ? Math.max(0, b.available) : b.request) }} />
-                  </div>
+              <div>
+                <div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-success/20" role="img" aria-label={`${usedPct}% of budget used after this request`} title={segs.map((g) => `${g.k}: ${money(g.v)}`).join("\n")}>
+                  <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
+                  <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(b.over ? Math.max(0, b.available) : b.request) }} />
                 </div>
-                <dl className="grid grid-cols-3 divide-x divide-border/70 rounded-lg bg-subtle/70 py-2">
-                  {segs.map((g) => (
-                    <div key={g.k} className="min-w-0 px-2.5 first:pl-3">
-                      <dt className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"><span className={cn("size-1.5 shrink-0 rounded-full", g.c)} /><span className="truncate">{g.k}</span></dt>
-                      <dd className={cn("num truncate text-xs leading-5 font-medium", g.k === "Over by" ? "text-destructive" : g.k === "Left after" ? "text-success" : "text-foreground")}><Money v={g.v} /></dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
+                <p className="mt-1.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
+                  <span className="truncate">{b.over ? <><Money v={-b.remaining} className="num font-medium text-destructive" /> over</> : <><Money v={b.remaining} className="num font-medium text-success" /> left after this request</>}</span>
+                  <span className="num">{usedPct}% of <Money v={b.budget.total} /></span>
+                </p>
+              </div>
             );
           })()}
           {b.over ? (
