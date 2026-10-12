@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, BellRing, Check, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
+import { Bell, BellRing, Check, ChevronDown, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -462,21 +462,48 @@ function MiniSuppliers({ r }: { r: PRequest }) {
   );
 }
 
+/** Approval route folded under the total: one line answers "who's next?", the full route expands on demand. */
+function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
+  const db = useDB();
+  const [open, setOpen] = useState(false);
+  const route = editable ? computeRoute(r, db) : r.route;
+  const count = route.reduce((t, s) => t + s.approvals.length, 0);
+  if (!count) return null;
+  const user = (id: string) => db.users.find((u) => u.id === id);
+  const i = currentStageIndex(r);
+  let label = "Next approver", ids: string[] = [], note = "", tone = "text-foreground";
+  if (editable || r.status === "draft" || r.status === "changes") { label = "First approver"; ids = route[0]?.approvals.map((a) => a.userId) ?? []; note = route[0]?.name ?? ""; }
+  else if (i >= 0) { label = "Waiting on"; ids = route[i].approvals.filter((a) => a.status === "pending").map((a) => a.userId); note = route[i].name; tone = "text-pending"; }
+  else if (r.status === "rejected") { label = "Rejected by"; ids = route.flatMap((s) => s.approvals).filter((a) => a.status === "rejected").map((a) => a.userId); tone = "text-destructive"; }
+  else { label = "Fully approved"; note = `${count} approver${count === 1 ? "" : "s"}`; tone = "text-success"; }
+  const first = ids.length ? user(ids[0]) : undefined;
+  return (
+    <div className="mt-3 border-t border-border/60 pt-3">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-subtle">
+        {first ? <UserAvatar user={first} /> : <span className={cn("grid size-6 shrink-0 place-items-center rounded-full bg-success-soft", tone)}><Check className="size-3.5" /></span>}
+        <span className="min-w-0 flex-1">
+          <span className={cn("block text-[11px] leading-4", first ? "text-muted-foreground" : tone)}>{label}</span>
+          <span className="block truncate text-[13px] font-medium leading-5">{first ? `${first.name}${ids.length > 1 ? ` +${ids.length - 1}` : ""}` : note}{first && note && <span className="font-normal text-muted-foreground"> · {note}</span>}</span>
+        </span>
+        <span className="shrink-0 text-[11px] text-muted-foreground">{open ? "Hide" : "Route"}</span>
+        <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="mt-3 animate-in fade-in slide-in-from-top-1"><RouteTimeline r={r} preview={editable} /></div>}
+    </div>
+  );
+}
+
 export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; after?: ReactNode; hideChecks?: boolean }) {
   const db = useDB();
   return (
     <div className="space-y-4">
-      <div className="pd-panel rounded-xl p-4"><TotalsBlock r={r} /></div>
+      <div className="pd-panel rounded-xl p-4">
+        <TotalsBlock r={r} />
+        <RouteSummary r={r} editable={editable} />
+      </div>
       <section className="pd-panel rounded-xl p-4"><BudgetBlock r={r} editable={editable} /></section>
       {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
-      <section className="pd-panel p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold">Approval route</h3>
-          <span className="text-xs text-muted-foreground">{(() => { const n = (editable ? computeRoute(r, db) : r.route).reduce((t, s) => t + s.approvals.length, 0); return `${n} approver${n === 1 ? "" : "s"}`; })()}</span>
-        </div>
-        <RouteTimeline r={r} preview={editable} />
-      </section>
       {after}
     </div>
   );
