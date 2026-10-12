@@ -42,7 +42,7 @@ export function hydrate() {
       const remote = await getWorkspace();
       if (remote) {
         version = remote.version;
-        state = withSession(migrate(remote.data as DB), state.session.userId);
+        state = withSession(migrate(remote.data as unknown as DB), state.session.userId);
       } else {
         // First browser to connect publishes its data (or the demo seed) as the shared workspace.
         pending.push(() => {});
@@ -63,10 +63,11 @@ async function flush() {
   if (flushing || !pending.length) return;
   flushing = true;
   const { saveWorkspace } = await import("./workspace.functions");
+  type Json = import("@/integrations/supabase/types").Json;
   try {
     for (let attempt = 0; attempt < 5 && pending.length; attempt++) {
       const sent = pending.length;
-      const res = await saveWorkspace({ data: { data: shared(state), version } });
+      const res = await saveWorkspace({ data: { data: shared(state) as unknown as Json, version } });
       if (res.ok) {
         version = res.version;
         pending = pending.slice(sent);
@@ -76,7 +77,7 @@ async function flush() {
       // Someone else saved first: rebuild on their version and replay our edits.
       if (res.current) {
         version = res.current.version;
-        const base = withSession(migrate(res.current.data as DB), state.session.userId);
+        const base = withSession(migrate(res.current.data as unknown as DB), state.session.userId);
         const replay = structuredClone(base);
         pending.forEach((fn) => fn(replay));
         state = replay;
@@ -105,7 +106,7 @@ function startPolling() {
       const remote = await getWorkspace();
       if (remote && remote.version > version && !pending.length && !flushing) {
         version = remote.version;
-        state = withSession(migrate(remote.data as DB), state.session.userId);
+        state = withSession(migrate(remote.data as unknown as DB), state.session.userId);
         saveLocal();
         emit();
       }

@@ -5,7 +5,7 @@ import type { Json } from "@/integrations/supabase/types";
  * Shared workspace document. The whole ProcureDesk DB (minus the per-browser session)
  * lives in one row; writes use optimistic versioning so concurrent edits never overwrite each other.
  */
-type Snapshot = { data: unknown; version: number } | null;
+type Snapshot = { data: Json; version: number } | null;
 
 const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
