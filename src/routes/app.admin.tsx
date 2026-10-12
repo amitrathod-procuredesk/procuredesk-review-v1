@@ -31,6 +31,7 @@ const SectionTitle = createContext("");
 function Admin() {
   const me = useMe()!;
   const { section = "users" } = Route.useSearch();
+  const nav = Route.useNavigate();
   const cur = ADMIN_SECTIONS.find((s) => s.id === section)!;
   if (me.role !== "admin")
     return (
@@ -41,6 +42,9 @@ function Admin() {
     );
   return (
     <div key={section} className="animate-in fade-in slide-in-from-bottom-1 mx-auto max-w-6xl p-4 duration-200 md:p-8">
+      <select aria-label="Admin section" className="pd-input mb-4 md:hidden" value={section} onChange={(e) => nav({ search: { section: e.target.value as AdminSection } })}>
+        {ADMIN_SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.group} · {s.label}</option>)}
+      </select>
       <p className="text-xs text-muted-foreground">{cur.group}</p>
       <h1 className="pd-h1">{cur.label}</h1>
       <p className="mb-5 mt-0.5 text-[13px] text-muted-foreground">{cur.desc}</p>
