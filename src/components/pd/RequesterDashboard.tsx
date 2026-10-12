@@ -214,7 +214,8 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
           ) : null}
           {/* Scrolls horizontally when space is short; Business unit stays pinned on the right */}
           <div className={cn("overflow-x-auto", sel.length > 0 && "mt-2")}>
-            <div className="w-max min-w-full">
+            {/* Fill the card; below the grid's summed minimum (columns + gaps + padding) scroll instead. */}
+            <div className="min-w-[1002px]">
               <div className={cn(GRID, "border-b border-border/60 bg-subtle h-8 px-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
                 <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
                 <span>Request</span>
