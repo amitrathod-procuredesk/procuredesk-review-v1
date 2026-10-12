@@ -10,9 +10,10 @@ import { mutate, useDB, useMe } from "@/lib/pd/store";
 import { CATEGORIES, type Role } from "@/lib/pd/types";
 import { ADMIN_SECTIONS, isAdminSection, type AdminSection } from "@/lib/pd/adminNav";
 import { cn } from "@/lib/utils";
+import { ConfigHub } from "@/components/pd/ConfigHub";
 
 export const Route = createFileRoute("/app/admin")({
-  validateSearch: (s: Record<string, unknown>): { section?: AdminSection } => (isAdminSection(s.section) ? { section: s.section } : {}),
+  validateSearch: (s: Record<string, unknown>): { section?: AdminSection; item?: string } => ({ ...(isAdminSection(s.section) ? { section: s.section } : {}), ...(typeof s.item === "string" ? { item: s.item } : {}) }),
   head: () => ({
     meta: [
       { title: "Admin portal · ProcureDesk" },
@@ -30,7 +31,7 @@ const SectionTitle = createContext("");
 
 function Admin() {
   const me = useMe()!;
-  const { section = "users" } = Route.useSearch();
+  const { section = "users", item } = Route.useSearch();
   const nav = Route.useNavigate();
   const cur = ADMIN_SECTIONS.find((s) => s.id === section)!;
   if (me.role !== "admin")
@@ -41,13 +42,15 @@ function Admin() {
       </div>
     );
   return (
-    <div key={section} className="animate-in fade-in slide-in-from-bottom-1 mx-auto max-w-6xl p-4 duration-200 md:p-8">
+    <div key={section + (item ?? "")} className="animate-in fade-in slide-in-from-bottom-1 mx-auto max-w-6xl p-4 duration-200 md:p-8">
       <select aria-label="Admin section" className="pd-input mb-4 md:hidden" value={section} onChange={(e) => nav({ search: { section: e.target.value as AdminSection } })}>
         {ADMIN_SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.group} · {s.label}</option>)}
       </select>
-      <p className="text-xs text-muted-foreground">{cur.group}</p>
-      <h1 className="pd-h1">{cur.label}</h1>
-      <p className="mb-5 mt-0.5 text-[13px] text-muted-foreground">{cur.desc}</p>
+      {section !== "config" && <>
+        <p className="text-xs text-muted-foreground">{cur.group}</p>
+        <h1 className="pd-h1">{cur.label}</h1>
+        <p className="mb-5 mt-0.5 text-[13px] text-muted-foreground">{cur.desc}</p>
+      </>}
       <SectionTitle.Provider value={cur.label}>
         {section === "users" && <UsersTab />}
         {section === "roles" && <RolesTab />}
@@ -56,7 +59,7 @@ function Admin() {
         {section === "rules" && <RulesTab />}
         {section === "policies" && <PolicyTab />}
         {section === "vendors" && <VendorTab />}
-        {section === "config" && <OrgTab />}
+        {section === "config" && <ConfigHub item={item} renderCompany={() => <OrgTab />} />}
         {section === "logs" && <LogsTab />}
         {section === "password" && <PasswordTab />}
       </SectionTitle.Provider>

@@ -1,4 +1,4 @@
-import { Bell, Boxes, Building2, DatabaseZap, FileCheck2, Landmark, Plug, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { Bell, Boxes, Building2, DatabaseZap, FileCheck2, Landmark, Plug, Truck, type LucideIcon } from "lucide-react";
 import type { AdminSection } from "./adminNav";
 
 export type ConfigItem = {
@@ -111,4 +111,3 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
 export const CONFIG_ITEMS = CONFIG_GROUPS.flatMap((g) => g.items.map((it) => ({ ...it, group: g })));
 export const findConfig = (id?: string) => CONFIG_ITEMS.find((x) => x.id === id);
 export const CONFIG_COUNT = CONFIG_ITEMS.length;
-export const ShieldIcon = ShieldCheck;
