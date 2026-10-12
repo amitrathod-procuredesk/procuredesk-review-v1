@@ -241,7 +241,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                         <span className="block truncate whitespace-nowrap text-xs text-muted-foreground"><span className="num">{r.id}</span> · {smartDate(r.updatedAt)}</span>
                       </span>
                       <span className="min-w-0" title={STEPS.map((s, i) => `${i < step ? "✓" : "○"} ${s}`).join("\n")}>
-                        <StatusBadge status={r.status} />
+                        <StatusBadge r={r} />
                         {step > 0 && (
                           <span className="mt-1.5 flex items-center gap-2" aria-label={`${pct}% complete`}>
                             <span className="h-1 flex-1 overflow-hidden rounded-full bg-border"><span className={cn("block h-full rounded-full", tone)} style={{ width: `${pct}%` }} /></span>

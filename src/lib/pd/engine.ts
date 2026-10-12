@@ -36,7 +36,7 @@ export function supplierBreakdown(r: PRequest, db: DB) {
   return [...map.values()].sort((a, b) => b.amount - a.amount);
 }
 
-const COMMITTING = new Set(["approved", "ordered", "partial", "received"]);
+const COMMITTING = new Set(["approved", "ordered", "part_ordered", "order_deleted", "partial", "received"]);
 
 export function budgetStatus(r: PRequest, db: DB) {
   const b = db.budgets.find((x) => x.id === r.budgetId);
@@ -219,12 +219,20 @@ export function smartTime(iso: string) {
 export const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   pending: "Pending approval",
-  changes: "Changes requested",
+  changes: "Sent to requestor",
   approved: "Approved",
   rejected: "Rejected",
   cancelled: "Cancelled",
-  ordered: "Ordered",
+  ordered: "Order created",
+  part_ordered: "Partially ordered",
+  order_deleted: "Order deleted",
+  part_approved: "Partially approved",
   partial: "Partially received",
   received: "Received",
   closed: "Closed",
 };
+
+/** Status as shown to users: an approved request with approver-declined lines reads "Partially approved". */
+export type ViewStatus = Status | "part_approved";
+export const viewStatus = (r: Pick<PRequest, "status" | "items">): ViewStatus =>
+  r.status === "approved" && r.items.some((i) => i.declined) ? "part_approved" : r.status;
