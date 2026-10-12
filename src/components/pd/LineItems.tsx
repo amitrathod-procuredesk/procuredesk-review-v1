@@ -158,23 +158,35 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
       )}
     </>
   );
-  const cell = "h-7 w-full min-w-0 rounded border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
+  const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
+  const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
     <div className="pd-scroll overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
-        <thead className="bg-subtle/60 text-left text-[11px] font-medium text-muted-foreground">
-          <tr className="[&>th]:h-8 [&>th]:px-2 [&>th]:font-medium">
-            {editable && <th className="w-8" />}
-            <th className="min-w-[260px]">Description</th>
-            <th className="w-24">Item #</th>
-            <th className="w-44">Account</th>
-            {!hideSupplier && <th className="w-40">Supplier</th>}
-            <th className="w-16 text-right">Qty</th>
-            <th className="w-14">UOM</th>
-            <th className="w-24 text-right">Unit price</th>
-            <th className="w-20 text-right" title="Tax + shipping">Other</th>
-            <th className="w-24 text-right">Total</th>
-            <th className="sticky right-0 w-16 bg-subtle" aria-label="Actions" />
+      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
+        <colgroup>
+          {editable && <col className="w-9" />}
+          <col />
+          <col className="w-[92px]" />
+          <col className="w-[140px]" />
+          {!hideSupplier && <col className="w-[130px]" />}
+          <col className="w-[104px]" />
+          <col className="w-[104px]" />
+          <col className="w-[72px]" />
+          <col className="w-[100px]" />
+          <col className="w-16" />
+        </colgroup>
+        <thead className="bg-subtle/60 text-left text-[11px] text-muted-foreground">
+          <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:px-2 [&>th]:font-medium">
+            {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
+            <th className="pl-3.5">Description</th>
+            <th className="pl-3.5">Item #</th>
+            <th>Account</th>
+            {!hideSupplier && <th>Supplier</th>}
+            <th className="text-right">Qty</th>
+            <th className="pr-3.5 text-right">Unit price</th>
+            <th className="text-right" title="Tax + shipping">Other</th>
+            <th className="text-right">Total</th>
+            <th className="sticky right-0 bg-subtle" aria-label="Actions" />
           </tr>
         </thead>
         <tbody>
@@ -183,24 +195,27 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
             const ro = !editable || !!l.declined;
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
-              <tr key={l.id} className={cn("group border-t border-border align-top transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-1.5", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
-                {editable && <td className="pt-2.5"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
+              <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
+                {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
-                  {ro ? <p className={cn("line-clamp-2 px-1.5 py-1 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
-                    : <textarea rows={2} aria-label="Description" className={cn(cell, "h-auto resize-none py-1 font-medium leading-snug", !l.description && "border-destructive/60")} value={l.description} onChange={(e) => patch(l.id, { description: e.target.value })} />}
-                  {(fromStock(l) || l.declined) && <span className="ml-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined" : "From stock · no cost"}</span>}
+                  {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
+                    : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
+                  {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                 </td>
-                <td>{ro ? <span className="num px-1.5 leading-7">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
-                <td>{ro ? <span className="block truncate px-1.5 leading-7">{l.account || "—"}</span> : (
-                  <select aria-label="Account" className={cn(cell, "pr-5", !l.account && "text-warning")} value={l.account} onChange={(e) => patch(l.id, { account: e.target.value })}><option value="">Select…</option>{ACCOUNTS.map((c) => <option key={c}>{c}</option>)}</select>)}</td>
-                {!hideSupplier && <td>{ro ? <span className="block truncate px-1.5 leading-7">{vendorName(l.vendorId) || "—"}</span> : (
-                  <select aria-label="Supplier" className={cn(cell, "pr-5", !l.vendorId && "text-warning")} value={l.vendorId} onChange={(e) => patch(l.id, { vendorId: e.target.value })}><option value="">Select…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>)}</td>}
-                <td className="text-right">{ro ? <span className="num px-1.5 leading-7">{l.qty}</span> : <input type="number" min={1} aria-label="Quantity" className={cn(cell, "num text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none")} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />}</td>
-                <td className="leading-7 text-muted-foreground">{l.uom}</td>
-                <td className="text-right">{ro ? <Money v={l.unitPrice} className="px-1.5 leading-7" /> : <input type="number" min={0} step="0.01" aria-label="Unit price" className={cn(cell, "num text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none")} value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} />}</td>
-                <td className="num text-right leading-7 text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
-                <td className="num text-right font-semibold leading-7">{fromStock(l) ? <span className="text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
-                <td className="sticky right-0 bg-surface group-hover:bg-subtle"><div className="flex justify-end gap-0.5 pt-0.5">{actions(l, isOpen)}</div></td>
+                <td>{ro ? <span className="num block truncate px-1.5">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
+                <td><span className={cn("block truncate", !l.account && "text-warning")} title={l.account}>{l.account || "No account"}</span></td>
+                {!hideSupplier && <td><span className={cn("block truncate", !l.vendorId && "text-warning")} title={vendorName(l.vendorId)}>{vendorName(l.vendorId) || "No supplier"}</span></td>}
+                <td>
+                  <div className="flex items-center justify-end gap-1">
+                    {ro ? <span className="num">{l.qty}</span> : <input type="number" min={1} aria-label="Quantity" className={cn(cell, "num w-12 text-right", noSpin)} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />}
+                    <span className="w-9 shrink-0 truncate text-[11px] text-muted-foreground" title="Unit of measure">{l.uom.toLowerCase()}</span>
+                  </div>
+                </td>
+                <td className="text-right">{ro ? <Money v={l.unitPrice} className="pr-1.5" /> : (
+                  <div className="relative"><span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><input type="number" min={0} step="0.01" aria-label="Unit price" className={cn(cell, "num pl-4 text-right", noSpin)} value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></div>)}</td>
+                <td className="num text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
+                <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
+                <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l, isOpen)}</div></td>
               </tr>,
               isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={20} className="px-4 py-3"><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></td></tr>,
             ];
