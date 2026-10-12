@@ -24,7 +24,7 @@ const KPIS: Kpi[] = [
   { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
 ];
 
-const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] items-center gap-x-4";
+const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_170px_104px_128px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
 const PIN = "sticky right-0 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
 
@@ -103,14 +103,14 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
   // Needs attention — derived from my requests and mentions.
   const attention = useMemo(() => {
     const out: { id: string; r: PRequest; icon: typeof Undo2; text: string; tone: string }[] = [];
-    db.requests.forEach((r) => {
+    db.requests.filter((r) => unit === "all" || r.businessUnit === unit).forEach((r) => {
       if (r.requesterId === me.id && r.status === "changes") out.push({ id: r.id + "c", r, icon: Undo2, text: "Returned for changes", tone: "text-attention" });
       if (r.requesterId === me.id && ["ordered", "partial"].includes(r.status)) out.push({ id: r.id + "d", r, icon: PackageCheck, text: "Delivery needs a receipt", tone: "text-transit" });
       if (r.route.some((s) => s.approvals.some((a) => a.userId === me.id && a.status === "pending")) && r.status === "pending") out.push({ id: r.id + "a", r, icon: Stamp, text: "Needs your approval", tone: "text-pending" });
       if (r.requesterId !== me.id && r.comments.some((c) => c.text.toLowerCase().includes(`@${me.name.split(" ")[0].toLowerCase()}`))) out.push({ id: r.id + "m", r, icon: AtSign, text: "You were mentioned", tone: "text-primary" });
     });
     return out.slice(0, 6);
-  }, [db, me]);
+  }, [db, me, unit]);
 
   // Vendors I buy from, with catalog item counts.
   const vendors = useMemo(() => {
@@ -140,38 +140,36 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
           <h1 className="truncate text-lg font-semibold tracking-tight">{greet()}, {me.name.split(" ")[0]}</h1>
           <p className="truncate text-[13px] text-muted-foreground">{drafts ? <>You have <button className="font-medium text-primary hover:underline" onClick={() => setKpi("draft")}>{drafts} draft{drafts === 1 ? "" : "s"}</button> to submit</> : "All your drafts are submitted"}</p>
         </div>
-        <div className="flex items-center gap-2">{tabs}{action}</div>
+        <div className="flex items-center gap-2">
+          <Select aria-label="Business unit" title="Applies to the whole dashboard" className={cn("h-8 w-44 text-[13px]", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => { setUnit(e.target.value); setSel([]); }}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+          {tabs}{action}
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Requests */}
         <section className="pd-panel min-w-0">
-          <header className="grid grid-cols-1 items-center gap-2 px-4 pt-3.5 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <h2 className="text-sm font-semibold">My requests</h2>
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="relative min-w-0 flex-1 sm:w-52 sm:flex-none">
-                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search requests" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
-              </div>
-              <Select aria-label="Business unit" className={cn("h-8 w-40 shrink-0 text-[13px]", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => { setUnit(e.target.value); setSel([]); }}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+          {/* One quiet row: status tabs filter the table, search on the right */}
+          <header className="flex items-end gap-3 border-b border-border/60 px-4 pt-2">
+            <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide flex min-w-0 flex-1 gap-5 overflow-x-auto">
+              {KPIS.map((k) => {
+                const n = mine.filter((r) => k.statuses.includes(r.status)).length;
+                const on = kpi === k.key;
+                return (
+                  <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }}
+                    className={cn("relative flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                    {k.key === "open" ? "All open" : k.label}
+                    <span className={cn("num text-[11px]", on ? "text-primary" : "text-muted-foreground/70")}>{n}</span>
+                    {on && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="relative mb-1.5 w-40 shrink-0 lg:w-48">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input className="pd-input h-7 pl-8 text-[13px]" placeholder="Search" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
           </header>
-          {/* Status tabs filter only this table */}
-          <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide mt-2 flex gap-4 overflow-x-auto border-b border-border/60 px-4">
-            {KPIS.map((k) => {
-              const n = mine.filter((r) => k.statuses.includes(r.status)).length;
-              const on = kpi === k.key;
-              return (
-                <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }}
-                  className={cn("relative flex shrink-0 items-center gap-1.5 whitespace-nowrap py-2 text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                  {k.key !== "open" && <span className={cn("size-1.5 rounded-full", k.dot)} />}
-                  {k.key === "open" ? "All open" : k.label}
-                  <span className={cn("num rounded-full px-1.5 text-[11px]", on ? "bg-accent text-accent-foreground" : "bg-subtle text-muted-foreground")}>{n}</span>
-                  {on && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
-                </button>
-              );
-            })}
-          </div>
           {sel.length > 0 ? (
             <div className="mx-4 mt-2 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
               <span className="font-medium text-primary">{sel.length} selected</span>
