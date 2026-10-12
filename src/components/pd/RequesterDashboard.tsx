@@ -26,7 +26,7 @@ const KPIS: Kpi[] = [
 
 const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
-const PIN = "sticky right-0 -my-2.5 -mr-4 flex min-w-0 items-center self-stretch border-l border-border/60 py-2.5 pl-4 pr-4";
+const PIN = "sticky right-0 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
 
 /** Who the request is currently waiting on, derived from status and the live approval route. */
 function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean; ids?: string[]; kind?: "team" | "supplier" | "none" } {
@@ -61,7 +61,7 @@ function WaitAvatar({ w, users }: { w: ReturnType<typeof waitingOn>; users: { id
     <span aria-hidden className="flex shrink-0 -space-x-1.5">
       {list.map((u) => u.avatar
         ? <img key={u.id} src={u.avatar} alt="" className={cn(AV, "object-cover")} />
-        : <span key={u.id} className={cn(AV, w.you ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary")}>{initials(u.name)}</span>)}
+        : <span key={u.id} className={cn(AV, w.you ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground")}>{initials(u.name)}</span>)}
     </span>
   );
 }
@@ -143,40 +143,37 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
         <div className="flex items-center gap-2">{tabs}{action}</div>
       </div>
 
-      {/* Stat strip — one surface, each segment filters the list below */}
-      <div className="pd-panel grid grid-cols-2 overflow-hidden sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
-        {KPIS.map((k) => {
-          const rs = mine.filter((r) => k.statuses.includes(r.status));
-          const amt = k.key === "pending" ? rs.reduce((s, r) => s + totals(r).total, 0) : 0;
-          const on = kpi === k.key;
-          return (
-            <button key={k.key} onClick={() => setKpi(k.key)} aria-pressed={on}
-              className={cn("relative border-b border-r border-border/60 px-4 py-2.5 text-left transition-colors hover:bg-subtle lg:border-b-0", on && "bg-primary/[0.04]")}>
-              {on && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className={cn("size-1.5 rounded-full", k.dot)} /><span className="truncate">{k.label}</span></span>
-              <span className="flex items-baseline gap-1.5"><span className={cn("num text-xl font-semibold", on && "text-primary")}>{rs.length}</span>{amt > 0 && <Money v={amt} className="truncate text-[11px] text-muted-foreground" />}</span>
-            </button>
-          );
-        })}
-        <label className="col-span-full flex flex-col justify-center gap-1 px-3 py-2 lg:col-span-1">
-          <span className="text-[11px] font-medium text-muted-foreground">Business unit</span>
-          <Select className={cn("h-8 w-full text-[13px] lg:w-40", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
-        </label>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Requests */}
         <section className="pd-panel min-w-0">
-          <header className="flex flex-wrap items-center gap-2 px-4 pt-4">
-            <h2 className="text-sm font-semibold">{active.label}</h2>
-            <span className="num rounded-full bg-subtle px-1.5 text-[11px] text-muted-foreground">{listed.length}</span>
-            <div className="relative ml-auto w-full sm:w-56">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
+          <header className="grid grid-cols-1 items-center gap-2 px-4 pt-3.5 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <h2 className="text-sm font-semibold">My requests</h2>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="relative min-w-0 flex-1 sm:w-52 sm:flex-none">
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input className="pd-input h-8 pl-8 text-[13px]" placeholder="Search requests" aria-label="Search requests" value={q} onChange={(e) => setQ(e.target.value)} />
+              </div>
+              <Select aria-label="Business unit" className={cn("h-8 w-40 shrink-0 text-[13px]", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => { setUnit(e.target.value); setSel([]); }}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
             </div>
           </header>
+          {/* Status tabs filter only this table */}
+          <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide mt-2 flex gap-4 overflow-x-auto border-b border-border/60 px-4">
+            {KPIS.map((k) => {
+              const n = mine.filter((r) => k.statuses.includes(r.status)).length;
+              const on = kpi === k.key;
+              return (
+                <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }}
+                  className={cn("relative flex shrink-0 items-center gap-1.5 whitespace-nowrap py-2 text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                  {k.key !== "open" && <span className={cn("size-1.5 rounded-full", k.dot)} />}
+                  {k.key === "open" ? "All open" : k.label}
+                  <span className={cn("num rounded-full px-1.5 text-[11px]", on ? "bg-accent text-accent-foreground" : "bg-subtle text-muted-foreground")}>{n}</span>
+                  {on && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+                </button>
+              );
+            })}
+          </div>
           {sel.length > 0 ? (
-            <div className="mx-4 mt-3 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
+            <div className="mx-4 mt-2 flex h-9 items-center gap-2 rounded-md bg-primary/5 px-3 text-[13px] animate-in fade-in">
               <span className="font-medium text-primary">{sel.length} selected</span>
               <button disabled={!eligible.length} title={eligible.length ? undefined : "Only approved requests can be ordered"} className="ml-2 rounded px-2 py-1 font-medium text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent" onClick={createOrders}>Create order{eligible.length ? ` (${eligible.length})` : ""}</button>
               {eligible.length < sel.length && <span className="text-xs text-muted-foreground">{sel.length - eligible.length} not approved</span>}
@@ -184,15 +181,15 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
             </div>
           ) : null}
           {/* Scrolls horizontally when space is short; Business unit stays pinned on the right */}
-          <div className="mt-3 overflow-x-auto">
+          <div className={cn("overflow-x-auto", sel.length > 0 && "mt-2")}>
             <div className="min-w-[780px]">
-              <div className={cn(GRID, "border-y border-border/60 bg-subtle px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
+              <div className={cn(GRID, "border-b border-border/60 bg-subtle h-8 px-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
                 <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
                 <span>Request</span>
                 <span>Progress</span>
                 <span>Waiting on</span>
                 <span className="text-right">Total</span>
-                <span className={cn(PIN, "-my-1.5 py-1.5 bg-subtle")}>Business unit</span>
+                <span className={cn(PIN, "bg-subtle")}>Business unit</span>
               </div>
               <ul className="divide-y divide-border/60">
                 {shown.map((r) => {
@@ -203,7 +200,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                   const w = waitingOn(r, me.id, db.users);
                   const tone = r.status === "changes" ? "bg-attention" : r.status === "pending" ? "bg-pending" : step >= 3 ? "bg-success" : "bg-primary";
                   return (
-                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group cursor-pointer bg-card px-4 py-2.5 transition-colors hover:bg-subtle")}>
+                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group min-h-[58px] cursor-pointer bg-card px-4 transition-colors hover:bg-subtle")}>
                       <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
