@@ -20,7 +20,7 @@ type Tab = { key: ViewStatus | "all"; label: string };
 const PRIMARY_TABS: Tab[] = [
   { key: "all", label: "All" },
   { key: "draft", label: "Draft" },
-  { key: "changes", label: "Sent back" },
+  { key: "changes", label: "Sent to requestor" },
   { key: "pending", label: "Pending approval" },
   { key: "approved", label: "Approved" },
   { key: "ordered", label: "Order created" },
