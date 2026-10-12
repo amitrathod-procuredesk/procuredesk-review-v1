@@ -22,10 +22,9 @@ export function AuditTrailButton({ r, compact }: { r: PRequest; compact?: boolea
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)} aria-label="Audit trail" title="Audit trail" className="gap-1.5">
+      <Button size="icon" variant="outline" onClick={() => setOpen(true)} aria-label={`Audit trail, ${r.activity.length} events`} title="Audit trail" className="relative size-8">
         <History className="size-4" />
-        {!compact && <span className="hidden sm:inline">Audit trail</span>}
-        <span className="num rounded-full bg-subtle px-1.5 text-[11px] text-muted-foreground">{r.activity.length}</span>
+        <span className="num absolute -right-1.5 -top-1.5 min-w-4 rounded-full border border-background bg-subtle px-1 text-center text-[10px] leading-4 text-muted-foreground">{r.activity.length > 99 ? "99+" : r.activity.length}</span>
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 bg-surface p-0 sm:max-w-[420px]">
@@ -126,7 +125,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
     <>
       <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(""); }}>
         <PopoverTrigger asChild>
-          <Button size="sm" className="gap-1.5" aria-haspopup="menu"><MoreHorizontal className="size-4" /> Actions</Button>
+          <Button size="icon" variant="outline" className="size-8" aria-haspopup="menu" aria-label="More actions" title="More actions"><MoreHorizontal className="size-4" /></Button>
         </PopoverTrigger>
         <PopoverContent align="end" sideOffset={6} className="w-56 p-1">
           <ul role="menu" aria-label={`Actions for ${r.id}`}>
