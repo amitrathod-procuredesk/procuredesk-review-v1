@@ -26,7 +26,7 @@ export function TotalsBlock({ r }: { r: PRequest }) {
         {parts.map(([k, v]) => (
           <div key={k} className="min-w-0 px-2.5 first:pl-3">
             <dt className="text-[11px] leading-4 text-muted-foreground">{k}</dt>
-            <dd className={cn("num truncate text-[13px] leading-5", v ? "text-foreground" : "text-muted-foreground/70")}><Money v={v} /></dd>
+            <dd className={cn("num truncate text-xs leading-5 font-medium", v ? "text-foreground" : "text-muted-foreground/70")}><Money v={v} /></dd>
           </div>
         ))}
       </dl>
@@ -130,7 +130,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
                   {segs.map((g) => (
                     <div key={g.k} className="min-w-0 px-2.5 first:pl-3">
                       <dt className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"><span className={cn("size-1.5 shrink-0 rounded-full", g.c)} /><span className="truncate">{g.k}</span></dt>
-                      <dd className={cn("num truncate text-[13px] leading-5", g.k === "Over by" ? "text-destructive" : g.k === "Left after" ? "text-success" : "text-foreground")}><Money v={g.v} /></dd>
+                      <dd className={cn("num truncate text-xs leading-5 font-medium", g.k === "Over by" ? "text-destructive" : g.k === "Left after" ? "text-success" : "text-foreground")}><Money v={g.v} /></dd>
                     </div>
                   ))}
                 </dl>
