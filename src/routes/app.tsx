@@ -30,6 +30,8 @@ function AppShell() {
   const params = useParams({ strict: false }) as { id?: string };
   const [assistant, setAssistant] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const adminMode = path.startsWith("/app/admin");
 
   useEffect(() => {
     if (hydrated && !me) nav({ to: "/" });
