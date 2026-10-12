@@ -1,3 +1,4 @@
+export type BudgetLevel = "header" | "line";
 export type Role = "admin" | "requestor" | "approver";
 
 export interface User {
@@ -89,6 +90,8 @@ export interface LineItem {
   category: string;
   deliveryDate?: string;
   notes?: string;
+  /** Line-level budget (used when budget control is "line"); falls back to the request budget. */
+  budgetId?: string;
   catalogId?: string;
   /** "inventory" = issued from internal stock (no purchase, excluded from spend); default purchase from supplier. */
   fulfillment?: "purchase" | "inventory";
@@ -184,6 +187,8 @@ export interface PRequest {
   shipmentType: string;
   requiredBy?: string;
   budgetId?: string;
+  /** Budget control captured at submission; drafts follow the org setting. */
+  budgetLevel?: BudgetLevel;
   urgent: boolean;
   delayed: boolean;
   blanket: boolean;
@@ -218,6 +223,8 @@ export interface Org {
   businessUnits: string[];
   shipTo: string[];
   projects: string[];
+  /** "header": one budget per request; "line": each line item picks its own budget. */
+  budgetLevel: BudgetLevel;
 }
 
 export interface DB {

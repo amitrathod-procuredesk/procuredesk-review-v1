@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { budgetStatus, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartTime, stageComplete, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
+import { budgetLevelOf, budgetStatus, budgetStatuses, budgetedLines, lineBudgetId, computeRoute, currentStageIndex, findDuplicates, money, runChecks, smartTime, stageComplete, supplierBreakdown, totals, uid, type Check as CheckT } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
@@ -55,7 +55,10 @@ export function SupplierBlock({ r }: { r: PRequest }) {
 export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }) {
   const db = useDB();
   const me = useMe();
-  const b = budgetStatus(r, db);
+  const lineMode = budgetLevelOf(r, db) === "line";
+  const all = budgetStatuses(r, db);
+  const b = lineMode ? all.find((x) => x.over) ?? null : budgetStatus(r, db);
+  const unassigned = lineMode ? budgetedLines(r).filter((l) => !lineBudgetId(l, r, db)).length : 0;
   const [exc, setExc] = useState(false);
   const [reason, setReason] = useState("");
   const setBudget = (id: string) =>
@@ -68,12 +71,16 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold">Budget</span>
-        {b ? (
+        <span className="text-sm font-semibold">{lineMode ? "Budgets" : "Budget"}</span>
+        {lineMode ? (
+          all.length ? <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", all.some((x) => x.over) ? "bg-danger-soft text-destructive" : "bg-success-soft text-success")}>{all.some((x) => x.over) ? "Over budget" : "Within budget"}</span> : null
+        ) : b ? (
           <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", b.over ? "bg-danger-soft text-destructive" : "bg-success-soft text-success")}>{b.over ? "Over budget" : "Within budget"}</span>
         ) : <SourceMark s={r.sources.budget} />}
       </div>
-      {editable ? (
+      {lineMode ? (
+        <LineBudgets r={r} all={all} unassigned={unassigned} />
+      ) : editable ? (
         <select id="budget-select-anchor" aria-label="Budget" aria-invalid={!r.budgetId || undefined} className="pd-input" value={r.budgetId ?? ""} onChange={(e) => setBudget(e.target.value)}>
           <option value="">Select a budget…</option>
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
@@ -83,7 +90,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
       )}
       {b && (
         <>
-          {(() => {
+          {!lineMode && (() => {
             const used = Math.max(0, b.budget.total - b.available);
             const pct = (v: number) => `${Math.max(0, Math.min(100, (v / b.budget.total) * 100))}%`;
             const segs = [
@@ -108,13 +115,15 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           })()}
           {b.over ? (
             <div className="rounded-md bg-danger-soft p-3 text-xs">
-              <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>
-              <p className="mt-1 text-foreground/80">This request exceeds the selected budget. {r.exceptionRequested ? "An exception has been requested — approvers will decide." : "You can choose another budget or request an exception."}</p>
+              {!lineMode && <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>}
+              <p className={cn("text-foreground/80", !lineMode && "mt-1")}>{lineMode ? `${b.budget.name} is exceeded by the lines charged to it.` : "This request exceeds the selected budget."} {r.exceptionRequested ? "An exception has been requested — approvers will decide." : "You can choose another budget or request an exception."}</p>
               {editable && !r.exceptionRequested && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <button className="pd-chip" onClick={() => document.getElementById("budget-select-anchor")?.focus()}>Choose another budget</button>
+                  {lineMode
+                    ? <button className="pd-chip" onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })}>Change line budgets</button>
+                    : <button className="pd-chip" onClick={() => document.getElementById("budget-select-anchor")?.focus()}>Choose another budget</button>}
                   <button className="pd-chip" onClick={() => setExc(true)}>Request exception</button>
-                  <button className="pd-chip" onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })}>Edit request</button>
+                  {!lineMode && <button className="pd-chip" onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })}>Edit request</button>}
                 </div>
               )}
               {r.exceptionRequested && r.exceptionReason && <p className="mt-1 italic text-muted-foreground">“{r.exceptionReason}”</p>}
@@ -133,6 +142,37 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Line-level budget control: one compact row per budget the lines charge to. */
+function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<typeof budgetStatuses>; unassigned: number }) {
+  return (
+    <div className="space-y-2.5">
+      {all.length === 0 && !unassigned && <p className="text-xs text-muted-foreground">Each line item picks its budget. Add items to see budget use.</p>}
+      {all.map((x) => {
+        const used = Math.max(0, x.budget.total - x.available);
+        const pct = (v: number) => `${Math.max(0, Math.min(100, (v / x.budget.total) * 100))}%`;
+        return (
+          <div key={x.budget.id} className="animate-in fade-in">
+            <div className="flex items-baseline justify-between gap-3 text-[13px]">
+              <span className="min-w-0 truncate">{x.budget.name} <span className="text-[11px] text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></span>
+              <Money v={x.request} className="shrink-0 font-medium" />
+            </div>
+            <div className="mt-1 flex h-1 gap-px overflow-hidden rounded-full bg-success/20" title={`Used ${money(used)} · This request ${money(x.request)} · ${x.over ? "Over by" : "Left"} ${money(Math.abs(x.remaining))}`}>
+              <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
+              <div className={cn("h-full transition-all duration-500", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(x.over ? Math.max(0, x.available) : x.request) }} />
+            </div>
+            <p className={cn("mt-1 text-[11px]", x.over ? "font-medium text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
+          </div>
+        );
+      })}
+      {unassigned > 0 && (
+        <button onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })} aria-invalid={r.status === "draft" || undefined} className="flex w-full items-center gap-1.5 rounded-md bg-warning-soft px-2.5 py-1.5 text-left text-xs text-warning transition-colors hover:opacity-90">
+          <span className="size-1.5 rounded-full bg-warning" />{unassigned} line{unassigned === 1 ? " needs" : "s need"} a budget
+        </button>
+      )}
     </div>
   );
 }

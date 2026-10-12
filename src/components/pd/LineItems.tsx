@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
+import { budgetLevelOf, lineBudgetId, lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
@@ -18,6 +18,8 @@ const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "",
 
 export function LineItems({ r, editable, heading }: { r: PRequest; editable: boolean; heading?: ReactNode }) {
   const db = useDB();
+  const lineBudgets = budgetLevelOf(r, db) === "line";
+  const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
   const me = useMe();
   const [open, setOpen] = useState<string | null>(null);
   const [edit, setEdit] = useState<string | null>(null);
@@ -86,6 +88,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </PopoverContent>
         </Popover>
       ) : <span key="s" className="text-warning">No supplier</span>),
+      lineBudgets && !fromStock(l) && !l.declined && <span key="b" className={cn(!budgetName(l) && "text-warning")} title="Budget">{budgetName(l) ?? "No budget"}</span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
@@ -133,7 +136,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">{actions(l, isOpen)}</div>
         </div>
-        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} /></div>}
+        {isOpen && <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div>}
       </li>
     );
   };
@@ -264,6 +267,14 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                       <option value="">Select…</option>{ACCOUNTS.map((c, i) => <option key={c} value={c}>{10 + i * 5} · {c}</option>)}
                     </select>
                   </DField>
+                  {lineBudgets && !fromStock(editing) && (
+                    <DField label="Budget" req className="sm:col-span-2">
+                      <select className={cn("pd-input text-sm", !lineBudgetId(editing, r, db) && "border-destructive")} value={lineBudgetId(editing, r, db) ?? ""} onChange={(e) => patch(editing.id, { budgetId: e.target.value || undefined }, `Budget set to ${db.budgets.find((b) => b.id === e.target.value)?.name ?? "none"}`)}>
+                        <option value="">Select…</option>
+                        {db.budgets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                    </DField>
+                  )}
                   <p className="pd-drawer-sec sm:col-span-2">Pricing & supplier</p>
                   <DField label="Quantity" req><input type="number" min={0} className="pd-input num text-sm" value={editing.qty} onChange={(e) => patch(editing.id, { qty: Math.max(0, Number(e.target.value)) })} /></DField>
                   <DField label="Unit price" req><input type="number" min={0} step="0.01" className="pd-input num text-sm" value={editing.unitPrice} onChange={(e) => patch(editing.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></DField>
@@ -319,7 +330,7 @@ function DField({ label, req, className, children }: { label: string; req?: bool
   );
 }
 
-function LineDetail({ l }: { l: LineItem; editable?: boolean; onPatch?: (p: Partial<LineItem>) => void }) {
+function LineDetail({ l, budget }: { l: LineItem; budget?: string }) {
   const db = useDB();
   const v = db.vendors.find((x) => x.id === l.vendorId);
   const cat = db.catalog.find((c) => c.id === l.catalogId);
@@ -331,6 +342,7 @@ function LineDetail({ l }: { l: LineItem; editable?: boolean; onPatch?: (p: Part
     ["Fulfilment", fromStock(l) ? `From stock${INVENTORY[l.catalogId ?? ""] ? ` · ${INVENTORY[l.catalogId ?? ""].location}` : ""}` : "Purchase from supplier"],
     ["Category", dash(l.category)],
     ["Account", dash(l.account)],
+    ...(budget !== undefined ? [["Budget", dash(budget)] as [string, ReactNode]] : []),
     ["UOM", dash(l.uom)],
     ["Class", dash(l.itemClass)],
     ["Project code", dash(l.projectCode)],
@@ -356,12 +368,13 @@ function LineDetail({ l }: { l: LineItem; editable?: boolean; onPatch?: (p: Part
 function MultiEdit({ open, onOpenChange, r, ids }: { open: boolean; onOpenChange: (o: boolean) => void; r: PRequest; ids: string[] }) {
   const db = useDB();
   const me = useMe();
-  const [vals, setVals] = useState<{ vendorId?: string; account?: string; category?: string; deliveryDate?: string }>({});
+  const [vals, setVals] = useState<{ vendorId?: string; account?: string; budgetId?: string; category?: string; deliveryDate?: string }>({});
+  const lineBudgets = budgetLevelOf(r, db) === "line";
   const changed = Object.entries(vals).filter(([, v]) => v);
   const apply = () => {
     updateRequest(r.id, (x) => {
       x.items.forEach((l) => { if (ids.includes(l.id)) changed.forEach(([k, v]) => ((l as unknown as Record<string, unknown>)[k] = v)); });
-      log(x, `Multi-edit: ${changed.map(([k]) => k.replace("vendorId", "supplier")).join(", ")} on ${ids.length} lines`, "edit", me?.id);
+      log(x, `Multi-edit: ${changed.map(([k]) => k.replace("vendorId", "supplier").replace("budgetId", "budget")).join(", ")} on ${ids.length} lines`, "edit", me?.id);
     });
     setVals({});
     onOpenChange(false);
@@ -374,6 +387,7 @@ function MultiEdit({ open, onOpenChange, r, ids }: { open: boolean; onOpenChange
         <div className="grid gap-3 sm:grid-cols-2">
           <label><span className="pd-label">Supplier</span><select className="pd-input" value={vals.vendorId ?? ""} onChange={(e) => setVals({ ...vals, vendorId: e.target.value })}><option value="">Keep current</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
           <label><span className="pd-label">Account</span><select className="pd-input" value={vals.account ?? ""} onChange={(e) => setVals({ ...vals, account: e.target.value })}><option value="">Keep current</option>{ACCOUNTS.map((a) => <option key={a}>{a}</option>)}</select></label>
+          {lineBudgets && <label><span className="pd-label">Budget</span><select className="pd-input" value={vals.budgetId ?? ""} onChange={(e) => setVals({ ...vals, budgetId: e.target.value })}><option value="">Keep current</option>{db.budgets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>}
           <label><span className="pd-label">Category</span><select className="pd-input" value={vals.category ?? ""} onChange={(e) => setVals({ ...vals, category: e.target.value })}><option value="">Keep current</option>{CATEGORIES.map((a) => <option key={a}>{a}</option>)}</select></label>
           <label><span className="pd-label">Delivery date</span><input type="date" className="pd-input" value={vals.deliveryDate ?? ""} onChange={(e) => setVals({ ...vals, deliveryDate: e.target.value })} /></label>
         </div>
