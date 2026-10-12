@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- ProcureDesk state lives in a client store (`src/lib/pd/store.ts`, persisted to localStorage) and all money/budget/route/policy values are derived in `src/lib/pd/engine.ts` from line items and admin rules — never hardcode totals or approval routes.
+- ProcureDesk state is one shared workspace document in Lovable Cloud (`workspace_state`, read/written only via `src/lib/pd/workspace.functions.ts` with optimistic versioning); `src/lib/pd/store.ts` keeps a local cache, replays edits on conflict and polls for others' changes. Only the signed-in user id stays per browser.
 - The copilot (`src/lib/pd/copilot.ts`) and assistant are deterministic and grounded only in org data; they prepare drafts but never submit, approve or change financial values without a user click.
 - Form controls use `src/components/pd/form.tsx` (TextInput, TextArea, Select, Checkbox, Radio) on top of the shared `.pd-input` / checkbox / radio styles in `src/styles.css`; never add per-field heights or radii — so one fix updates every screen.
 - Line items issued from internal stock (`fulfillment: "inventory"`, stock in `src/lib/pd/inventory.ts`) are excluded from totals, supplier spend and budget — they create no purchase.
