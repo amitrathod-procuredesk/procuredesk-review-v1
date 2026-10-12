@@ -26,7 +26,7 @@ const KPIS: Kpi[] = [
 
 const GRID = "grid grid-cols-[16px_minmax(200px,1fr)_140px_160px_92px_128px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
-const PIN = "sticky right-0 z-[1] flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
+const PIN = "sticky -right-4 z-[1] -mr-4 pr-4 flex min-w-0 items-center self-stretch border-l border-border/60 pl-4";
 
 /** Who the request is currently waiting on, derived from status and the live approval route. */
 function waitingOn(r: PRequest, meId: string, users: { id: string; name: string }[]): { who: string; what?: string; you?: boolean; ids?: string[]; kind?: "team" | "supplier" | "none" } {
@@ -183,7 +183,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
           {/* Scrolls horizontally when space is short; Business unit stays pinned on the right */}
           <div className={cn("overflow-x-auto", sel.length > 0 && "mt-2")}>
             <div className="min-w-[780px]">
-              <div className={cn(GRID, "border-b border-border/60 bg-subtle px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
+              <div className={cn(GRID, "border-b border-border/60 bg-subtle h-8 px-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
                 <input type="checkbox" aria-label="Select all shown" disabled={!shown.length} checked={!!shown.length && shown.every((r) => sel.includes(r.id))} onChange={(e) => setSel(e.target.checked ? shown.map((r) => r.id) : [])} />
                 <span>Request</span>
                 <span>Progress</span>
@@ -200,7 +200,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                   const w = waitingOn(r, me.id, db.users);
                   const tone = r.status === "changes" ? "bg-attention" : r.status === "pending" ? "bg-pending" : step >= 3 ? "bg-success" : "bg-primary";
                   return (
-                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group cursor-pointer bg-card px-4 py-2.5 transition-colors hover:bg-subtle")}>
+                    <li key={r.id} onClick={() => open(r)} className={cn(GRID, "group min-h-[58px] cursor-pointer bg-card px-4 transition-colors hover:bg-subtle")}>
                       <input type="checkbox" aria-label={`Select ${r.id}`} checked={picked} onClick={(e) => e.stopPropagation()} onChange={() => setSel((x) => (picked ? x.filter((y) => y !== r.id) : [...x, r.id]))} />
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</span>
