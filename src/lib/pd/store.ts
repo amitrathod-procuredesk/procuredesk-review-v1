@@ -3,23 +3,121 @@ import { seedDB } from "./seed";
 import type { Activity, DB, PRequest, User } from "./types";
 import { computeRoute, currentStageIndex, nowISO, stageComplete, uid } from "./engine";
 
+/** Legacy per-browser copy of the whole DB; read once to seed the shared workspace, then kept as an offline cache. */
 const KEY = "procuredesk-v1";
+/** Who is signed in is per browser, never shared. */
+const SESSION_KEY = "procuredesk-session";
 let state: DB = seedDB();
 let hydrated = false;
+let version = 0;
+let pending: ((d: DB) => void)[] = [];
+let flushing = false;
+let syncError = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+const shared = (d: DB) => ({ ...d, session: { userId: null } });
+const withSession = (d: DB, userId: string | null) => ({ ...d, session: { userId } });
+const saveLocal = () => {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(state.session.userId));
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch { /* storage full */ }
+};
+
 export function hydrate() {
   if (hydrated) return;
+  let local: DB | null = null;
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) state = migrate(JSON.parse(raw));
-  } catch {
-    /* corrupted storage: fall back to seed */
-  }
-  hydrated = true;
-  emit();
+    if (raw) local = migrate(JSON.parse(raw));
+    const sess = localStorage.getItem(SESSION_KEY);
+    const userId = sess ? (JSON.parse(sess) as string | null) : local?.session.userId ?? null;
+    if (local) state = withSession(local, userId);
+    else state = withSession(state, userId);
+  } catch { /* corrupted storage: fall back to seed */ }
+  void (async () => {
+    try {
+      const { getWorkspace } = await import("./workspace.functions");
+      const remote = await getWorkspace();
+      if (remote) {
+        version = remote.version;
+        state = withSession(migrate(remote.data as DB), state.session.userId);
+      } else {
+        // First browser to connect publishes its data (or the demo seed) as the shared workspace.
+        pending.push(() => {});
+      }
+    } catch (e) {
+      syncError = true;
+      console.error("Workspace load failed; using this browser's copy", e);
+    }
+    hydrated = true;
+    saveLocal();
+    emit();
+    if (pending.length) void flush();
+    startPolling();
+  })();
 }
+
+async function flush() {
+  if (flushing || !pending.length) return;
+  flushing = true;
+  const { saveWorkspace } = await import("./workspace.functions");
+  try {
+    for (let attempt = 0; attempt < 5 && pending.length; attempt++) {
+      const sent = pending.length;
+      const res = await saveWorkspace({ data: { data: shared(state), version } });
+      if (res.ok) {
+        version = res.version;
+        pending = pending.slice(sent);
+        syncError = false;
+        continue;
+      }
+      // Someone else saved first: rebuild on their version and replay our edits.
+      if (res.current) {
+        version = res.current.version;
+        const base = withSession(migrate(res.current.data as DB), state.session.userId);
+        const replay = structuredClone(base);
+        pending.forEach((fn) => fn(replay));
+        state = replay;
+        saveLocal();
+        emit();
+      } else version = 0;
+    }
+  } catch (e) {
+    syncError = true;
+    console.error("Workspace save failed; will retry", e);
+    setTimeout(() => void flush(), 5000);
+  } finally {
+    flushing = false;
+    emit();
+  }
+}
+
+let polling = false;
+function startPolling() {
+  if (polling || typeof window === "undefined") return;
+  polling = true;
+  const pull = async () => {
+    if (flushing || pending.length || document.hidden) return;
+    try {
+      const { getWorkspace } = await import("./workspace.functions");
+      const remote = await getWorkspace();
+      if (remote && remote.version > version && !pending.length && !flushing) {
+        version = remote.version;
+        state = withSession(migrate(remote.data as DB), state.session.userId);
+        saveLocal();
+        emit();
+      }
+      syncError = false;
+    } catch { syncError = true; }
+  };
+  setInterval(pull, 5000);
+  window.addEventListener("focus", pull);
+}
+
+/** True while edits are waiting to reach the shared workspace, or the last sync failed. */
+export const syncState = () => (syncError ? "error" : pending.length || flushing ? "saving" : "saved");
 /** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
 function migrate(d: DB): DB {
   const seed = seedDB();
@@ -54,19 +152,19 @@ export const getDB = () => state;
 export function mutate(fn: (d: DB) => void) {
   const draft: DB = structuredClone(state);
   fn(draft);
+  const changed = JSON.stringify(shared(draft)) !== JSON.stringify(shared(state));
   state = draft;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {
-    /* storage full */
+  saveLocal();
+  if (changed && hydrated) {
+    pending.push(fn);
+    void flush();
   }
   emit();
 }
 
+/** Resets the shared workspace to demo data for everyone, and signs this browser out. */
 export function resetDemo() {
-  state = seedDB();
-  localStorage.removeItem(KEY);
-  emit();
+  mutate((d) => { Object.assign(d, seedDB()); d.session = { userId: null }; });
 }
 
 const subscribe = (l: () => void) => {
