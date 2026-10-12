@@ -1,56 +1,174 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Check, KeyRound, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Empty, Money, UserAvatar } from "@/components/pd/bits";
 import { budgetAvailable, money, uid } from "@/lib/pd/engine";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
 import { CATEGORIES, type Role } from "@/lib/pd/types";
+import { ADMIN_SECTIONS, isAdminSection, type AdminSection } from "@/lib/pd/adminNav";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/admin")({
+  validateSearch: (s: Record<string, unknown>): { section?: AdminSection } => (isAdminSection(s.section) ? { section: s.section } : {}),
   head: () => ({
     meta: [
-      { title: "Admin · ProcureDesk" },
-      { name: "description", content: "Configure organization, users, budgets, approval rules, policies and vendors." },
-      { property: "og:title", content: "Admin · ProcureDesk" },
+      { title: "Admin portal · ProcureDesk" },
+      { name: "description", content: "Configure users, roles, approvals, reference data and general settings." },
+      { property: "og:title", content: "Admin portal · ProcureDesk" },
       { property: "og:description", content: "Procurement administration." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Admin,
 });
 
+const SectionTitle = createContext("");
+
 function Admin() {
   const me = useMe()!;
-  if (me.role !== "admin") return <div className="p-8"><Empty title="Permission denied" body="Only admins can configure the organization." /></div>;
+  const { section = "users" } = Route.useSearch();
+  const nav = Route.useNavigate();
+  const cur = ADMIN_SECTIONS.find((s) => s.id === section)!;
+  if (me.role !== "admin")
+    return (
+      <div className="p-8">
+        <Empty title="Admin access required" body="Only admins can open the admin portal. Switch to an admin user from your profile menu." />
+        <div className="mt-4 text-center"><Link to="/app" className="text-sm font-medium text-primary hover:underline">Back to workspace</Link></div>
+      </div>
+    );
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <h1 className="pd-h1 mb-4">Admin</h1>
-      <Tabs defaultValue="users">
-        <TabsList className="mb-4 flex-wrap">
-          <TabsTrigger value="org">Organization</TabsTrigger>
-          <TabsTrigger value="users">Users & roles</TabsTrigger>
-          <TabsTrigger value="depts">Departments & budgets</TabsTrigger>
-          <TabsTrigger value="rules">Approval rules</TabsTrigger>
-          <TabsTrigger value="policies">Policies</TabsTrigger>
-          <TabsTrigger value="vendors">Vendors & catalog</TabsTrigger>
-        </TabsList>
-        <TabsContent value="org"><OrgTab /></TabsContent>
-        <TabsContent value="users"><UsersTab /></TabsContent>
-        <TabsContent value="depts"><DeptTab /></TabsContent>
-        <TabsContent value="rules"><RulesTab /></TabsContent>
-        <TabsContent value="policies"><PolicyTab /></TabsContent>
-        <TabsContent value="vendors"><VendorTab /></TabsContent>
-      </Tabs>
+    <div key={section} className="animate-in fade-in slide-in-from-bottom-1 mx-auto max-w-6xl p-4 duration-200 md:p-8">
+      <select aria-label="Admin section" className="pd-input mb-4 md:hidden" value={section} onChange={(e) => nav({ search: { section: e.target.value as AdminSection } })}>
+        {ADMIN_SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.group} · {s.label}</option>)}
+      </select>
+      <p className="text-xs text-muted-foreground">{cur.group}</p>
+      <h1 className="pd-h1">{cur.label}</h1>
+      <p className="mb-5 mt-0.5 text-[13px] text-muted-foreground">{cur.desc}</p>
+      <SectionTitle.Provider value={cur.label}>
+        {section === "users" && <UsersTab />}
+        {section === "roles" && <RolesTab />}
+        {section === "departments" && <DeptTab part="departments" />}
+        {section === "budgets" && <DeptTab part="budgets" />}
+        {section === "rules" && <RulesTab />}
+        {section === "policies" && <PolicyTab />}
+        {section === "vendors" && <VendorTab />}
+        {section === "config" && <OrgTab />}
+        {section === "logs" && <LogsTab />}
+        {section === "password" && <PasswordTab />}
+      </SectionTitle.Provider>
     </div>
   );
 }
 
-const Panel = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
-  <section className="pd-panel mb-4"><header className="border-b border-border px-4 py-3"><h2 className="text-sm font-medium">{title}</h2>{desc && <p className="text-xs text-muted-foreground">{desc}</p>}</header><div className="p-4">{children}</div></section>
-);
+function Panel({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+  const page = useContext(SectionTitle);
+  // Don't repeat the page heading/description inside its own panel.
+  const showHead = title !== page;
+  return (
+    <section className="pd-panel mb-4">
+      {showHead && <header className="border-b border-border px-4 py-3"><h2 className="text-sm font-medium">{title}</h2>{desc && <p className="text-xs text-muted-foreground">{desc}</p>}</header>}
+      <div className="p-4">{!showHead && desc && <p className="mb-3 text-xs text-muted-foreground">{desc}</p>}{children}</div>
+    </section>
+  );
+}
+
+const PERMS: { label: string; roles: Role[] }[] = [
+  { label: "Create and edit own requests", roles: ["requestor", "approver", "admin"] },
+  { label: "Approve, reject or reassign", roles: ["approver", "admin"] },
+  { label: "Partially approve line items", roles: ["approver", "admin"] },
+  { label: "Create orders from approved requests", roles: ["admin"] },
+  { label: "Manage users, rules and reference data", roles: ["admin"] },
+  { label: "Open the admin portal", roles: ["admin"] },
+];
+
+function RolesTab() {
+  const db = useDB();
+  const roles: Role[] = ["requestor", "approver", "admin"];
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <table className="pd-table">
+        <thead><tr><th>Permission</th>{roles.map((r) => <th key={r} className="text-center capitalize">{r} <span className="num ml-1 text-[11px] font-normal text-muted-foreground">{db.users.filter((u) => u.role === r && u.active).length}</span></th>)}</tr></thead>
+        <tbody>
+          {PERMS.map((p) => (
+            <tr key={p.label}>
+              <td>{p.label}</td>
+              {roles.map((r) => <td key={r} className="text-center">{p.roles.includes(r) ? <Check className="mx-auto size-4 text-success" aria-label="Allowed" /> : <X className="mx-auto size-4 text-muted-foreground/50" aria-label="Not allowed" />}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function LogsTab() {
+  const db = useDB();
+  const [q, setQ] = useState("");
+  const rows = useMemo(() => db.requests.flatMap((r) => r.activity.map((a) => ({ ...a, req: r }))).sort((a, b) => b.at.localeCompare(a.at)), [db.requests]);
+  const shown = rows.filter((x) => !q || `${x.text} ${x.req.id} ${x.req.title}`.toLowerCase().includes(q.toLowerCase())).slice(0, 200);
+  return (
+    <div className="rounded-lg border border-border bg-surface">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+        <Search className="size-4 text-muted-foreground" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search logs by action or request" aria-label="Search logs" className="h-8 flex-1 bg-transparent text-[13px] outline-none" />
+        <span className="num text-[11px] text-muted-foreground">{shown.length} of {rows.length}</span>
+      </div>
+      {shown.length === 0 ? <div className="p-8"><Empty title="No matching logs" body="Try a different search." /></div> : (
+        <ul className="divide-y divide-border">
+          {shown.map((x) => {
+            const actor = db.users.find((u) => u.id === x.actorId);
+            return (
+              <li key={`${x.req.id}-${x.id}`} className="flex items-center gap-3 px-3 py-2.5 text-[13px]">
+                {actor ? <UserAvatar user={actor} /> : <span className="inline-flex size-6 items-center justify-center rounded-full bg-subtle"><ShieldCheck className="size-3.5 text-muted-foreground" /></span>}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate"><span className="font-medium">{actor?.name ?? "System"}</span> <span className="text-muted-foreground">{x.text}</span></p>
+                  <Link to="/app/requests/$id" params={{ id: x.req.id }} className="block truncate text-[11px] text-muted-foreground hover:text-primary">{x.req.id} · {x.req.title}</Link>
+                </div>
+                <time className="num shrink-0 text-[11px] text-muted-foreground">{new Date(x.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PasswordTab() {
+  const db = useDB();
+  const users = db.users.filter((u) => u.active);
+  const [userId, setUserId] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const save = () => {
+    if (!userId) return setErr("Choose a user");
+    if (pw.length < 8) return setErr("Use at least 8 characters");
+    const u = users.find((x) => x.id === userId)!;
+    mutate((d) => (d.users.find((x) => x.id === userId)!.password = pw));
+    toast.success(`Password reset for ${u.name}`, { description: "They'll use the new password next time they sign in." });
+    setPw(""); setUserId(""); setErr(null);
+  };
+  return (
+    <Panel title="Reset the password">
+      <div className="grid max-w-md gap-3">
+        <label><span className="pd-label">User</span>
+          <select className={cn("pd-input", err && !userId && "border-destructive")} value={userId} onChange={(e) => { setUserId(e.target.value); setErr(null); }}>
+            <option value="">Select a user</option>{users.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.email}</option>)}
+          </select>
+        </label>
+        <label><span className="pd-label">New password</span>
+          <input type="password" autoComplete="new-password" className={cn("pd-input", err && userId && "border-destructive")} value={pw} onChange={(e) => { setPw(e.target.value); setErr(null); }} placeholder="At least 8 characters" />
+        </label>
+        {err && <p role="alert" className="text-xs text-destructive">{err}</p>}
+        <div><Button size="sm" onClick={save}><KeyRound /> Reset password</Button></div>
+      </div>
+    </Panel>
+  );
+}
 
 function OrgTab() {
   const db = useDB();
@@ -111,14 +229,14 @@ function UsersTab() {
   );
 }
 
-function DeptTab() {
+function DeptTab({ part }: { part: "departments" | "budgets" }) {
   const db = useDB();
   const [dn, setDn] = useState({ name: "", businessUnit: db.org.businessUnits[0], managerId: "" });
   const [b, setB] = useState({ name: "", departmentId: "", category: CATEGORIES[0], total: 0 });
   const approvers = db.users.filter((u) => u.role === "approver");
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Panel title="Departments" desc="The manager is the fallback approver when no rule applies.">
+    <div>
+      {part === "departments" && <Panel title="Departments" desc="The manager is the fallback approver when no rule applies.">
         <ul className="mb-4 divide-y divide-border">
           {db.departments.map((d) => (
             <li key={d.id} className="flex items-center gap-3 py-2 text-sm">
@@ -133,8 +251,8 @@ function DeptTab() {
           <select className="pd-input" value={dn.managerId} onChange={(e) => setDn({ ...dn, managerId: e.target.value })}><option value="">Manager</option>{approvers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
         </div>
         <Button size="sm" className="mt-3" disabled={!dn.name.trim()} onClick={() => { mutate((d) => d.departments.push({ id: uid("dep"), name: dn.name, businessUnit: dn.businessUnit, managerId: dn.managerId || undefined })); setDn({ ...dn, name: "" }); toast.success("Department added"); }}>Add department</Button>
-      </Panel>
-      <Panel title="Budgets" desc="Available = total − already committed − approved requests.">
+      </Panel>}
+      {part === "budgets" && <Panel title="Budgets" desc="Available = total − already committed − approved requests.">
         <ul className="mb-4 divide-y divide-border">
           {db.budgets.map((x) => (
             <li key={x.id} className="flex items-center gap-3 py-2 text-sm">
@@ -151,7 +269,7 @@ function DeptTab() {
           <input type="number" className="pd-input num" placeholder="Total" value={b.total || ""} onChange={(e) => setB({ ...b, total: Number(e.target.value) })} />
         </div>
         <Button size="sm" className="mt-3" disabled={!b.name || !b.departmentId || b.total <= 0} onClick={() => { mutate((d) => d.budgets.push({ id: uid("bud"), ...b, committed: 0, fiscalYear: d.org.fiscalYear })); setB({ ...b, name: "", total: 0 }); toast.success("Budget added"); }}>Add budget</Button>
-      </Panel>
+      </Panel>}
     </div>
   );
 }
