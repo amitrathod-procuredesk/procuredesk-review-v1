@@ -136,7 +136,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
   const eligible = sel.filter((id) => (db.requests.find((r) => r.id === id)?.status ?? "") && ["approved", "order_deleted"].includes(db.requests.find((r) => r.id === id)!.status));
   const createOrders = () => {
     if (!eligible.length) return;
-    mutate((d) => d.requests.forEach((r) => { if (eligible.includes(r.id) && r.status === "approved") { r.status = "ordered"; r.updatedAt = new Date().toISOString(); log(r, "Purchase order created", "system", me.id); } }));
+    mutate((d) => d.requests.forEach((r) => { if (eligible.includes(r.id) && ["approved", "order_deleted"].includes(r.status)) { r.status = "ordered"; r.updatedAt = new Date().toISOString(); log(r, "Purchase order created", "system", me.id); } }));
     const skipped = sel.length - eligible.length;
     toast.success(`${eligible.length} order${eligible.length === 1 ? "" : "s"} created`, { description: skipped ? `${skipped} skipped — only approved requests can be ordered` : undefined });
     setSel([]);
