@@ -304,7 +304,7 @@ function RequestTitle({ text }: { text: string }) {
       {text}
       {/* Quiet chevron affordance (muted, not link-blue): fades the clipped end when collapsed */}
       {toggle && (
-        <span aria-hidden className={open ? "ml-1.5 inline-flex align-middle" : "absolute bottom-0 right-0 flex h-[1.375em] items-center bg-gradient-to-r from-transparent via-surface to-surface pl-10"}>
+        <span aria-hidden className={open ? "ml-1.5 inline-flex align-middle" : "absolute bottom-0 right-0 flex h-[1.375em] items-center bg-surface pl-1.5"}>
           <span className="grid size-5 place-items-center rounded-full bg-subtle text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-foreground">
             <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
           </span>
