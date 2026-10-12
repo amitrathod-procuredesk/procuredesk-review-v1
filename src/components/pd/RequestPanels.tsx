@@ -14,9 +14,7 @@ const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15",
 
 /** Requester's first question: "how much?" — one big number, its make-up as quiet subtext, suppliers only when there's more than one. */
 export function TotalsBlock({ r }: { r: PRequest }) {
-  const db = useDB();
   const t = totals(r);
-  const parts = ([["Subtotal", t.subtotal], ["Shipping", t.shipping], ["Tax", t.tax]] as const);
   return (
     <div>
       <p className="text-xs text-muted-foreground">Request total</p>
