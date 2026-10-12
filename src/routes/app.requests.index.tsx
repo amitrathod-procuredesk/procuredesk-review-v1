@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, Money, StatusBadge } from "@/components/pd/bits";
 import { RequesterDashboard } from "@/components/pd/RequesterDashboard";
-import { budgetStatus, smartDate, STATUS_LABEL, supplierBreakdown, totals } from "@/lib/pd/engine";
+import { budgetStatus, smartDate, STATUS_LABEL, supplierBreakdown, viewStatus, type ViewStatus, totals } from "@/lib/pd/engine";
 import { createDraft, log, mutate, useDB, useMe } from "@/lib/pd/store";
 import type { DB, PRequest, Status } from "@/lib/pd/types";
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/app/requests/")({
 
 const COLS = ["Request", "Requestor", "Department", "Supplier", "Amount", "Status", "Required", "Created"] as const;
 type Col = (typeof COLS)[number];
-const STATUSES: Status[] = ["draft", "pending", "changes", "approved", "rejected", "ordered", "received", "cancelled"];
+const STATUSES: ViewStatus[] = ["draft", "changes", "pending", "approved", "part_approved", "ordered", "part_ordered", "order_deleted", "rejected", "cancelled", "partial", "received", "closed"];
 
 /** Natural-language filter: departments, statuses, amounts, suppliers, free text. */
 function nlFilter(db: DB, q: string) {
@@ -50,7 +50,7 @@ function Requests() {
   const nav = useNavigate();
   const search = Route.useSearch();
   const [q, setQ] = useState(search.q ?? "");
-  const [status, setStatus] = useState<Status | "all">("all");
+  const [status, setStatus] = useState<ViewStatus | "all">("all");
   const [dept, setDept] = useState("all");
   const [scope, setScope] = useState<"mine" | "all">(me.role === "requestor" ? "mine" : "all");
   const [sort, setSort] = useState<{ col: Col; dir: 1 | -1 }>({ col: "Created", dir: -1 });
@@ -76,7 +76,7 @@ function Requests() {
     };
     return db.requests
       .filter((r) => (scope === "mine" ? r.requesterId === me.id : me.role !== "requestor" || r.requesterId === me.id))
-      .filter((r) => status === "all" || r.status === status)
+      .filter((r) => status === "all" || viewStatus(r) === status)
       .filter((r) => dept === "all" || r.departmentId === dept)
       .filter(f)
       .sort((a, b) => (val(a) > val(b) ? sort.dir : val(a) < val(b) ? -sort.dir : 0));
@@ -130,7 +130,7 @@ function Requests() {
             {(["all", "mine"] as const).map((s) => <button key={s} className="rounded-sm px-2.5 py-1 text-xs data-[on=true]:bg-subtle data-[on=true]:font-medium" data-on={scope === s} onClick={() => setScope(s)}>{s === "all" ? "All" : "Mine"}</button>)}
           </div>
         )}
-        <select className="pd-input w-auto" value={status} onChange={(e) => { setStatus(e.target.value as Status | "all"); setPage(0); }}>
+        <select className="pd-input w-auto" value={status} onChange={(e) => { setStatus(e.target.value as ViewStatus | "all"); setPage(0); }}>
           <option value="all">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
         <select className="pd-input w-auto" value={dept} onChange={(e) => { setDept(e.target.value); setPage(0); }}>
@@ -177,7 +177,7 @@ function Requests() {
                       {show("Department") && <td>{db.departments.find((d) => d.id === r.departmentId)?.name ?? "—"}</td>}
                       {show("Supplier") && <td>{sup[0]?.name ?? "—"}{sup.length > 1 && <span className="text-xs text-muted-foreground"> +{sup.length - 1}</span>}</td>}
                       {show("Amount") && <td className="text-right"><Money v={totals(r).total} /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></td>}
-                      {show("Status") && <td><StatusBadge status={r.status} /></td>}
+                      {show("Status") && <td><StatusBadge r={r} /></td>}
                       {show("Required") && <td className="text-xs">{smartDate(r.requiredBy)}</td>}
                       {show("Created") && <td className="text-xs text-muted-foreground">{smartDate(r.createdAt)}</td>}
                     </tr>
@@ -188,7 +188,7 @@ function Requests() {
           </div>
           <ul className="space-y-2 md:hidden">
             {pageRows.map((r) => (
-              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="line-clamp-2 min-w-0 break-words text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge status={r.status} /></div></Link></li>
+              <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="line-clamp-2 min-w-0 break-words text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge r={r} /></div></Link></li>
             ))}
           </ul>
           <div className="flex items-center justify-between text-xs text-muted-foreground">

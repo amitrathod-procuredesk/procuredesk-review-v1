@@ -66,7 +66,7 @@ function RequestorHome() {
                     <p className="line-clamp-2 break-words text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</p>
                     <p className="truncate text-xs text-muted-foreground">{r.status === "changes" ? `“${r.decisionReason}”` : `Draft · saved ${smartTime(r.updatedAt)}`}</p>
                   </div>
-                  <StatusBadge status={r.status} />
+                  <StatusBadge r={r} />
                   <span className="w-24 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span>
                   <ArrowRight className="size-4 text-muted-foreground" />
                 </Link>
@@ -89,7 +89,7 @@ function RequestorHome() {
                       <p className="line-clamp-2 break-words text-sm" title={r.title}>{r.title}</p>
                       <p className="text-xs text-muted-foreground"><span className="num">{r.id}</span>{stage ? ` · With ${stage.name}` : ""}</p>
                     </div>
-                    <StatusBadge status={r.status} />
+                    <StatusBadge r={r} />
                     <span className="w-24 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span>
                   </Link>
                 </li>
@@ -106,7 +106,7 @@ function AdminDashboard() {
   const db = useDB();
   const pending = db.requests.filter((r) => r.status === "pending");
   const open = db.requests.filter((r) => ["draft", "pending", "changes"].includes(r.status));
-  const spend = db.requests.filter((r) => ["approved", "ordered", "partial", "received"].includes(r.status)).reduce((s, r) => s + totals(r).total, 0);
+  const spend = db.requests.filter((r) => ["approved", "ordered", "part_ordered", "partial", "received"].includes(r.status)).reduce((s, r) => s + totals(r).total, 0);
   const blocked = open.filter((r) => budgetStatus(r, db)?.over);
   const exceptions = db.requests.filter((r) => r.exceptionRequested || runChecks(r, db).some((c) => c.level !== "ok" && c.id !== "dup") && r.status === "pending");
   const activity = db.requests.flatMap((r) => r.activity.map((a) => ({ ...a, rid: r.id }))).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);

@@ -14,7 +14,7 @@ import type { PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 
 /** Statuses after approval where the post-approval action menu applies. */
-export const POST_APPROVAL = ["approved", "ordered", "partial", "received", "closed"] as const;
+export const POST_APPROVAL = ["approved", "ordered", "part_ordered", "order_deleted", "partial", "received", "closed"] as const;
 
 /* ---------------- Audit trail ---------------- */
 

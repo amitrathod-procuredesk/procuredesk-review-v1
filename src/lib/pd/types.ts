@@ -108,6 +108,8 @@ export type Status =
   | "rejected"
   | "cancelled"
   | "ordered"
+  | "part_ordered"
+  | "order_deleted"
   | "partial"
   | "received"
   | "closed";

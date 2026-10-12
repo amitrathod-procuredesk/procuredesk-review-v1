@@ -192,6 +192,9 @@
   .st-rejected { @apply bg-danger-soft text-destructive; }
   .st-cancelled { @apply bg-subtle text-muted-foreground line-through; }
   .st-ordered { @apply bg-transit-soft text-transit; }
+  .st-part_ordered { @apply bg-transit-soft text-transit; }
+  .st-order_deleted { @apply bg-danger-soft text-destructive; }
+  .st-part_approved { @apply bg-success-soft text-success; }
   .st-partial { @apply bg-transit-soft text-transit; }
   .st-received { @apply bg-success-soft text-success; }
   .st-closed { @apply bg-subtle text-foreground/70; }

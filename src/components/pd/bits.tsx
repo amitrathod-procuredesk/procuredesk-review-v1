@@ -1,11 +1,12 @@
 import { AlertTriangle, Check, CircleAlert, CircleCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Source, Status, User } from "@/lib/pd/types";
-import { money, STATUS_LABEL, type Check as CheckT } from "@/lib/pd/engine";
+import type { PRequest, Source, Status, User } from "@/lib/pd/types";
+import { money, STATUS_LABEL, viewStatus, type Check as CheckT } from "@/lib/pd/engine";
 import { cn } from "@/lib/utils";
 
-export function StatusBadge({ status }: { status: Status }) {
-  return <span className={cn("pd-badge", `st-${status}`)}>{STATUS_LABEL[status]}</span>;
+export function StatusBadge({ status, r }: { status?: Status; r?: Pick<PRequest, "status" | "items"> }) {
+  const s = r ? viewStatus(r) : status!;
+  return <span className={cn("pd-badge", `st-${s}`)}>{STATUS_LABEL[s]}</span>;
 }
 
 export function Money({ v, className }: { v: number; className?: string }) {
