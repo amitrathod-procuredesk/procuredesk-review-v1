@@ -63,7 +63,7 @@ function RequestorHome() {
               <li key={r.id}>
                 <Link to="/app/requests/$id/edit" params={{ id: r.id }} search={{ prompt: undefined }} className="flex items-center gap-3 px-4 py-3 hover:bg-subtle">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{r.title || "Untitled request"}</p>
+                    <p className="line-clamp-2 break-words text-sm font-medium" title={r.title}>{r.title || "Untitled request"}</p>
                     <p className="truncate text-xs text-muted-foreground">{r.status === "changes" ? `“${r.decisionReason}”` : `Draft · saved ${smartTime(r.updatedAt)}`}</p>
                   </div>
                   <StatusBadge status={r.status} />
@@ -86,7 +86,7 @@ function RequestorHome() {
                 <li key={r.id}>
                   <Link to="/app/requests/$id" params={{ id: r.id }} className="flex items-center gap-3 px-4 py-3 hover:bg-subtle">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm">{r.title}</p>
+                      <p className="line-clamp-2 break-words text-sm" title={r.title}>{r.title}</p>
                       <p className="text-xs text-muted-foreground"><span className="num">{r.id}</span>{stage ? ` · With ${stage.name}` : ""}</p>
                     </div>
                     <StatusBadge status={r.status} />
