@@ -60,6 +60,7 @@ export function seedDB(): DB {
       businessUnits: ["Edtech", "Corporate", "Research"],
       shipTo: ["US HQ · Agate, CO", "Austin office · TX", "Remote employee"],
       projects: ["Q4 hiring", "Office refresh", "Platform migration", "General operations"],
+      budgetLevel: "header",
     },
     users: [
       { id: "u_admin", name: "Alex Morgan", email: "admin@procuredesk.app", password: "admin123", role: "admin", title: "Procurement Admin", active: true },

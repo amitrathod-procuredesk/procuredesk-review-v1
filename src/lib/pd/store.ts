@@ -23,6 +23,7 @@ export function hydrate() {
 /** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
 function migrate(d: DB): DB {
   const seed = seedDB();
+  d.org.budgetLevel ??= "header";
   const oldNames = new Map<string, string>();
   d.catalog.forEach((c) => {
     oldNames.set(c.id, c.name);
@@ -153,6 +154,7 @@ export function submitRequest(id: string, userId: string) {
     const resubmit = r.status === "changes";
     r.route = computeRoute(r, d);
     r.route.forEach((s, i) => s.approvals.forEach((a) => (a.status = i === 0 ? "pending" : "waiting")));
+    r.budgetLevel = d.org.budgetLevel ?? "header";
     r.status = "pending";
     r.submittedAt = nowISO();
     r.decisionReason = undefined;

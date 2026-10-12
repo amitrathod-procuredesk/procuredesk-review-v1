@@ -1,4 +1,4 @@
-import type { DB, LineItem, PRequest, Stage, Status } from "./types";
+import type { BudgetLevel, DB, LineItem, PRequest, Stage, Status } from "./types";
 
 export const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 9)}`;
 export const nowISO = () => new Date().toISOString();
@@ -38,25 +38,58 @@ export function supplierBreakdown(r: PRequest, db: DB) {
 
 const COMMITTING = new Set(["approved", "ordered", "part_ordered", "order_deleted", "partial", "received"]);
 
+/** Drafts follow the admin setting; submitted requests keep the level they were submitted with. */
+export const budgetLevelOf = (r: PRequest, db: DB): BudgetLevel =>
+  r.status === "draft" || r.status === "changes" ? (db.org.budgetLevel ?? "header") : (r.budgetLevel ?? "header");
+
+/** Lines that consume budget: purchased (not from stock) and not declined. */
+export const budgetedLines = (r: PRequest) => r.items.filter((l) => !l.declined && l.fulfillment !== "inventory");
+
+/** Budget a line charges to; line level falls back to the request budget. */
+export const lineBudgetId = (l: LineItem, r: PRequest, db: DB) => (budgetLevelOf(r, db) === "line" ? (l.budgetId ?? r.budgetId) : r.budgetId);
+
+/** Amount each budget receives from this request. */
+export function budgetAllocation(r: PRequest, db: DB) {
+  const m = new Map<string, { amount: number; lines: number }>();
+  for (const l of budgetedLines(r)) {
+    const id = lineBudgetId(l, r, db);
+    if (!id) continue;
+    const c = m.get(id) ?? { amount: 0, lines: 0 };
+    c.amount += lineTotal(l); c.lines += 1;
+    m.set(id, c);
+  }
+  return m;
+}
+
+const committedTo = (budgetId: string, db: DB, exceptId?: string) =>
+  db.requests.filter((o) => o.id !== exceptId && COMMITTING.has(o.status)).reduce((s, o) => s + (budgetAllocation(o, db).get(budgetId)?.amount ?? 0), 0);
+
+export type BudgetState = { budget: DB["budgets"][number]; available: number; request: number; remaining: number; over: boolean; utilization: number; lines: number };
+
+/** One entry per budget this request touches (header level: just the request budget). */
+export function budgetStatuses(r: PRequest, db: DB): BudgetState[] {
+  const alloc = budgetAllocation(r, db);
+  if (budgetLevelOf(r, db) === "header" && r.budgetId && !alloc.has(r.budgetId)) alloc.set(r.budgetId, { amount: 0, lines: 0 });
+  const out: BudgetState[] = [];
+  alloc.forEach((a, id) => {
+    const b = db.budgets.find((x) => x.id === id);
+    if (!b) return;
+    const available = b.total - b.committed - committedTo(id, db, r.id);
+    const remaining = available - a.amount;
+    out.push({ budget: b, available, request: a.amount, remaining, over: remaining < 0, utilization: (b.total - available) / b.total, lines: a.lines });
+  });
+  return out.sort((x, y) => x.remaining - y.remaining);
+}
+
+/** The most constrained budget for this request (header level: the request budget). */
 export function budgetStatus(r: PRequest, db: DB) {
-  const b = db.budgets.find((x) => x.id === r.budgetId);
-  if (!b) return null;
-  const others = db.requests
-    .filter((o) => o.id !== r.id && o.budgetId === b.id && COMMITTING.has(o.status))
-    .reduce((s, o) => s + totals(o).total, 0);
-  const available = b.total - b.committed - others;
-  const request = totals(r).total;
-  const remaining = available - request;
-  return { budget: b, available, request, remaining, over: remaining < 0, utilization: (b.total - available) / b.total };
+  return budgetStatuses(r, db)[0] ?? null;
 }
 
 export function budgetAvailable(budgetId: string, db: DB) {
   const b = db.budgets.find((x) => x.id === budgetId);
   if (!b) return 0;
-  const used = db.requests
-    .filter((o) => o.budgetId === b.id && COMMITTING.has(o.status))
-    .reduce((s, o) => s + totals(o).total, 0);
-  return b.total - b.committed - used;
+  return b.total - b.committed - committedTo(budgetId, db);
 }
 
 export function categories(r: PRequest) {
@@ -148,7 +181,8 @@ export function runChecks(r: PRequest, db: DB): Check[] {
   if (!r.title.trim()) missing.push("title");
   if (!r.departmentId) missing.push("department");
   if (!r.requiredBy) missing.push("required date");
-  if (!r.budgetId) missing.push("budget");
+  if (budgetLevelOf(r, db) === "header") { if (!r.budgetId) missing.push("budget"); }
+  else r.items.forEach((l, i) => { if (!l.declined && l.fulfillment !== "inventory" && !lineBudgetId(l, r, db)) missing.push(`line ${i + 1} budget`); });
   if (r.items.length === 0) missing.push("at least one item");
   r.items.forEach((l, i) => {
     if (!l.description.trim()) missing.push(`line ${i + 1} description`);
@@ -188,7 +222,10 @@ export function runChecks(r: PRequest, db: DB): Check[] {
     out.push({ id: "quote", level: "warn", title: `Quote required over ${money(db.policies.quoteThreshold)}`, detail: "Attach a supplier quote before approval.", action: "attach" });
   else if (t >= db.policies.quoteThreshold) out.push({ id: "quote", level: "ok", title: "Supplier quote attached" });
 
-  const b = budgetStatus(r, db);
+  const bs = budgetStatuses(r, db);
+  const overList = bs.filter((x) => x.over);
+  const b = bs.length > 1 && !overList.length ? null : bs[0];
+  if (bs.length > 1 && !overList.length) out.push({ id: "budget", level: "ok", title: `Within ${bs.length} budgets`, detail: "Every line fits its budget." });
   if (b) {
     if (b.over && r.exceptionRequested)
       out.push({ id: "budget", level: "warn", title: `Budget exception requested`, detail: `Over ${b.budget.name} by ${money(-b.remaining)}. Approvers will decide.` });
