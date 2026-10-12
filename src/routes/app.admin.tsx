@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Empty, Money, UserAvatar } from "@/components/pd/bits";
 import { budgetAvailable, money, uid } from "@/lib/pd/engine";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
-import { CATEGORIES, type Role } from "@/lib/pd/types";
+import { CATEGORIES, type BudgetLevel, type Role } from "@/lib/pd/types";
 import { ADMIN_SECTIONS, isAdminSection, type AdminSection } from "@/lib/pd/adminNav";
 import { cn } from "@/lib/utils";
 import { ConfigHub } from "@/components/pd/ConfigHub";
@@ -177,6 +177,7 @@ function OrgTab() {
   const db = useDB();
   const [o, setO] = useState(db.org);
   return (
+    <>
     <section className="pd-panel p-4">
       <div className="grid gap-4 sm:grid-cols-3">
         <label><span className="pd-label">Name</span><input className="pd-input" value={o.name} onChange={(e) => setO({ ...o, name: e.target.value })} /></label>
@@ -186,7 +187,55 @@ function OrgTab() {
         <label className="sm:col-span-3"><span className="pd-label">Ship-to locations</span><input className="pd-input" value={o.shipTo.join(", ")} onChange={(e) => setO({ ...o, shipTo: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></label>
         <label className="sm:col-span-3"><span className="pd-label">Projects</span><input className="pd-input" value={o.projects.join(", ")} onChange={(e) => setO({ ...o, projects: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></label>
       </div>
-      <Button className="mt-4" size="sm" onClick={() => { mutate((d) => (d.org = o)); toast.success("Organization saved"); }}>Save</Button>
+      <Button className="mt-4" size="sm" onClick={() => { mutate((d) => (d.org = { ...o, budgetLevel: d.org.budgetLevel })); toast.success("Organization saved"); }}>Save</Button>
+    </section>
+    <BudgetControl />
+    </>
+  );
+}
+
+const LEVELS: { id: BudgetLevel; title: string; body: string }[] = [
+  { id: "header", title: "Header level", body: "One budget for the whole request. Requesters pick it once, beside the total." },
+  { id: "line", title: "Line level", body: "Each line item picks its own budget, so one request can be split across budgets." },
+];
+
+function BudgetControl() {
+  const db = useDB();
+  const level = db.org.budgetLevel ?? "header";
+  const drafts = db.requests.filter((r) => r.status === "draft" || r.status === "changes");
+  const set = (v: BudgetLevel) => {
+    if (v === level) return;
+    let split = 0;
+    mutate((d) => {
+      d.org.budgetLevel = v;
+      d.requests.filter((r) => r.status === "draft" || r.status === "changes").forEach((r) => {
+        const ids = new Set(r.items.filter((l) => !l.declined && l.fulfillment !== "inventory").map((l) => l.budgetId ?? r.budgetId).filter(Boolean));
+        if (v === "header") {
+          if (ids.size > 1) split++;
+          if (!r.budgetId) r.budgetId = [...ids][0];
+        }
+      });
+    });
+    toast.success(v === "line" ? "Line-level budgets on" : "Header-level budget on", {
+      description: `Applies to new requests and ${drafts.length} open draft${drafts.length === 1 ? "" : "s"}. Submitted requests keep their budgets.${split ? ` ${split} draft${split === 1 ? " was" : "s were"} split across budgets and now use one budget.` : ""}`,
+    });
+  };
+  return (
+    <section className="pd-panel mt-4 p-4">
+      <h2 className="text-sm font-semibold">Budget control</h2>
+      <p className="mb-3 text-xs text-muted-foreground">Where requesters choose the budget a purchase is charged to.</p>
+      <div role="radiogroup" aria-label="Budget control" className="grid gap-2 sm:grid-cols-2">
+        {LEVELS.map((x) => {
+          const on = level === x.id;
+          return (
+            <button key={x.id} role="radio" aria-checked={on} onClick={() => set(x.id)} className={cn("flex items-start gap-3 rounded-lg border p-3 text-left transition-colors", on ? "border-primary bg-primary/5" : "border-border hover:border-primary/40")}>
+              <span className={cn("mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors", on ? "border-primary" : "border-muted-foreground/40")}>{on && <span className="size-2 rounded-full bg-primary animate-in zoom-in-50" />}</span>
+              <span><span className="block text-[13px] font-medium">{x.title}</span><span className="mt-0.5 block text-xs text-muted-foreground">{x.body}</span></span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground">Changes apply right away to new requests and open drafts. Submitted requests keep the budgets they were submitted with.</p>
     </section>
   );
 }
