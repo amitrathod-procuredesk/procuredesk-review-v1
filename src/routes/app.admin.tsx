@@ -111,14 +111,14 @@ function UsersTab() {
   );
 }
 
-function DeptTab() {
+function DeptTab({ part }: { part: "departments" | "budgets" }) {
   const db = useDB();
   const [dn, setDn] = useState({ name: "", businessUnit: db.org.businessUnits[0], managerId: "" });
   const [b, setB] = useState({ name: "", departmentId: "", category: CATEGORIES[0], total: 0 });
   const approvers = db.users.filter((u) => u.role === "approver");
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Panel title="Departments" desc="The manager is the fallback approver when no rule applies.">
+    <div>
+      {part === "departments" && <Panel title="Departments" desc="The manager is the fallback approver when no rule applies.">
         <ul className="mb-4 divide-y divide-border">
           {db.departments.map((d) => (
             <li key={d.id} className="flex items-center gap-3 py-2 text-sm">
@@ -133,8 +133,8 @@ function DeptTab() {
           <select className="pd-input" value={dn.managerId} onChange={(e) => setDn({ ...dn, managerId: e.target.value })}><option value="">Manager</option>{approvers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
         </div>
         <Button size="sm" className="mt-3" disabled={!dn.name.trim()} onClick={() => { mutate((d) => d.departments.push({ id: uid("dep"), name: dn.name, businessUnit: dn.businessUnit, managerId: dn.managerId || undefined })); setDn({ ...dn, name: "" }); toast.success("Department added"); }}>Add department</Button>
-      </Panel>
-      <Panel title="Budgets" desc="Available = total − already committed − approved requests.">
+      </Panel>}
+      {part === "budgets" && <Panel title="Budgets" desc="Available = total − already committed − approved requests.">
         <ul className="mb-4 divide-y divide-border">
           {db.budgets.map((x) => (
             <li key={x.id} className="flex items-center gap-3 py-2 text-sm">
@@ -151,7 +151,7 @@ function DeptTab() {
           <input type="number" className="pd-input num" placeholder="Total" value={b.total || ""} onChange={(e) => setB({ ...b, total: Number(e.target.value) })} />
         </div>
         <Button size="sm" className="mt-3" disabled={!b.name || !b.departmentId || b.total <= 0} onClick={() => { mutate((d) => d.budgets.push({ id: uid("bud"), ...b, committed: 0, fiscalYear: d.org.fiscalYear })); setB({ ...b, name: "", total: 0 }); toast.success("Budget added"); }}>Add budget</Button>
-      </Panel>
+      </Panel>}
     </div>
   );
 }
