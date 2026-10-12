@@ -115,8 +115,8 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           })()}
           {b.over ? (
             <div className="rounded-md bg-danger-soft p-3 text-xs">
-              <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>
-              <p className="mt-1 text-foreground/80">{lineMode ? `${b.budget.name} is exceeded by the lines charged to it.` : "This request exceeds the selected budget."} {r.exceptionRequested ? "An exception has been requested — approvers will decide." : "You can choose another budget or request an exception."}</p>
+              {!lineMode && <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>}
+              <p className={cn("text-foreground/80", !lineMode && "mt-1")}>{lineMode ? `${b.budget.name} is exceeded by the lines charged to it.` : "This request exceeds the selected budget."} {r.exceptionRequested ? "An exception has been requested — approvers will decide." : "You can choose another budget or request an exception."}</p>
               {editable && !r.exceptionRequested && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {lineMode
