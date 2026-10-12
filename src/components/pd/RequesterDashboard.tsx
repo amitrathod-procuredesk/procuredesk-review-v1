@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Minus, Package, PackageCheck, Plus, RotateCcw, Search, Undo2, Truck, Building2, AtSign, Stamp, MoreHorizontal, ExternalLink, Copy, Printer, Trash2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Money, StatusBadge } from "@/components/pd/bits";
@@ -90,11 +90,6 @@ function RowActions({ r, onOpen }: { r: PRequest; onOpen: () => void }) {
     if (!window.confirm(isDraft ? `Delete draft ${r.id}? This can't be undone.` : `Delete ${r.id}? It will be withdrawn from approvers and removed. This can't be undone.`)) return;
     mutate((d) => { d.requests = d.requests.filter((x) => x.id !== r.id); });
     toast.success(isDraft ? "Draft deleted" : `${r.id} deleted`);
-  };
-  const cancel = () => {
-    if (!window.confirm(`Cancel ${r.id}? Approvers will no longer see it.`)) return;
-    updateRequest(r.id, (x) => { x.status = "cancelled"; log(x, "Request cancelled", "system", me.id); });
-    toast.success("Request cancelled");
   };
   return (
     <DropdownMenu>
