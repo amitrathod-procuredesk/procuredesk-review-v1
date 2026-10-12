@@ -59,34 +59,42 @@ function AppShell() {
     { to: "/app", label: "Home", icon: Home, exact: true },
     { to: "/app/requests", label: "Requests", icon: FileText },
     ...(me.role !== "requestor" ? [{ to: "/app/approvals", label: "Approvals", icon: ClipboardCheck }] : []),
-    ...(me.role === "admin" ? [{ to: "/app/admin", label: "Admin", icon: Settings2 }] : []),
   ] as const;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
-        <Link to="/app" className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
-          <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
-          <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to={adminMode ? "/app/admin" : "/app"} className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
+            <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
+            <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
+          </Link>
+          {adminMode && <span className="animate-in fade-in rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">Admin</span>}
+        </div>
         <div className="flex justify-center">
-          <button onClick={() => setAssistant(true)} className="hidden h-9 w-full max-w-[304px] items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-muted-foreground transition-colors hover:border-primary/40 sm:flex">
-            <Search className="size-4" /> <span className="flex-1 text-left">Search for anything</span>
-            <kbd className="rounded border border-border px-1 text-[10px]">⌘K</kbd>
-          </button>
+          {!adminMode && (
+            <button onClick={() => setAssistant(true)} className="hidden h-9 w-full max-w-[304px] items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-muted-foreground transition-colors hover:border-primary/40 sm:flex">
+              <Search className="size-4" /> <span className="flex-1 text-left">Search for anything</span>
+              <kbd className="rounded border border-border px-1 text-[10px]">⌘K</kbd>
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3 sm:gap-6">
-          <button onClick={() => setAssistant(true)} aria-label="Search" className="sm:hidden"><Search className="size-4 text-muted-foreground" /></button>
-          <Link to={me.role === "requestor" ? "/app/requests" : "/app/approvals"} className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[13px] font-medium transition-colors hover:border-primary/40">
-            <AlarmClock className="size-4 text-primary" /> <span className="hidden sm:inline">My Tasks</span>
-            {pendingCount > 0 && <span className="num inline-flex size-[18px] items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{pendingCount}</span>}
-          </Link>
-          <UserMenu compact />
+          {!adminMode && <>
+            <button onClick={() => setAssistant(true)} aria-label="Search" className="sm:hidden"><Search className="size-4 text-muted-foreground" /></button>
+            <Link to={me.role === "requestor" ? "/app/requests" : "/app/approvals"} className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[13px] font-medium transition-colors hover:border-primary/40">
+              <AlarmClock className="size-4 text-primary" /> <span className="hidden sm:inline">My Tasks</span>
+              {pendingCount > 0 && <span className="num inline-flex size-[18px] items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{pendingCount}</span>}
+            </Link>
+          </>}
+          <UserMenu compact adminMode={adminMode} />
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <SideNav collapsed={collapsed} setCollapsed={setCollapsed} pendingCount={pendingCount} role={me.role} onChat={() => setAssistant(true)} />
+        {adminMode
+          ? <AdminSideNav collapsed={collapsed} setCollapsed={setCollapsed} />
+          : <SideNav collapsed={collapsed} setCollapsed={setCollapsed} pendingCount={pendingCount} role={me.role} onChat={() => setAssistant(true)} />}
         <div className="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
           <main className="min-w-0 flex-1">
             <Outlet />
