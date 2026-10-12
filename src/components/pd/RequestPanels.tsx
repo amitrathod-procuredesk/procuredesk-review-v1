@@ -98,7 +98,7 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
       ) : (
-        <p className="truncate text-sm text-foreground/80">{b?.budget.name ?? "No budget selected"}</p>
+        <p className="flex items-baseline justify-between gap-3 text-sm text-foreground/80"><span className="min-w-0 truncate">{b?.budget.name ?? "No budget selected"}</span>{b && <Money v={b.budget.total} className="num shrink-0 text-xs text-muted-foreground" />}</p>
       )}
       {b && (
         <>
