@@ -115,7 +115,6 @@ function Detail() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex gap-2 md:hidden">
               <AuditTrailButton r={r} compact />
-              <AuditTrailButton r={r} />
               {(r.status === "pending" || (POST_APPROVAL as readonly string[]).includes(r.status)) && <RequestActionsButton r={r} />}
             </div>
             {/* Text actions first; icon-only utilities (audit trail, more) grouped at the end */}
