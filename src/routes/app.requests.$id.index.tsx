@@ -292,7 +292,8 @@ function RequestTitle({ text }: { text: string }) {
     <h1
       ref={ref}
       id="req-title"
-      title={toggle ? (open ? "Click to collapse" : text) : undefined}
+      title={toggle ? (open ? "Collapse title" : "Expand title") : undefined}
+      aria-label={toggle ? text : undefined}
       role={toggle ? "button" : undefined}
       tabIndex={toggle ? 0 : undefined}
       aria-expanded={toggle ? open : undefined}
@@ -301,12 +302,12 @@ function RequestTitle({ text }: { text: string }) {
       className={`group relative break-words text-xl font-semibold leading-snug tracking-tight ${open ? "" : "line-clamp-2"} ${toggle ? "cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
     >
       {text}
-      {open && (
-        <span className="ml-1.5 align-baseline text-sm font-medium text-primary group-hover:underline">less</span>
-      )}
-      {toggle && !open && (
-        <span className="absolute bottom-0 right-0 bg-gradient-to-r from-transparent via-background to-background pl-8 text-sm font-medium leading-[inherit] text-primary group-hover:underline">
-          <span className="text-foreground">… </span>more
+      {/* Quiet chevron affordance (muted, not link-blue): fades the clipped end when collapsed */}
+      {toggle && (
+        <span aria-hidden className={open ? "ml-1.5 inline-flex align-middle" : "absolute bottom-0 right-0 flex h-[1.375em] items-center bg-surface pl-1.5"}>
+          <span className="grid size-5 place-items-center rounded-full bg-subtle text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-foreground">
+            <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+          </span>
         </span>
       )}
     </h1>
