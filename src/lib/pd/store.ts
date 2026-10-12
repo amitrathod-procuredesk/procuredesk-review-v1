@@ -34,7 +34,7 @@ function migrate(d: DB): DB {
   d.requests.forEach((r) => r.items.forEach((l) => {
     const c = d.catalog.find((x) => x.id === l.catalogId);
     if (c && l.partNumber && !/^\d+$/.test(l.partNumber)) l.partNumber = c.partNumber;
-  });
+  }));
   const same = (a?: string, b?: string) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
   d.requests.forEach((r) => r.items.forEach((l) => {
     const c = d.catalog.find((x) => x.id === l.catalogId);
