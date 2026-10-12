@@ -1,4 +1,4 @@
-import type { DB, LineItem, PRequest, Stage } from "./types";
+import type { DB, LineItem, PRequest, Stage, Status } from "./types";
 
 export const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 9)}`;
 export const nowISO = () => new Date().toISOString();

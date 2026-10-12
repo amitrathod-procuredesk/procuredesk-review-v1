@@ -50,7 +50,7 @@ function Requests() {
   const nav = useNavigate();
   const search = Route.useSearch();
   const [q, setQ] = useState(search.q ?? "");
-  const [status, setStatus] = useState<Status | "all">("all");
+  const [status, setStatus] = useState<ViewStatus | "all">("all");
   const [dept, setDept] = useState("all");
   const [scope, setScope] = useState<"mine" | "all">(me.role === "requestor" ? "mine" : "all");
   const [sort, setSort] = useState<{ col: Col; dir: 1 | -1 }>({ col: "Created", dir: -1 });
@@ -130,7 +130,7 @@ function Requests() {
             {(["all", "mine"] as const).map((s) => <button key={s} className="rounded-sm px-2.5 py-1 text-xs data-[on=true]:bg-subtle data-[on=true]:font-medium" data-on={scope === s} onClick={() => setScope(s)}>{s === "all" ? "All" : "Mine"}</button>)}
           </div>
         )}
-        <select className="pd-input w-auto" value={status} onChange={(e) => { setStatus(e.target.value as Status | "all"); setPage(0); }}>
+        <select className="pd-input w-auto" value={status} onChange={(e) => { setStatus(e.target.value as ViewStatus | "all"); setPage(0); }}>
           <option value="all">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
         <select className="pd-input w-auto" value={dept} onChange={(e) => { setDept(e.target.value); setPage(0); }}>
