@@ -110,7 +110,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
       if (r.requesterId !== me.id && r.comments.some((c) => c.text.toLowerCase().includes(`@${me.name.split(" ")[0].toLowerCase()}`))) out.push({ id: r.id + "m", r, icon: AtSign, text: "You were mentioned", tone: "text-primary" });
     });
     return out.slice(0, 6);
-  }, [db, me]);
+  }, [db, me, unit]);
 
   // Vendors I buy from, with catalog item counts.
   const vendors = useMemo(() => {
