@@ -13,18 +13,29 @@ import { cn } from "@/lib/utils";
 
 /** Lifecycle used for the progress meter: Draft → Approval → Approved → Ordered → Received. */
 const STEPS = ["Draft", "Approval", "Approved", "Ordered", "Received"];
-const STEP_OF: Partial<Record<Status, number>> = { draft: 1, changes: 1, pending: 2, approved: 3, ordered: 4, partial: 4, received: 5, closed: 5 };
-const OPEN: Status[] = ["draft", "changes", "pending", "approved", "ordered", "partial"];
+const STEP_OF: Partial<Record<Status, number>> = { draft: 1, changes: 1, pending: 2, approved: 3, order_deleted: 3, ordered: 4, part_ordered: 4, partial: 4, received: 5, closed: 5 };
 
-type Kpi = { key: string; label: string; statuses: Status[]; dot: string };
-const KPIS: Kpi[] = [
-  { key: "open", label: "Open requests", statuses: OPEN, dot: "bg-muted-foreground/50" },
-  { key: "draft", label: "Drafts", statuses: ["draft", "changes"], dot: "bg-muted-foreground/50" },
-  { key: "pending", label: "Pending approval", statuses: ["pending"], dot: "bg-pending" },
-  { key: "approved", label: "Approved", statuses: ["approved"], dot: "bg-success" },
-  { key: "ordered", label: "Order created", statuses: ["ordered", "partial"], dot: "bg-transit" },
+/** Status tabs: frequent states inline, rare/terminal ones under "More" (Coupa/Ariba-style overflow). */
+type Tab = { key: ViewStatus | "all"; label: string };
+const PRIMARY_TABS: Tab[] = [
+  { key: "all", label: "All" },
+  { key: "draft", label: "Draft" },
+  { key: "changes", label: "Sent to requestor" },
+  { key: "pending", label: "Pending approval" },
+  { key: "approved", label: "Approved" },
+  { key: "ordered", label: "Order created" },
 ];
+const MORE_TABS: Tab[] = [
+  { key: "part_approved", label: "Partially approved" },
+  { key: "part_ordered", label: "Partially ordered" },
+  { key: "rejected", label: "Rejected" },
+  { key: "cancelled", label: "Cancelled" },
+  { key: "order_deleted", label: "Order deleted" },
+];
+const ALL_TABS = [...PRIMARY_TABS, ...MORE_TABS];
+const inTab = (r: PRequest, k: Tab["key"]) => k === "all" || viewStatus(r) === k;
 
+const TAB = "relative flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30";
 const GRID = "grid grid-cols-[16px_minmax(280px,1fr)_140px_170px_104px_120px_44px] items-center gap-x-4";
 /** Pinned last column; a soft left edge signals rows scroll beneath it. */
 const PIN = "sticky right-0 z-[1] -mr-4 flex items-center justify-center self-stretch border-l border-border/60 pr-4 pl-2";
@@ -44,6 +55,8 @@ function waitingOn(r: PRequest, meId: string, users: { id: string; name: string 
     }
     case "approved": return { who: "Procurement", what: "Create purchase order", kind: "team" };
     case "ordered": return { who: "Supplier", what: "Delivery", kind: "supplier" };
+    case "part_ordered": return { who: "Procurement", what: "Order remaining items", kind: "team" };
+    case "order_deleted": return { who: "Procurement", what: "Re-create order", kind: "team" };
     case "partial": return { who: "Supplier", what: "Remaining delivery", kind: "supplier" };
     default: return { who: "—", what: "Nothing pending", kind: "none" };
   }
@@ -102,25 +115,25 @@ function RowActions({ r, onOpen }: { r: PRequest; onOpen: () => void }) {
 
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 
-export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (status?: Status) => void; tabs?: ReactNode; action?: ReactNode }) {
+export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (status?: ViewStatus) => void; tabs?: ReactNode; action?: ReactNode }) {
   const db = useDB();
   const me = useMe()!;
   const nav = useNavigate();
   const [unit, setUnit] = useState("all");
-  const [kpi, setKpi] = useState("open");
+  const [kpi, setKpi] = useState<Tab["key"]>("all");
   const [q, setQ] = useState("");
   const [vq, setVq] = useState("");
   const [bq, setBq] = useState("");
 
   const mine = useMemo(() => db.requests.filter((r) => r.requesterId === me.id && (unit === "all" || r.businessUnit === unit)), [db, me.id, unit]);
-  const active = KPIS.find((k) => k.key === kpi)!;
+  const active = ALL_TABS.find((k) => k.key === kpi)!;
   const listed = mine
-    .filter((r) => active.statuses.includes(r.status))
+    .filter((r) => inTab(r, kpi))
     .filter((r) => !q || `${r.id} ${r.title}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const shown = listed.slice(0, 6);
   const [sel, setSel] = useState<string[]>([]);
-  const eligible = sel.filter((id) => db.requests.find((r) => r.id === id)?.status === "approved");
+  const eligible = sel.filter((id) => (db.requests.find((r) => r.id === id)?.status ?? "") && ["approved", "order_deleted"].includes(db.requests.find((r) => r.id === id)!.status));
   const createOrders = () => {
     if (!eligible.length) return;
     mutate((d) => d.requests.forEach((r) => { if (eligible.includes(r.id) && r.status === "approved") { r.status = "ordered"; r.updatedAt = new Date().toISOString(); log(r, "Purchase order created", "system", me.id); } }));
@@ -186,18 +199,39 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
           {/* One quiet row: status tabs filter the table, search on the right */}
           <header className="flex items-end gap-3 border-b border-border/60 px-4 pt-2">
             <div role="tablist" aria-label="Filter by status" className="pd-scroll-hide flex min-w-0 flex-1 gap-5 overflow-x-auto">
-              {KPIS.map((k) => {
-                const n = mine.filter((r) => k.statuses.includes(r.status)).length;
+              {PRIMARY_TABS.map((k) => {
+                const n = mine.filter((r) => inTab(r, k.key)).length;
                 const on = kpi === k.key;
                 return (
-                  <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }}
-                    className={cn("relative flex h-10 shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30 gap-1.5 whitespace-nowrap text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                    {k.key === "open" ? "All open" : k.label}
-                    <span className={cn("num text-[11px]", on ? "text-primary" : "text-muted-foreground/70")}>{n}</span>
+                  <button key={k.key} role="tab" aria-selected={on} onClick={() => { setKpi(k.key); setSel([]); }} className={cn(TAB, on ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                    {k.label}<span className={cn("num text-[11px]", on ? "text-primary" : "text-muted-foreground/70")}>{n}</span>
                     {on && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
                   </button>
                 );
               })}
+              {(() => {
+                const picked = MORE_TABS.find((k) => k.key === kpi);
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className={cn(TAB, picked ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                      {picked ? <>{picked.label}<span className="num text-[11px] text-primary">{mine.filter((r) => inTab(r, picked.key)).length}</span></> : "More"}
+                      <ChevronDown className="size-3.5" />
+                      {picked && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-52 text-[13px]">
+                      {MORE_TABS.map((k) => {
+                        const n = mine.filter((r) => inTab(r, k.key)).length;
+                        return (
+                          <DropdownMenuItem key={k.key} onSelect={() => { setKpi(k.key); setSel([]); }} className={cn("justify-between", kpi === k.key && "font-medium text-primary")}>
+                            <span className="flex items-center gap-2"><span className={cn("pd-badge !h-auto !bg-transparent !p-0", `st-${k.key}`)} aria-hidden />{k.label}</span>
+                            <span className="num text-[11px] text-muted-foreground">{n}</span>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
             </div>
             <div className="relative mb-1.5 w-40 shrink-0 lg:w-48">
               <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -262,12 +296,12 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
                     </li>
                   );
                 })}
-                {!listed.length && <li className="px-4 py-10 text-center text-sm text-muted-foreground">No {active.label.toLowerCase()}{q && " match your search"}.</li>}
+                {!listed.length && <li className="px-4 py-10 text-center text-sm text-muted-foreground">{kpi === "all" ? "No requests" : `No ${active.label.toLowerCase()} requests`}{q && " match your search"}.</li>}
               </ul>
             </div>
           </div>
           {listed.length > 0 && (
-            <button onClick={() => onOpenList(active.key === "open" ? undefined : active.statuses[0])} className="flex w-full items-center justify-center gap-1 border-t border-border/70 py-2.5 text-xs font-medium text-primary hover:bg-subtle">
+            <button onClick={() => onOpenList(kpi === "all" ? undefined : kpi)} className="flex w-full items-center justify-center gap-1 border-t border-border/70 py-2.5 text-xs font-medium text-primary hover:bg-subtle">
               View all {listed.length} in list <ArrowRight className="size-3.5" />
             </button>
           )}
