@@ -178,14 +178,14 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
         <thead className="bg-subtle/60 text-left text-[11px] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-medium">
             {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
-            <th className="pl-3.5">Description</th>
-            <th className="pl-3.5">Item #</th>
+            <th className="pl-3.5!">Description</th>
+            <th className="pl-3.5!">Item #</th>
             <th>Account</th>
             {!hideSupplier && <th>Supplier</th>}
-            <th className="pr-3.5 text-right">Qty</th>
-            <th className="pr-3.5 text-right">Unit price</th>
-            <th className="pr-3.5 text-right" title="Tax + shipping">Other</th>
-            <th className="pr-3.5 text-right">Total</th>
+            <th className="text-right">Qty</th>
+            <th className="text-right">Unit price</th>
+            <th className="text-right" title="Tax + shipping">Other</th>
+            <th className="text-right">Total</th>
             <th className="sticky right-0 bg-subtle" aria-label="Actions" />
           </tr>
         </thead>
