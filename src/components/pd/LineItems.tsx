@@ -60,8 +60,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const allSel = r.items.length > 0 && sel.length === r.items.length;
   const [view, setView] = useState<"list" | "supplier">("list");
   const [layout, setLayoutState] = useState<"cards" | "table">("cards");
-  useEffect(() => { try { if (localStorage.getItem("pd.items.layout") === "table") setLayoutState("table"); } catch { /* ignore */ } }, []);
-  const setLayout = (v: "cards" | "table") => { setLayoutState(v); try { localStorage.setItem("pd.items.layout", v); } catch { /* ignore */ } };
+  const setLayout = (v: "cards" | "table") => setLayoutState(v);
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState("");
