@@ -500,14 +500,16 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
   const first = ids.length ? user(ids[0]) : undefined;
   return (
     <div className="mt-3 border-t border-border/60 pt-3">
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-subtle">
+      <div className="flex items-center gap-2.5">
         {first ? <UserAvatar user={first} /> : <span className={cn("grid size-6 shrink-0 place-items-center rounded-full bg-success-soft", tone)}><Check className="size-3.5" /></span>}
         <span className="min-w-0 flex-1">
           <span className={cn("block truncate text-[11px] leading-4", first ? "text-muted-foreground" : tone)} title={note}>{label}{first && route.length > 1 && label !== "Rejected by" && <> · Step {Math.max(0, i) + 1} of {route.length}</>}</span>
           <span className="block truncate text-[13px] font-medium leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? `${first.name}${ids.length > 1 ? ` +${ids.length - 1}` : ""}` : note}</span>
         </span>
-        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{open ? "Hide" : count > 1 ? `All ${count} approvers` : "View route"}</span>
-        <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </div>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 rounded-md py-0.5 pl-[34px] text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+        {open ? "Hide approvers" : count > 1 ? `Show all ${count} approvers` : "Show approval details"}
+        <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="mt-3 animate-in fade-in slide-in-from-top-1"><RouteTimeline r={r} preview={editable} /></div>}
     </div>
