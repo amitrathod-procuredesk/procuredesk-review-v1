@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { budgetLevelOf, lineBudgetId, lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
+import { budgetLevelOf, budgetStatuses, lineBudgetId, lineTotal, money, smartDate, uid } from "@/lib/pd/engine";
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
@@ -347,6 +347,21 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                         <option value="">Select…</option>
                         {db.budgets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
+                      {(() => { const st = budgetStatuses(r, db).find((x) => x.budget.id === lineBudgetId(editing, r, db)); if (!st) return null;
+                        const T = st.budget.total, used = Math.max(0, T - st.available), req = st.request;
+                        const pct = (v: number) => `${Math.max(0, Math.min(100, (v / T) * 100))}%`;
+                        return (
+                          <div className="mt-2" aria-label="Budget utilisation">
+                            <div className="flex h-1.5 overflow-hidden rounded-full bg-subtle">
+                              <span className="bg-muted-foreground/40" style={{ width: pct(used) }} />
+                              <span className={st.over ? "bg-destructive" : "bg-primary"} style={{ width: pct(req) }} />
+                            </div>
+                            <p className="num mt-1.5 flex justify-between text-[11px] text-muted-foreground">
+                              <span>This request {money(req)}{st.lines > 1 && ` · ${st.lines} lines`}</span>
+                              <span className={st.over ? "font-medium text-destructive" : "text-success"}>{st.over ? `Over by ${money(-st.remaining)}` : `${money(st.remaining)} left`}</span>
+                            </p>
+                          </div>
+                        ); })()}
                     </DField>
                   )}
                   <p className="pd-drawer-sec sm:col-span-2">Pricing & supplier</p>
