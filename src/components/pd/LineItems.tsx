@@ -1,4 +1,4 @@
-import { INVENTORY, fromStock, stockFor } from "@/lib/pd/inventory";
+import { INVENTORY, fromStock} from "@/lib/pd/inventory";
 import { Package, ChevronDown, LayoutList, Table2, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
