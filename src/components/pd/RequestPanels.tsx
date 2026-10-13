@@ -493,7 +493,7 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
   const user = (id: string) => db.users.find((u) => u.id === id);
   const i = currentStageIndex(r);
   let label = "Next approver", ids: string[] = [], note = "", tone = "text-foreground";
-  if (editable || r.status === "draft" || r.status === "changes") { label = "First approver"; ids = route[0]?.approvals.map((a) => a.userId) ?? []; note = route[0]?.name ?? ""; }
+  if (editable || r.status === "draft" || r.status === "changes") { label = "Goes first to"; ids = route[0]?.approvals.map((a) => a.userId) ?? []; note = route[0]?.name ?? ""; }
   else if (i >= 0) { label = "Waiting on"; ids = route[i].approvals.filter((a) => a.status === "pending").map((a) => a.userId); note = route[i].name; tone = "text-pending"; }
   else if (r.status === "rejected") { label = "Rejected by"; ids = route.flatMap((s) => s.approvals).filter((a) => a.status === "rejected").map((a) => a.userId); tone = "text-destructive"; }
   else { label = "Fully approved"; note = `${count} approver${count === 1 ? "" : "s"}`; tone = "text-success"; }
@@ -503,10 +503,10 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-subtle">
         {first ? <UserAvatar user={first} /> : <span className={cn("grid size-6 shrink-0 place-items-center rounded-full bg-success-soft", tone)}><Check className="size-3.5" /></span>}
         <span className="min-w-0 flex-1">
-          <span className={cn("block text-[11px] leading-4", first ? "text-muted-foreground" : tone)}>{label}</span>
-          <span className="block truncate text-[13px] font-medium leading-5">{first ? `${first.name}${ids.length > 1 ? ` +${ids.length - 1}` : ""}` : note}{first && note && <span className="font-normal text-muted-foreground"> · {note}</span>}</span>
+          <span className={cn("block truncate text-[11px] leading-4", first ? "text-muted-foreground" : tone)} title={note}>{label}{first && route.length > 1 && <> · Step {Math.max(0, i) + 1} of {route.length}</>}</span>
+          <span className="block truncate text-[13px] font-medium leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? `${first.name}${ids.length > 1 ? ` +${ids.length - 1}` : ""}` : note}</span>
         </span>
-        <span className="shrink-0 text-[11px] text-muted-foreground">{open ? "Hide" : "Route"}</span>
+        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{open ? "Hide" : count > 1 ? `All ${count} approvers` : "View route"}</span>
         <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="mt-3 animate-in fade-in slide-in-from-top-1"><RouteTimeline r={r} preview={editable} /></div>}
