@@ -283,7 +283,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
 
       {view === "list" ? (
         <div>
-          {layout === "table" ? table(cap(visibleItems, "_list")) : <ul className="space-y-2">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>}
+          {visibleItems.length === 0 ? null : layout === "table" ? table(cap(visibleItems, "_list")) : <ul className="space-y-2">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>}
           {!q && more(visibleItems.length, "_list")}
         </div>
       ) : (
