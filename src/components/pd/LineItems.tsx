@@ -169,21 +169,21 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <col className="w-[92px]" />
           <col className="w-[140px]" />
           {!hideSupplier && <col className="w-[130px]" />}
-          <col className="w-[104px]" />
-          <col className="w-[104px]" />
+          <col className="w-[84px]" />
+          <col className="w-[112px]" />
           <col className="w-[72px]" />
           <col className="w-[100px]" />
           <col className="w-16" />
         </colgroup>
         <thead className="bg-subtle/60 text-left text-[11px] text-muted-foreground">
-          <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:px-2 [&>th]:font-medium">
+          <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-medium">
             {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
-            <th className="pl-3.5">Description</th>
-            <th className="pl-3.5">Item #</th>
+            <th className="pl-3.5!">Description</th>
+            <th className="pl-3.5!">Item #</th>
             <th>Account</th>
             {!hideSupplier && <th>Supplier</th>}
             <th className="text-right">Qty</th>
-            <th className="pr-3.5 text-right">Unit price</th>
+            <th className="text-right">Unit price</th>
             <th className="text-right" title="Tax + shipping">Other</th>
             <th className="text-right">Total</th>
             <th className="sticky right-0 bg-subtle" aria-label="Actions" />
@@ -207,14 +207,13 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 {!hideSupplier && <td><span className={cn("block truncate", !l.vendorId && "text-warning")} title={vendorName(l.vendorId)}>{vendorName(l.vendorId) || "No supplier"}</span></td>}
                 <td>
                   <div className="flex items-center justify-end gap-1">
-                    {ro ? <span className="num">{l.qty}</span> : <input type="number" min={1} aria-label="Quantity" className={cn(cell, "num w-12 text-right", noSpin)} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />}
-                    <span className="w-9 shrink-0 truncate text-[11px] text-muted-foreground" title="Unit of measure">{l.uom.toLowerCase()}</span>
+                    {ro ? <span className="num pr-1.5">{l.qty}</span> : <input inputMode="numeric" aria-label="Quantity" className={cn(cell, "num w-16 text-right")} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 1)) })} />}
                   </div>
                 </td>
                 <td className="text-right">{ro ? <Money v={l.unitPrice} className="pr-1.5" /> : (
-                  <div className="relative"><span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><input type="number" min={0} step="0.01" aria-label="Unit price" className={cn(cell, "num pl-4 text-right", noSpin)} value={l.unitPrice} onChange={(e) => patch(l.id, { unitPrice: Math.max(0, Number(e.target.value)) })} /></div>)}</td>
-                <td className="num text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
-                <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
+                  <label className={cn(cell, "num flex cursor-text items-center justify-end focus-within:border-primary/60 focus-within:bg-card")}><span className="text-muted-foreground">$</span><input key={l.unitPrice} inputMode="decimal" aria-label="Unit price" className="num min-w-[3ch] bg-transparent text-right outline-none [field-sizing:content]" defaultValue={l.unitPrice.toFixed(2)} onBlur={(e) => { const v = Math.max(0, Number(e.target.value.replace(/[^\d.]/g, "")) || 0); if (v !== l.unitPrice) patch(l.id, { unitPrice: v }); else e.target.value = v.toFixed(2); }} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} /></label>)}</td>
+                <td className="num pr-3.5! text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
+                <td className="num whitespace-nowrap pr-3.5! text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l, isOpen)}</div></td>
               </tr>,
               isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={20} className="px-4 py-3"><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></td></tr>,
