@@ -78,7 +78,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     // Card subtext order: Item # · Account · Supplier (clickable); UOM shows once, beside the unit price. Prices live in the right column.
     const meta: ReactNode[] = [
       <span key="p" className={cn("num", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #">{l.partNumber || "No item #"}</span>,
-      <span key="a" className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span>,
+      <span key="a" title="GL account"><span className="text-muted-foreground/70">Account: </span><span className={cn(!l.account && "text-warning")}>{l.account || "None"}</span></span>,
       !hideSupplier && (v ? (
         <Popover key="s">
           <PopoverTrigger asChild><button type="button" className="font-medium text-primary hover:underline">{sup}</button></PopoverTrigger>
@@ -90,7 +90,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </PopoverContent>
         </Popover>
       ) : <span key="s" className="text-warning">No supplier</span>),
-      lineBudgets && !fromStock(l) && !l.declined && <span key="b" className={cn(!budgetName(l) && "text-warning")} title="Budget">{budgetName(l) ?? "No budget"}</span>,
+      lineBudgets && !fromStock(l) && !l.declined && <span key="b" title="Budget"><span className="text-muted-foreground/70">Budget: </span><span className={cn(!budgetName(l) && "text-warning")}>{budgetName(l) ?? "None"}</span></span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
@@ -110,11 +110,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                     <span className={cn("inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-medium", short ? "bg-attention-soft text-attention" : "bg-success-soft text-success")} title={st ? `${st.onHand} on hand at ${st.location} · no purchase` : "Issued from internal stock"}>
                       <Warehouse className="size-3" />{short ? `Only ${st.onHand} in stock` : "From stock"}
                     </span>); })()}
-                  {editable && !l.declined && stockFor(l.catalogId) && (
-                    <button type="button" onClick={() => patch(l.id, { fulfillment: fromStock(l) ? "purchase" : "inventory" })} className="shrink-0 text-[10.5px] font-medium text-primary hover:underline" title={fromStock(l) ? "Order from the supplier instead" : `${stockFor(l.catalogId)!.onHand} available at ${stockFor(l.catalogId)!.location}`}>
-                      {fromStock(l) ? "Buy instead" : "Use stock"}
-                    </button>
-                  )}
                   {l.source === "ai" && <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">AI</span>}
                 </div>
               </div>
