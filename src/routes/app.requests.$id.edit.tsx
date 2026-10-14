@@ -105,12 +105,29 @@ function EditRequest() {
             <EssentialsBar r={r} set={set} />
           </Section>
 
+          {wide ? (
+            <div className="fixed inset-0 z-40 flex flex-col bg-background animate-in fade-in duration-150">
+              <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-surface/85 px-4 backdrop-blur md:px-8">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-sm font-semibold">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-medium text-accent-foreground">{r.items.length}</span></p>
+                  <p className="truncate text-xs text-muted-foreground">{r.title || "Untitled request"} · <span className="num">{r.id}</span></p>
+                </div>
+                <div className="hidden text-right sm:block"><p className="text-[11px] text-muted-foreground">Request total</p><Money v={totals(r).total} className="text-sm font-semibold" /></div>
+                <Button size="sm" variant="outline" onClick={() => setWide(false)} title="Back to request (Esc)"><Minimize2 className="size-3.5" /> Done</Button>
+              </header>
+              <div className="pd-scroll flex-1 overflow-y-auto p-4 md:p-8">
+                <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_3px_rgba(16,24,40,0.06),0_8px_24px_-12px_rgba(16,24,40,0.12)] md:p-6">
+                  <LineItems r={r} editable />
+                </div>
+              </div>
+            </div>
+          ) : (
           <Section
-            className={cn(wide && "fixed inset-0 z-40 overflow-y-auto rounded-none border-0 animate-in fade-in duration-150")}
-            action={<button type="button" onClick={() => setWide((w) => !w)} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" title={wide ? "Back to request (Esc)" : "Open line items full width"}>{wide ? <><Minimize2 className="size-3.5" /> Exit full width</> : <><Maximize2 className="size-3.5" /> Full width</>}</button>}
+            action={<button type="button" onClick={() => setWide(true)} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" title="Open line items full width"><Maximize2 className="size-3.5" /> Full width</button>}
             title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}>
             <LineItems r={r} editable />
           </Section>
+          )}
 
           <MoreDetails r={r} set={set} />
 
