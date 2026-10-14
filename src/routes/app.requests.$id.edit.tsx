@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, ChevronDown, CircleCheck, Lock } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, CircleCheck, Lock, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,13 @@ function EditRequest() {
   const r = db.requests.find((x) => x.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [tried, setTried] = useState(false);
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    if (!wide) return;
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape" && !document.querySelector("[role=dialog]")) setWide(false); };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [wide]);
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   if (r.requesterId !== me.id && me.role !== "admin")
@@ -98,7 +105,10 @@ function EditRequest() {
             <EssentialsBar r={r} set={set} />
           </Section>
 
-          <Section title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}>
+          <Section
+            className={cn(wide && "fixed inset-0 z-40 overflow-y-auto rounded-none border-0 animate-in fade-in duration-150")}
+            action={<button type="button" onClick={() => setWide((w) => !w)} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground" title={wide ? "Back to request (Esc)" : "Open line items full width"}>{wide ? <><Minimize2 className="size-3.5" /> Exit full width</> : <><Maximize2 className="size-3.5" /> Full width</>}</button>}
+            title={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>}>
             <LineItems r={r} editable />
           </Section>
 

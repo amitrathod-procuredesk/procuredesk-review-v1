@@ -71,7 +71,7 @@
 - **Section / Panel**: White panel with an uppercase section title; content follows immediately, no extra headers.
 - **Line item card**: Image, description as title, metadata row (item #, Account:, Supplier, Budget:), quantity x unit price and total on the right, expand and more menu.
 - **Line item table**: Optional view; card view is default. Inline edit only for item #, description, quantity and unit price.
-- **Right rail**: Summary, budget, approval route, attachments and comments; can be hidden on desktop with a strip to reopen.
+- **Right rail**: Summary, budget, approval route, attachments and comments; always visible while creating a request. For more room, Line items has a "Full width" mode that fills the screen (Esc or "Exit full width" returns).
 - **Overlays**: Popover for quick actions, Tooltip for hints, Dialog for confirmations, side Drawer for item details.
 - **Toasts**: Sonner, short title plus optional one-line description.
 
