@@ -15,7 +15,6 @@ import { budgetStatus, canSubmit, computeRoute, money, runChecks, smartDate, sma
 import { log, submitRequest, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
-import { RailHeader, RailStrip, useRailHidden } from "@/components/pd/RailToggle";
 
 export const Route = createFileRoute("/app/requests/$id/edit")({
   validateSearch: (s: Record<string, unknown>): { prompt?: string } => (typeof s.prompt === "string" ? { prompt: s.prompt } : {}),
@@ -38,7 +37,6 @@ function EditRequest() {
   const r = db.requests.find((x) => x.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [tried, setTried] = useState(false);
-  const [railHidden, toggleRail] = useRailHidden();
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   if (r.requesterId !== me.id && me.role !== "admin")
@@ -85,7 +83,7 @@ function EditRequest() {
         </div>
       </header>
 
-      <div className={cn("grid flex-1 gap-0 lg:min-h-0", railHidden ? "lg:grid-cols-[1fr_44px] lg:[&>aside]:hidden" : "lg:grid-cols-[1fr_320px]")}>
+      <div className={"grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_320px]"}>
 
         <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
           {r.status === "changes" && r.decisionReason && (
@@ -109,10 +107,8 @@ function EditRequest() {
         </div>
 
         <aside id="rail-budget" className="pd-scroll border-t border-border bg-subtle/50 p-4 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l">
-          <RailHeader onHide={toggleRail} />
           <div><SummaryRail r={r} editable hideChecks onCheckAction={onCheck} extra={<><div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div></>} after={<Section title="Comments"><Comments r={r} /></Section>} /></div>
         </aside>
-        {railHidden && <RailStrip onShow={toggleRail} />}
       </div>
 
     </div>
