@@ -155,7 +155,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
-    <div className="pd-scroll overflow-x-auto rounded-lg border border-border bg-surface">
+    <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
         <colgroup>
           {editable && <col className="w-9" />}
