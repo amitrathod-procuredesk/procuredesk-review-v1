@@ -155,7 +155,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
-    <div className="pd-scroll overflow-x-auto rounded-lg border border-border bg-surface">
+    <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
         <colgroup>
           {editable && <col className="w-9" />}
@@ -169,8 +169,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <col className="w-[100px]" />
           <col className="w-16" />
         </colgroup>
-        <thead className="bg-subtle/60 text-left text-[11px] text-muted-foreground">
-          <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-medium">
+        <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
+          <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-semibold">
             {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3.5!">Description</th>
             <th className="pl-3.5!">Item #</th>
