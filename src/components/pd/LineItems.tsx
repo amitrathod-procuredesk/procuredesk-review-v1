@@ -169,8 +169,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <col className="w-[100px]" />
           <col className="w-16" />
         </colgroup>
-        <thead className="bg-subtle/60 text-left text-[11px] text-muted-foreground">
-          <tr className="whitespace-nowrap [&>th]:h-8 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-medium">
+        <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
+          <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-semibold">
             {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3.5!">Description</th>
             <th className="pl-3.5!">Item #</th>
