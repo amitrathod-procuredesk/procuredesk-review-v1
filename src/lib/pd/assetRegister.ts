@@ -1,5 +1,5 @@
 /** Asset register: records, lifecycle actions, repair cycle and derived values. Pure helpers + store actions. */
-import { depreciationSchedule, formatAssetId, type AssetCategory, type AssetSettings, type DepRule } from "./assets";
+import { depreciationSchedule, issueAssetId, type AssetCategory, type AssetSettings, type DepRule } from "./assets";
 import type { DB } from "./types";
 
 export type Condition = "new" | "good" | "fair" | "poor" | "damaged";
@@ -182,8 +182,7 @@ const sname = (d: DB, id: string) => d.assets!.statuses.find((x) => x.id === id)
 export function registerAsset(d: DB, a: Asset, by?: string) {
   const s = d.assets!;
   const c = s.categories.find((x) => x.id === a.categoryId) as AssetCategory | undefined;
-  a.tag = formatAssetId(s.numbering, c);
-  s.numbering.nextSeq += 1;
+  a.tag = issueAssetId(s, c);
   a.createdAt = now();
   a.createdBy = by;
   if (a.statusId !== "draft" && !a.inServiceDate) a.inServiceDate = a.purchaseDate || today();

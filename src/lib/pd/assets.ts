@@ -18,7 +18,27 @@ export interface Numbering {
   resetYearly: boolean;
   /** Allow editing an issued ID on the asset record. */
   allowManualOverride: boolean;
+  /** When the sequence restarts. `resetYearly` mirrors "calendar" for older data. */
+  resetMode?: ResetMode;
+  /** Last ID handed out from the global sequence. */
+  lastIssued?: string;
 }
+
+export type ResetMode = "never" | "calendar" | "fiscal";
+
+/** A reserved block of numbers for one category, with its own prefix. */
+export interface NumberRange {
+  id: string;
+  categoryId: string;
+  prefix: string;
+  start: number;
+  end: number;
+  next: number;
+  lastIssued?: string;
+}
+
+export type IntegrationId = "netsuite" | "jira" | "zebra" | "fiix" | "api";
+export interface IntegrationState { connected: boolean; connectedAt?: string; connectedBy?: string; account?: string; syncEvents: string[] }
 
 export interface DepRule { method: DepMethod; usefulLifeMonths: number; salvagePct: number }
 
@@ -111,8 +131,61 @@ export interface AssetSettings {
   fields: CustomField[];
   checkout: CheckoutSettings;
   audit: AuditSettings;
+  ranges?: NumberRange[];
+  /** 1–12; month the fiscal year starts. */
+  fiscalYearStartMonth?: number;
+  integrations?: Partial<Record<IntegrationId, IntegrationState>>;
   updatedAt?: string;
   updatedBy?: string;
+}
+
+export const INTEGRATIONS: { id: IntegrationId; name: string; desc: string; accountLabel: string; placeholder: string; events: { id: string; label: string }[] }[] = [
+  { id: "netsuite", name: "NetSuite", desc: "Post journal entries for purchases, depreciation and disposals.", accountLabel: "Account ID", placeholder: "e.g. 1234567", events: [{ id: "acq", label: "Acquisitions" }, { id: "dep", label: "Monthly depreciation" }, { id: "disp", label: "Disposals and write-offs" }] },
+  { id: "jira", name: "Jira Service Management", desc: "Open a ticket automatically when an asset goes into repair.", accountLabel: "Site URL", placeholder: "yourcompany.atlassian.net", events: [{ id: "repair", label: "Asset moved to In repair" }, { id: "vendor", label: "Asset sent to vendor" }, { id: "missing", label: "Asset flagged missing in audit" }] },
+  { id: "zebra", name: "Zebra label printers", desc: "Print asset tags on networked label printers.", accountLabel: "Printer address", placeholder: "e.g. 10.0.4.21", events: [{ id: "register", label: "Print a tag when an asset is registered" }, { id: "retag", label: "Print when an ID is changed" }] },
+  { id: "fiix", name: "Fiix CMMS", desc: "Keep maintenance work orders in sync both ways.", accountLabel: "Tenant", placeholder: "yourcompany.macmms.com", events: [{ id: "wo", label: "Create work orders for maintenance due" }, { id: "close", label: "Close repairs when the work order closes" }] },
+  { id: "api", name: "API & webhooks", desc: "Tokens and webhook endpoints for your own systems.", accountLabel: "Webhook URL", placeholder: "https://example.com/hooks/assets", events: [{ id: "status", label: "Status changes" }, { id: "checkout", label: "Check-out and check-in" }, { id: "create", label: "New assets" }] },
+];
+
+export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+export const resetModeOf = (n: Numbering): ResetMode => n.resetMode ?? (n.resetYearly ? "calendar" : "never");
+
+/** The year used in IDs; a fiscal reset uses the fiscal year (named after the year it ends). */
+export function idYear(n: Numbering, date: Date, fiscalStartMonth = 1): Date {
+  if (resetModeOf(n) !== "fiscal" || fiscalStartMonth <= 1) return date;
+  const y = date.getMonth() + 1 >= fiscalStartMonth ? date.getFullYear() + 1 : date.getFullYear();
+  return new Date(y, 5, 1);
+}
+
+export const activeRange = (s: AssetSettings, categoryId?: string) => s.ranges?.find((r) => r.categoryId === categoryId && r.next <= r.end);
+
+/** The ID the next asset in this category would get. */
+export function previewAssetId(s: AssetSettings, cat?: AssetCategory, date = new Date()): string {
+  const r = activeRange(s, cat?.id);
+  const d = idYear(s.numbering, date, s.fiscalYearStartMonth);
+  if (r) return formatAssetId(s.numbering, { code: cat?.code ?? "", prefixOverride: r.prefix }, d, r.next);
+  return formatAssetId(s.numbering, cat, d);
+}
+
+/** Issues an ID and advances the matching sequence (range first, then global). Mutates settings. */
+export function issueAssetId(s: AssetSettings, cat?: AssetCategory, date = new Date()): string {
+  const id = previewAssetId(s, cat, date);
+  const r = activeRange(s, cat?.id);
+  if (r) { r.next += 1; r.lastIssued = id; }
+  else { s.numbering.nextSeq += 1; s.numbering.lastIssued = id; }
+  return id;
+}
+
+export function rangeIssues(r: NumberRange, all: NumberRange[], seqLength: number): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!r.categoryId) e.categoryId = "Choose a category.";
+  else if (all.some((x) => x.id !== r.id && x.categoryId === r.categoryId)) e.categoryId = "This category already has a range.";
+  if (!/^[A-Z0-9]{1,6}$/.test(r.prefix)) e.prefix = "Use 1–6 capital letters or numbers.";
+  if (!Number.isInteger(r.start) || r.start < 1) e.start = "Start at 1 or higher.";
+  if (!Number.isInteger(r.end) || r.end <= r.start) e.end = "Must be higher than the first number.";
+  else if (String(r.end).length > seqLength) e.end = `Doesn't fit in ${seqLength} digits.`;
+  return e;
 }
 
 export const ALERT_META: Record<AlertEvent, { label: string; hint: string; unit: "before" | "after" }> = {
@@ -136,7 +209,7 @@ const st = (id: string, name: string, phase: StatusPhase, tone: Tone, descriptio
 
 export function defaultAssetSettings(): AssetSettings {
   return {
-    numbering: { prefix: "AST", separator: "-", includeCategory: true, yearFormat: "YY", seqLength: 5, startAt: 1, nextSeq: 1248, resetYearly: false, allowManualOverride: false },
+    numbering: { prefix: "AST", separator: "-", includeCategory: true, yearFormat: "YY", seqLength: 5, startAt: 1, nextSeq: 1248, resetYearly: false, allowManualOverride: false, resetMode: "never", lastIssued: "AST-IT-26-01247" },
     categories: [
       { id: "cat-it", name: "IT equipment", code: "IT", description: "Laptops, monitors, phones and peripherals.", identifier: "serial", depreciation: { method: "straight_line", usefulLifeMonths: 36, salvagePct: 5 }, maintenanceEveryMonths: 12, checkoutAllowed: true, active: true, assetCount: 842 },
       { id: "cat-veh", name: "Vehicles", code: "VEH", description: "Cars, trucks, buses and vans.", identifier: "vin", depreciation: { method: "declining_balance", usefulLifeMonths: 96, salvagePct: 15 }, maintenanceEveryMonths: 6, checkoutAllowed: true, active: true, assetCount: 37 },
@@ -177,6 +250,9 @@ export function defaultAssetSettings(): AssetSettings {
     ],
     checkout: { requireApproval: false, defaultDays: 14, maxDays: 90, allowSelfCheckout: true, requireCondition: true, requireAcknowledgement: true },
     audit: { cycleMonths: 12, requirePhoto: false, autoFlagMissing: true },
+    ranges: [{ id: "rg-1", categoryId: "cat-veh", prefix: "FLT", start: 1, end: 500, next: 38, lastIssued: "FLT-VEH-26-00037" }],
+    fiscalYearStartMonth: 1,
+    integrations: {},
   };
 }
 

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { BTN, BTN_GHOST, BTN_PRIMARY, CAT_ICON, Card, Field, HolderPick, HolderToggle, StatusPill, fmtDate } from "@/components/pd/assetUi";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
-import { IDENTIFIER_LABEL, METHOD_LABEL, depreciationSchedule, formatAssetId, type DepMethod } from "@/lib/pd/assets";
+import { IDENTIFIER_LABEL, METHOD_LABEL, depreciationSchedule, previewAssetId, type DepMethod } from "@/lib/pd/assets";
 import { activationIssues, addDays, addMonths, blankAsset, CONDITION_LABEL, depRuleFor, DOC_KIND, registerAsset, SITES, today, type Asset, type AssetDoc, type Condition } from "@/lib/pd/assetRegister";
 import { money } from "@/lib/pd/engine";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
@@ -68,7 +68,7 @@ function NewAssetPage() {
   const up = (p: Partial<Asset>) => setA((x) => ({ ...x, ...p }));
 
   const cat = s.categories.find((c) => c.id === a.categoryId);
-  const nextId = formatAssetId(s.numbering, cat);
+  const nextId = previewAssetId(s, cat);
   const fields = s.fields.filter((f) => !f.categoryIds.length || f.categoryIds.includes(a.categoryId));
   const rule = depRuleFor({ ...a, depOverride: customDep ? a.depOverride : undefined }, s);
   const belowThreshold = a.cost > 0 && a.cost < s.depreciation.capitalizationThreshold;
