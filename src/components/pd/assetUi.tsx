@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Box, Bus, Hammer, Laptop, Package, Sofa, type LucideIcon } from "lucide-react";
+import type { Asset } from "@/lib/pd/assetRegister";
 import type { AssetStatus, Tone } from "@/lib/pd/assets";
 import { FieldHint } from "@/components/pd/form";
 import { cn } from "@/lib/utils";
@@ -58,3 +60,14 @@ export const relDays = (n: number) => (n === 0 ? "today" : n === 1 ? "tomorrow" 
 export const BTN_PRIMARY = "inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
 export const BTN = "inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50";
 export const BTN_GHOST = "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground";
+
+export const CAT_ICON: Record<string, LucideIcon> = { "cat-it": Laptop, "cat-veh": Bus, "cat-fur": Sofa, "cat-mch": Hammer, "cat-sw": Package };
+
+export function AssetThumb({ a, size = "sm" }: { a: Pick<Asset, "photos" | "categoryId">; size?: "sm" | "lg" }) {
+  const Icon = CAT_ICON[a.categoryId] ?? Box;
+  const cls = size === "sm" ? "size-9 rounded-md" : "size-16 rounded-lg";
+  return a.photos[0]
+    ? <img src={a.photos[0].url} alt="" className={cn(cls, "shrink-0 object-cover ring-1 ring-border")} />
+    : <span className={cn(cls, "inline-flex shrink-0 items-center justify-center bg-subtle text-muted-foreground ring-1 ring-border")}><Icon className={size === "sm" ? "size-4" : "size-6"} /></span>;
+}
+

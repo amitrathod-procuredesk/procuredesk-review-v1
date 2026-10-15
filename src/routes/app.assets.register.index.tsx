@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Box, Bus, ChevronRight, Download, Hammer, Laptop, Package, Plus, Search, Sofa, Wrench, X, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Box, ChevronRight, Download, Plus, Search, Wrench, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { BTN, BTN_PRIMARY, StatusPill, fmtDate, relDays } from "@/components/pd/assetUi";
+import { AssetThumb, BTN, BTN_PRIMARY, StatusPill, fmtDate, relDays } from "@/components/pd/assetUi";
 import { Select, TextInput } from "@/components/pd/form";
 import { UserAvatar } from "@/components/pd/bits";
 import { bookValue, daysUntil, holderName, insights, REPAIR_STAGES, SITES, type Asset } from "@/lib/pd/assetRegister";
@@ -26,16 +26,6 @@ export const Route = createFileRoute("/app/assets/register/")({
   }),
   component: RegisterPage,
 });
-
-export const CAT_ICON: Record<string, LucideIcon> = { "cat-it": Laptop, "cat-veh": Bus, "cat-fur": Sofa, "cat-mch": Hammer, "cat-sw": Package };
-
-export function AssetThumb({ a, size = "sm" }: { a: Pick<Asset, "photos" | "categoryId">; size?: "sm" | "lg" }) {
-  const Icon = CAT_ICON[a.categoryId] ?? Box;
-  const cls = size === "sm" ? "size-9 rounded-md" : "size-16 rounded-lg";
-  return a.photos[0]
-    ? <img src={a.photos[0].url} alt="" className={cn(cls, "shrink-0 object-cover ring-1 ring-border")} />
-    : <span className={cn(cls, "inline-flex shrink-0 items-center justify-center bg-subtle text-muted-foreground ring-1 ring-border")}><Icon className={size === "sm" ? "size-4" : "size-6"} /></span>;
-}
 
 function RegisterPage() {
   const db = useDB();

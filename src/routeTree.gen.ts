@@ -16,6 +16,7 @@ import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
+import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
 import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
 import { Route as AppRequestsIdEditRouteImport } from './routes/app.requests.$id.edit'
 
@@ -54,6 +55,11 @@ const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
   path: '/requests/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssetsRegisterIndexRoute = AppAssetsRegisterIndexRouteImport.update({
+  id: '/assets/register/',
+  path: '/assets/register/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRequestsIdIndexRoute = AppRequestsIdIndexRouteImport.update({
   id: '/requests/$id/',
   path: '/requests/$id/',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/requests/$id/edit'
+    | '/app/assets/register/'
     | '/app/requests/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/app/assets/settings'
     | '/app/requests'
     | '/app/requests/$id/edit'
+    | '/app/assets/register'
     | '/app/requests/$id'
   id:
     | '__root__'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/requests/$id/edit'
+    | '/app/assets/register/'
     | '/app/requests/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -189,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRequestsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets/register/': {
+      id: '/app/assets/register/'
+      path: '/assets/register'
+      fullPath: '/app/assets/register/'
+      preLoaderRoute: typeof AppAssetsRegisterIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/requests/$id/': {
       id: '/app/requests/$id/'
       path: '/requests/$id'
@@ -213,6 +232,7 @@ interface AppRouteChildren {
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
+  AppAssetsRegisterIndexRoute: typeof AppAssetsRegisterIndexRoute
   AppRequestsIdIndexRoute: typeof AppRequestsIdIndexRoute
 }
 
@@ -223,6 +243,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
+  AppAssetsRegisterIndexRoute: AppAssetsRegisterIndexRoute,
   AppRequestsIdIndexRoute: AppRequestsIdIndexRoute,
 }
 
