@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { AlarmClock, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -139,6 +139,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
     { label: "Insights", icon: Lightbulb, children: [{ label: "Spend" }, { label: "Reports" }] },
     { label: "Expenses", icon: CircleDollarSign },
     { label: "Contracts", icon: FileText },
+    { label: "Assets", icon: Box, children: [{ label: "Register" }, { label: "Maintenance" }, { label: "Check in / out" }, { label: "Reports" }, { label: "Settings", to: "/app/assets/settings" }] },
     { label: "Inventory", icon: Briefcase },
     { label: "Sell", icon: HeartHandshake, children: [{ label: "Customers" }, { label: "Invoices" }] },
     { label: "Cards", icon: WalletCards, children: [{ label: "My cards" }, { label: "Transactions" }] },
