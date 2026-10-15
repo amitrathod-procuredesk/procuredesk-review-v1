@@ -248,7 +248,7 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
           </div>
           <div className="rounded-lg bg-subtle p-4">
             <p className="pd-section-title">Last issued</p>
-            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued) || "None yet"}</p>
+            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued || (n.nextSeq > n.startAt ? formatAssetId(n, pc, new Date(), n.nextSeq - 1) : "")) || "None yet"}</p>
             <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
           </div>
         </div>
