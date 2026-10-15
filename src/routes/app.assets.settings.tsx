@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { FieldHint, Select, TextArea, TextInput } from "@/components/pd/form";
 import {
   ALERT_META, INTEGRATIONS, MONTHS, IDENTIFIER_LABEL, previewAssetId, rangeIssues, resetModeOf, METHOD_LABEL, PHASE_LABEL, RECIPIENT_LABEL, capacityLeft, categoryIssues, defaultAssetSettings, depreciationSchedule, formatAssetId, numberingIssues, slug, suggestCode,
-  type AlertRule, type IntegrationId, type NumberRange, type ResetMode, type AssetCategory, type AssetSettings, type AssetStatus, type CustomField, type DepMethod, type DepRule, type StatusPhase, type Tone,
+  type AlertRule, type IntegrationId, type IntegrationState, type NumberRange, type ResetMode, type AssetCategory, type AssetSettings, type AssetStatus, type CustomField, type DepMethod, type DepRule, type StatusPhase, type Tone,
 } from "@/lib/pd/assets";
 import { money } from "@/lib/pd/engine";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
@@ -965,7 +965,7 @@ function IntegrationsSection({ d, setDraft, canEdit }: { d: AssetSettings; setDr
   const [disc, setDisc] = useState<IntegrationId | null>(null);
   const saved = db.assets?.integrations ?? {};
   // Connections apply right away (like signing in to a service), so they don't wait for Save.
-  const apply = (id: IntegrationId, v: AssetSettings["integrations"] extends infer T ? NonNullable<T>[IntegrationId] : never) => {
+  const apply = (id: IntegrationId, v: IntegrationState) => {
     mutate((x) => { if (!x.assets) return; x.assets.integrations = { ...(x.assets.integrations ?? {}), [id]: v }; });
     setDraft((p) => ({ ...p, integrations: { ...(p.integrations ?? {}), [id]: v } }));
   };
