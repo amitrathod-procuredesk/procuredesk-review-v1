@@ -3,7 +3,7 @@ import { AlertTriangle, Building2, Check, ChevronRight, FileText, Hash, ImagePlu
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import { BTN, BTN_PRIMARY, CAT_ICON, Card, Field, StatusPill, fmtDate } from "@/components/pd/assetUi";
+import { BTN, BTN_GHOST, BTN_PRIMARY, CAT_ICON, Card, Field, HolderPick, HolderToggle, StatusPill, fmtDate } from "@/components/pd/assetUi";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
 import { IDENTIFIER_LABEL, METHOD_LABEL, depreciationSchedule, formatAssetId, type DepMethod } from "@/lib/pd/assets";
 import { activationIssues, addDays, addMonths, blankAsset, CONDITION_LABEL, depRuleFor, DOC_KIND, registerAsset, SITES, today, type Asset, type AssetDoc, type Condition } from "@/lib/pd/assetRegister";
@@ -400,37 +400,18 @@ function NewAssetPage() {
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur md:left-[var(--pd-sidebar,0px)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8">
-          <p className="hidden items-center gap-1.5 text-[12px] text-muted-foreground sm:flex">
-            {tried && Object.keys(issues).length ? <><AlertTriangle className="size-3.5 text-warning" />{Object.keys(issues).length} {Object.keys(issues).length === 1 ? "detail" : "details"} missing to register</> : <><UserIcon className="size-3.5" />Registered by {me?.name ?? "you"}</>}
+      <div className="fixed inset-x-0 bottom-14 z-30 flex justify-center px-4 md:bottom-6">
+        <div role="region" aria-label="Save asset" className="flex w-full max-w-2xl items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2.5 shadow-lg">
+          <p className="hidden min-w-0 flex-1 items-center gap-1.5 truncate text-[13px] sm:flex">
+            {tried && Object.keys(issues).length ? <><AlertTriangle className="size-4 shrink-0 text-warning" />{Object.keys(issues).length} {Object.keys(issues).length === 1 ? "detail" : "details"} missing to register</> : <><UserIcon className="size-4 shrink-0 text-muted-foreground" /><span className="truncate text-muted-foreground">Will be registered as <span className="num text-foreground">{nextId}</span></span></>}
           </p>
           <div className="ml-auto flex gap-2">
-            <Link to="/app/assets/register" className={BTN} onClick={(e) => { if (dirty && !confirm("Leave without saving? Your changes will be lost.")) e.preventDefault(); }}>Cancel</Link>
+            <Link to="/app/assets/register" className={BTN_GHOST} onClick={(e) => { if (dirty && !confirm("Leave without saving? Your changes will be lost.")) e.preventDefault(); }}>Cancel</Link>
             <button onClick={() => save(true)} className={BTN}>Save as draft</button>
             <button onClick={() => save(false)} className={BTN_PRIMARY}>Register asset</button>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function HolderToggle({ v, set }: { v: "user" | "site"; set: (k: "user" | "site") => void }) {
-  return (
-    <div className="inline-flex rounded-md bg-subtle p-0.5 text-[12px]">
-      {(["user", "site"] as const).map((k) => <button key={k} type="button" onClick={() => set(k)} aria-pressed={v === k} className={cn("h-6 rounded px-2 transition-colors", v === k ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>{k === "user" ? "Person" : "Location / job site"}</button>)}
-    </div>
-  );
-}
-
-export function HolderPick({ kind, value, people, onChange, error }: { kind: "user" | "site"; value?: { kind: string; userId?: string; site?: string }; people: { id: string; name: string; title: string }[]; onChange: (h: { kind: "user" | "site"; userId?: string; site?: string } | undefined) => void; error?: string }) {
-  return (
-    <>
-      {kind === "user"
-        ? <Select aria-label="Person" value={value?.userId ?? ""} invalid={!!error} onChange={(e) => onChange(e.target.value ? { kind: "user", userId: e.target.value } : undefined)}><option value="">Choose a person…</option>{people.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.title}</option>)}</Select>
-        : <Select aria-label="Location or job site" value={value?.site ?? ""} invalid={!!error} onChange={(e) => onChange(e.target.value ? { kind: "site", site: e.target.value } : undefined)}><option value="">Choose a location…</option>{SITES.map((x) => <option key={x}>{x}</option>)}</Select>}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-    </>
   );
 }

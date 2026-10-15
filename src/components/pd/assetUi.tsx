@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Box, Bus, Hammer, Laptop, Package, Sofa, type LucideIcon } from "lucide-react";
 import type { Asset } from "@/lib/pd/assetRegister";
 import type { AssetStatus, Tone } from "@/lib/pd/assets";
-import { FieldHint } from "@/components/pd/form";
+import { FieldHint, Select } from "@/components/pd/form";
+import { SITES } from "@/lib/pd/assetRegister";
 import { cn } from "@/lib/utils";
 
 export const TONES: Record<Tone, string> = {
@@ -71,3 +72,21 @@ export function AssetThumb({ a, size = "sm" }: { a: Pick<Asset, "photos" | "cate
     : <span className={cn(cls, "inline-flex shrink-0 items-center justify-center bg-subtle text-muted-foreground ring-1 ring-border")}><Icon className={size === "sm" ? "size-4" : "size-6"} /></span>;
 }
 
+export function HolderToggle({ v, set }: { v: "user" | "site"; set: (k: "user" | "site") => void }) {
+  return (
+    <div className="inline-flex rounded-md bg-subtle p-0.5 text-[12px]">
+      {(["user", "site"] as const).map((k) => <button key={k} type="button" onClick={() => set(k)} aria-pressed={v === k} className={cn("h-6 rounded px-2 transition-colors", v === k ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>{k === "user" ? "Person" : "Location / job site"}</button>)}
+    </div>
+  );
+}
+
+export function HolderPick({ kind, value, people, onChange, error }: { kind: "user" | "site"; value?: { kind: string; userId?: string; site?: string }; people: { id: string; name: string; title: string }[]; onChange: (h: { kind: "user" | "site"; userId?: string; site?: string } | undefined) => void; error?: string }) {
+  return (
+    <>
+      {kind === "user"
+        ? <Select aria-label="Person" value={value?.userId ?? ""} invalid={!!error} onChange={(e) => onChange(e.target.value ? { kind: "user", userId: e.target.value } : undefined)}><option value="">Choose a person…</option>{people.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.title}</option>)}</Select>
+        : <Select aria-label="Location or job site" value={value?.site ?? ""} invalid={!!error} onChange={(e) => onChange(e.target.value ? { kind: "site", site: e.target.value } : undefined)}><option value="">Choose a location…</option>{SITES.map((x) => <option key={x}>{x}</option>)}</Select>}
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+    </>
+  );
+}
