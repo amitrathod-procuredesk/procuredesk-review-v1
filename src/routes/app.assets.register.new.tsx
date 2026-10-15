@@ -175,7 +175,7 @@ function NewAssetPage() {
           {/* Identification */}
           <Card id="identification" title="Identification" desc="What the asset is and how people will find it.">
             <p className="pd-label">Category <span className="text-destructive">*</span></p>
-            <div role="radiogroup" aria-label="Category" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div role="radiogroup" aria-label="Category" className="mb-4 grid grid-cols-2 gap-2 xl:grid-cols-3">
               {s.categories.filter((c) => c.active).map((c) => {
                 const Icon = CAT_ICON[c.id] ?? Tag;
                 const on = c.id === a.categoryId;
