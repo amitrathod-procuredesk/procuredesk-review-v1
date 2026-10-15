@@ -749,7 +749,7 @@ function FieldsSection({ d, set, canEdit }: SP & { canEdit: boolean }) {
   const [tried, setTried] = useState(false);
   const isNew = edit && !d.fields.some((f) => f.id === edit.id);
   const open = (f: CustomField) => { setEdit(structuredClone(f)); setOptText(f.options.join(", ")); setTried(false); };
-  const nameErr = edit && (!edit.label.trim() ? "Give the field a name." : d.fields.some((f) => f.id !== edit.id && slug(f.label) === slug(edit.label)) ? "A field with this name already exists." : undefined);
+  const nameErr = !edit ? undefined : (!edit.label.trim() ? "Give the field a name." : d.fields.some((f) => f.id !== edit.id && slug(f.label) === slug(edit.label)) ? "A field with this name already exists." : undefined);
   const optErr = edit?.type === "select" && optText.split(",").map((s) => s.trim()).filter(Boolean).length < 2 ? "Add at least two choices, separated by commas." : undefined;
   const scope = (f: CustomField) => (f.categoryIds.length ? f.categoryIds.map((i) => d.categories.find((c) => c.id === i)?.name).filter(Boolean).join(", ") : "All categories");
   const TYPE = { text: "Text", number: "Number", date: "Date", select: "Dropdown" };
