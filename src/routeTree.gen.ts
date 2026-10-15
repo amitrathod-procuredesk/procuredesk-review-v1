@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
+import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
 import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
 import { Route as AppRequestsIdEditRouteImport } from './routes/app.requests.$id.edit'
@@ -43,6 +44,11 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
+  id: '/assets/settings',
+  path: '/assets/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
   id: '/requests/',
   path: '/requests/',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
+  '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/requests/$id': typeof AppRequestsIdIndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/settings'
     | '/app/requests/'
     | '/app/requests/$id/edit'
     | '/app/requests/$id/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app'
+    | '/app/assets/settings'
     | '/app/requests'
     | '/app/requests/$id/edit'
     | '/app/requests/$id'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/settings'
     | '/app/requests/'
     | '/app/requests/$id/edit'
     | '/app/requests/$id/'
@@ -163,6 +175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets/settings': {
+      id: '/app/assets/settings'
+      path: '/assets/settings'
+      fullPath: '/app/assets/settings'
+      preLoaderRoute: typeof AppAssetsSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/requests/': {
       id: '/app/requests/'
       path: '/requests'
@@ -191,6 +210,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
   AppRequestsIdIndexRoute: typeof AppRequestsIdIndexRoute
@@ -200,6 +220,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppApprovalsRoute: AppApprovalsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
   AppRequestsIdIndexRoute: AppRequestsIdIndexRoute,
