@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Bell, Boxes, CalendarClock, Check, ChevronRight, CircleDot, Copy, Hash, Info, Lock, Pencil, Plus, RotateCcw, Search, Shapes, Trash2, TrendingDown, Undo2, X, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Boxes, CalendarClock, Check, ChevronRight, CircleDot, Copy, Hash, Info, Lock, Pencil, Plus, RotateCcw, Search, Shapes, Trash2, TrendingDown, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -835,5 +835,3 @@ function CheckoutSection({ d, set }: SP) {
   );
 }
 
-// keep icons referenced for tree-shaking clarity
-void X; void Undo2;
