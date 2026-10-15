@@ -131,8 +131,8 @@ function RegisterPage() {
                           <span className="min-w-0"><span className="block max-w-[280px] truncate font-medium">{a.name || "Untitled asset"}</span><span className="num block text-[11px] text-muted-foreground">{a.tag}{a.identifier && ` · ${a.identifier}`}</span></span>
                         </Link>
                       </td>
-                      <td className="text-[13px] text-muted-foreground">{s.categories.find((c) => c.id === a.categoryId)?.name}</td>
-                      <td><StatusPill s={st} />{a.repair && <span className="mt-0.5 block text-[11px] text-muted-foreground">{REPAIR_STAGES.find((x) => x.id === a.repair!.stage)?.label}</span>}</td>
+                      <td className="whitespace-nowrap text-[13px] text-muted-foreground">{s.categories.find((c) => c.id === a.categoryId)?.name}</td>
+                      <td><StatusPill s={st} />{a.repair && a.repair.stage !== "at_vendor" && <span className="mt-0.5 block text-[11px] text-muted-foreground">{REPAIR_STAGES.find((x) => x.id === a.repair!.stage)?.label}</span>}</td>
                       <td className="text-[13px]">
                         {holder ? <span className="flex items-center gap-2">{user && <UserAvatar user={user} />}<span className="min-w-0"><span className="block max-w-[180px] truncate">{holderName(holder, db)}</span><span className="block max-w-[180px] truncate text-[11px] text-muted-foreground">{a.checkout ? "Checked out" : "Assigned"}</span></span></span>
                           : <span className="block max-w-[200px] truncate text-muted-foreground">{a.site}{a.room && ` · ${a.room}`}</span>}

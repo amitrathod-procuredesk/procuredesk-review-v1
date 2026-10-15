@@ -15,3 +15,4 @@
 - Line items issued from internal stock (`fulfillment: "inventory"`, stock in `src/lib/pd/inventory.ts`) are excluded from totals, supplier spend and budget — they create no purchase.
 - Admin portal is /app/admin?section=…; its sidebar and section list come from `src/lib/pd/adminNav.ts` so menu and pages never drift.
 - Budget control (header vs line) is resolved only through engine helpers (`budgetLevelOf`, `lineBudgetId`, `budgetAllocation`, `budgetStatuses`); drafts follow the org setting, submitted requests keep a snapshot so history never shifts.
+- Asset records live in the workspace document as `assetItems`; every lifecycle change (status, check-out/in, repair stages, disposal) goes through the action helpers in `src/lib/pd/assetRegister.ts` so history and status stay consistent with the lifecycle configured in asset settings.

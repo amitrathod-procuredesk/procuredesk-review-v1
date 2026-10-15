@@ -109,11 +109,10 @@ export function depRuleFor(a: Pick<Asset, "depOverride" | "categoryId">, s: Asse
 
 /** Current book value, interpolated monthly within the yearly schedule. Below the capitalisation threshold, assets are expensed and not depreciated. */
 export function bookValue(a: Asset, s: AssetSettings, at = new Date()): number {
-  if (!s.depreciation.enabled || a.cost < s.depreciation.capitalizationThreshold) return a.cost;
-  const status = s.statuses.find((x) => x.id === a.statusId);
   if (a.statusId === "disposed") return 0;
+  if (!s.depreciation.enabled || a.cost < s.depreciation.capitalizationThreshold) return a.cost;
   const start = a.inServiceDate || a.purchaseDate;
-  if (!start || (status && a.statusId === "draft")) return a.cost;
+  if (!start || a.statusId === "draft") return a.cost;
   const rule = depRuleFor(a, s);
   const sched = depreciationSchedule(a.cost, rule, s.depreciation.ddbFactor);
   if (!sched.length) return a.cost;
