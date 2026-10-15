@@ -250,7 +250,7 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
     <>
       <Card>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Short company code, e.g. AST or ACME. Leave blank to start with the category code.">
+          <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Up to 6 characters, e.g. AST.">
             <TextInput id="n-prefix" value={n.prefix} maxLength={6} invalid={!!err.prefix} onChange={(e) => up({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} placeholder="AST" />
           </Field>
           <Field label="Separator" htmlFor="n-sep">
