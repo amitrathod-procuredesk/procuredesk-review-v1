@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRightLeft, Check, ChevronRight, CircleDot, Copy, FileText, History, LogIn, LogOut, MoreHorizontal, Package, Pencil, Plus, Trash2, UserPlus, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRightLeft, Check, ChevronRight, CircleDot, Copy, FileText, LogIn, LogOut, MoreHorizontal, Package, Pencil, Plus, Trash2, UserPlus, Wrench } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -614,5 +614,3 @@ function ActionBody({ action, close, a, stageTo, run, meId }: { action: Action; 
   </>);
 }
 
-// keep History icon import referenced for future tab icon use
-void History;

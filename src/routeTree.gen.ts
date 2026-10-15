@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
+import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$assetId'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
 import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
@@ -44,6 +45,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
 const AppApprovalsRoute = AppApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsAssetIdRoute = AppAssetsAssetIdRouteImport.update({
+  id: '/assets/$assetId',
+  path: '/assets/$assetId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/assets/register/new'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests'
     | '/app/assets/register/new'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/assets/register/new'
@@ -197,6 +209,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/app/approvals'
       preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/assets/$assetId': {
+      id: '/app/assets/$assetId'
+      path: '/assets/$assetId'
+      fullPath: '/app/assets/$assetId'
+      preLoaderRoute: typeof AppAssetsAssetIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/assets/settings': {
@@ -248,6 +267,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAssetsAssetIdRoute: typeof AppAssetsAssetIdRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
@@ -260,6 +280,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppApprovalsRoute: AppApprovalsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAssetsAssetIdRoute: AppAssetsAssetIdRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
