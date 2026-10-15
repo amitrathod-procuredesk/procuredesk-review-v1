@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Bell, Boxes, CalendarClock, Check, ChevronRight, CircleDot, Copy, Hash, Info, Lock, Pencil, Plus, RotateCcw, Search, Shapes, Trash2, TrendingDown, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Boxes, CalendarClock, Check, ChevronRight, CircleDot, Copy, Hash, Info, Lock, Pencil, Plug, Plus, RotateCcw, Search, Shapes, Trash2, TrendingDown, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -9,8 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHint, Select, TextArea, TextInput } from "@/components/pd/form";
 import {
-  ALERT_META, IDENTIFIER_LABEL, METHOD_LABEL, PHASE_LABEL, RECIPIENT_LABEL, capacityLeft, categoryIssues, defaultAssetSettings, depreciationSchedule, formatAssetId, numberingIssues, slug, suggestCode,
-  type AlertRule, type AssetCategory, type AssetSettings, type AssetStatus, type CustomField, type DepMethod, type DepRule, type StatusPhase, type Tone,
+  ALERT_META, INTEGRATIONS, MONTHS, IDENTIFIER_LABEL, previewAssetId, rangeIssues, resetModeOf, METHOD_LABEL, PHASE_LABEL, RECIPIENT_LABEL, capacityLeft, categoryIssues, defaultAssetSettings, depreciationSchedule, formatAssetId, numberingIssues, slug, suggestCode,
+  type AlertRule, type IntegrationId, type NumberRange, type ResetMode, type AssetCategory, type AssetSettings, type AssetStatus, type CustomField, type DepMethod, type DepRule, type StatusPhase, type Tone,
 } from "@/lib/pd/assets";
 import { money } from "@/lib/pd/engine";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
@@ -24,6 +24,7 @@ const SECTIONS = [
   { id: "alerts", label: "Notifications & alerts", icon: Bell, desc: "Who hears about what, and when." },
   { id: "fields", label: "Custom fields", icon: Boxes, desc: "Extra details captured on assets." },
   { id: "checkout", label: "Check-out & audits", icon: CalendarClock, desc: "Lending rules and physical checks." },
+  { id: "integrations", label: "Integrations", icon: Plug, desc: "Sync asset data with your ERP, service desk and label printers." },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -83,11 +84,13 @@ function AssetSettingsPage() {
   const set = (fn: (d: AssetSettings) => void) => setDraft((p) => { const n = structuredClone(p); fn(n); return n; });
   const numErr = numberingIssues(draft.numbering);
   const catErrCount = draft.categories.filter((c) => Object.keys(categoryIssues(c, draft.categories)).length).length;
-  const errorCount = Object.keys(numErr).length + catErrCount;
+  const rangeErrCount = (draft.ranges ?? []).filter((x) => Object.keys(rangeIssues(x, draft.ranges ?? [], draft.numbering.seqLength)).length).length;
+  const numErrCount = Object.keys(numErr).length + rangeErrCount;
+  const errorCount = numErrCount + catErrCount;
   const sectionDirty = (id: SectionId) => {
     const pick = (s: AssetSettings) => JSON.stringify(
-      id === "numbering" ? s.numbering : id === "categories" ? s.categories : id === "statuses" ? [s.statuses, s.defaultStatusId]
-      : id === "depreciation" ? s.depreciation : id === "alerts" ? [s.alerts, s.digest, s.quietWeekends] : id === "fields" ? s.fields : [s.checkout, s.audit]);
+      id === "numbering" ? [s.numbering, s.ranges ?? []] : id === "categories" ? s.categories : id === "statuses" ? [s.statuses, s.defaultStatusId]
+      : id === "depreciation" ? [s.depreciation, s.fiscalYearStartMonth ?? 1] : id === "integrations" ? s.integrations ?? {} : id === "alerts" ? [s.alerts, s.digest, s.quietWeekends] : id === "fields" ? s.fields : [s.checkout, s.audit]);
     return pick(draft) !== pick(saved);
   };
 
@@ -131,7 +134,7 @@ function AssetSettingsPage() {
               className={cn("flex h-8 shrink-0 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors hover:bg-subtle", s.id === section ? "bg-subtle font-medium text-primary" : "text-foreground")}>
               <s.icon className="size-4 shrink-0" />
               <span className="flex-1 truncate">{s.label}</span>
-              {(s.id === "numbering" && Object.keys(numErr).length) || (s.id === "categories" && catErrCount)
+              {(s.id === "numbering" && numErrCount) || (s.id === "categories" && catErrCount)
                 ? <span className="size-1.5 rounded-full bg-destructive" title="Has errors" />
                 : sectionDirty(s.id) ? <span className="size-1.5 rounded-full bg-primary" title="Unsaved changes" /> : null}
             </Link>
@@ -151,6 +154,7 @@ function AssetSettingsPage() {
             {section === "alerts" && <AlertsSection d={draft} set={set} />}
             {section === "fields" && <FieldsSection d={draft} set={set} canEdit={canEdit} />}
             {section === "checkout" && <CheckoutSection d={draft} set={set} />}
+            {section === "integrations" && <IntegrationsSection d={draft} setDraft={setDraft} canEdit={canEdit} />}
           </fieldset>
         </div>
       </div>
@@ -214,39 +218,49 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
   const sample = d.categories.find((c) => c.active) ?? d.categories[0];
   const [previewCat, setPreviewCat] = useState(sample?.id ?? "");
   const pc = d.categories.find((c) => c.id === previewCat) ?? sample;
-  const id = formatAssetId(n, pc);
+  const id = previewAssetId(d, pc);
+  const range = d.ranges?.find((r) => r.categoryId === pc?.id && r.next <= r.end);
+  const reset = resetModeOf(n);
   const left = capacityLeft(n);
   const parts = [
-    { k: "Prefix", v: (pc?.prefixOverride || n.prefix) },
+    { k: "Prefix", v: range?.prefix || pc?.prefixOverride || n.prefix },
     { k: "Category", v: n.includeCategory ? pc?.code : "" },
     { k: "Year", v: n.yearFormat === "none" ? "" : n.yearFormat === "YY" ? String(new Date().getFullYear()).slice(-2) : String(new Date().getFullYear()) },
-    { k: "Number", v: String(n.nextSeq).padStart(n.seqLength, "0") },
+    { k: "Number", v: String(range ? range.next : n.nextSeq).padStart(n.seqLength, "0") },
   ].filter((p) => p.v);
 
   return (
     <>
       <Card>
-        <div className="rounded-lg bg-subtle p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="pd-section-title">Next asset ID</p>
-            <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
-              {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
+            <div className="flex items-center justify-between gap-2">
+              <p className="pd-section-title">Next asset ID</p>
+              <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
+                {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </div>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="num truncate text-xl font-semibold tracking-tight" aria-live="polite">{id}</span>
+              <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">{range ? <>From the {pc?.name} range · {(range.end - range.next + 1).toLocaleString()} numbers left</> : "From the company-wide sequence"}</p>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="num text-2xl font-semibold tracking-tight" aria-live="polite">{id}</span>
-            <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {parts.map((p, i) => (
-              <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
-                <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
-              </span>
-            ))}
+          <div className="rounded-lg bg-subtle p-4">
+            <p className="pd-section-title">Last issued</p>
+            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued) || "None yet"}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
           </div>
         </div>
-        {left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {parts.map((p, i) => (
+            <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
+              <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
+            </span>
+          ))}
+        </div>
+        {!range && left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
       </Card>
 
       <Card title="Format" desc="Changes apply to new assets only. Existing IDs never change, so labels and records stay valid.">
@@ -259,8 +273,8 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
               <option value="-">Hyphen  ( - )</option><option value="/">Slash  ( / )</option><option value=".">Dot  ( . )</option><option value="_">Underscore  ( _ )</option><option value="">None</option>
             </Select>
           </Field>
-          <Field label="Year segment" htmlFor="n-year" hint="Uses the year the asset is registered.">
-            <Select id="n-year" value={n.yearFormat} onChange={(e) => up({ yearFormat: e.target.value as typeof n.yearFormat, resetYearly: e.target.value === "none" ? false : n.resetYearly })}>
+          <Field label="Year segment" htmlFor="n-year" hint={reset === "fiscal" ? "Uses the fiscal year the asset is registered in." : "Uses the year the asset is registered."}>
+            <Select id="n-year" value={n.yearFormat} onChange={(e) => up({ yearFormat: e.target.value as typeof n.yearFormat, ...(e.target.value === "none" ? { resetMode: "never" as ResetMode, resetYearly: false } : {}) })}>
               <option value="none">Don't include</option><option value="YY">2 digits (26)</option><option value="YYYY">4 digits (2026)</option>
             </Select>
           </Field>
@@ -272,14 +286,18 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
           <Field label="Starting number" htmlFor="n-start" error={err.startAt} hint={n.startAt < n.nextSeq ? <>Already issued up to {n.nextSeq - 1}. The next ID continues from <span className="num">{n.nextSeq}</span>.</> : "First number issued after a reset."}>
             <TextInput id="n-start" inputMode="numeric" className="num" value={n.startAt} invalid={!!err.startAt} onChange={(e) => up({ startAt: int(e.target.value), nextSeq: Math.max(n.nextSeq, int(e.target.value)) })} />
           </Field>
+          <Field label="Restart numbering" htmlFor="n-reset" hint={n.yearFormat === "none" ? "Add a year segment first, otherwise restarted IDs would repeat." : reset === "fiscal" ? `On 1 ${MONTHS[(d.fiscalYearStartMonth ?? 1) - 1]} — change the month under Depreciation.` : reset === "calendar" ? "On 1 January, from the starting number." : "Numbers keep counting up forever."}>
+            <Select id="n-reset" value={reset} disabled={n.yearFormat === "none"} onChange={(e) => up({ resetMode: e.target.value as ResetMode, resetYearly: e.target.value !== "never" })}>
+              <option value="never">Never</option><option value="calendar">Every calendar year</option><option value="fiscal">Every fiscal year</option>
+            </Select>
+          </Field>
         </div>
         <div className="mt-5 divide-y divide-border border-t border-border pt-4">
           <ToggleRow label="Include category code" desc="e.g. AST-VEH-26-00012 for a truck, AST-IT-26-00013 for a laptop." checked={n.includeCategory} onChange={(v) => up({ includeCategory: v })} />
-          <ToggleRow label="Restart numbering every year" desc={n.yearFormat === "none" ? "Needs a year segment, otherwise IDs would repeat." : "Starts again from the starting number on 1 January."} checked={n.resetYearly} onChange={(v) => { if (v && n.yearFormat === "none") { toast.error("Add a year segment first", { description: "Without the year, restarted numbers would duplicate existing IDs." }); return; } up({ resetYearly: v }); }} />
           <ToggleRow label="Allow editing an ID after it's issued" desc="Useful when migrating tagged assets. Changes are recorded in the asset's history." checked={n.allowManualOverride} onChange={(v) => up({ allowManualOverride: v })} />
         </div>
       </Card>
-      <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Info className="size-3.5" /> Categories can use their own prefix — set it under Categories.</p>
+      <RangesCard d={d} set={set} />
     </>
   );
 }
@@ -675,7 +693,10 @@ function DepreciationSection({ d, set }: SP) {
         )}
 
         <Card title="Accounting">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Fiscal year starts" htmlFor="d-fy" hint="Used for yearly totals and fiscal-year ID resets.">
+              <Select id="d-fy" value={d.fiscalYearStartMonth ?? 1} onChange={(e) => set((x) => { x.fiscalYearStartMonth = +e.target.value; })}>{MONTHS.map((m, i) => <option key={m} value={i + 1}>1 {m}</option>)}</Select>
+            </Field>
             <Field label="Capitalise purchases over" htmlFor="d-cap" hint="Cheaper items are expensed and not depreciated.">
               <div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span><TextInput id="d-cap" className="num pl-6" inputMode="numeric" value={dep.capitalizationThreshold} onChange={(e) => up({ capitalizationThreshold: int(e.target.value) })} /></div>
             </Field>
@@ -837,3 +858,193 @@ function CheckoutSection({ d, set }: SP) {
   );
 }
 
+
+/* ───────────── Per-category ranges ───────────── */
+function RangesCard({ d, set }: SP) {
+  const ranges = d.ranges ?? [];
+  const [edit, setEdit] = useState<{ r: NumberRange; isNew: boolean } | null>(null);
+  const [del, setDel] = useState<NumberRange | null>(null);
+  const free = d.categories.filter((c) => !ranges.some((r) => r.categoryId === c.id));
+  const catOf = (id: string) => d.categories.find((c) => c.id === id);
+  const fmt = (x: number) => String(x).padStart(d.numbering.seqLength, "0");
+  const add = () => {
+    const c = free[0];
+    setEdit({ isNew: true, r: { id: uidx("rg"), categoryId: c?.id ?? "", prefix: c?.code.slice(0, 3) ?? "", start: 1, end: Math.min(999, 10 ** d.numbering.seqLength - 1), next: 1 } });
+  };
+  return (
+    <Card title="Number ranges by category" desc="Give a category its own prefix and block of numbers — handy for fleet IDs or pre-printed tags. Other categories use the company-wide sequence."
+      action={<button type="button" onClick={add} disabled={!free.length} title={free.length ? undefined : "Every category already has a range"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-[13px] font-medium transition-colors hover:bg-subtle disabled:opacity-50"><Plus className="size-3.5" /> Add range</button>}>
+      {ranges.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-[13px] text-muted-foreground">No ranges yet. Every category draws from the company-wide sequence.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="pd-table min-w-[560px]">
+            <thead><tr><th>Category</th><th>Range</th><th>Next ID</th><th>Used</th><th className="w-20" /></tr></thead>
+            <tbody>
+              {ranges.map((r) => {
+                const c = catOf(r.categoryId);
+                const used = r.next - r.start, total = r.end - r.start + 1, full = r.next > r.end;
+                const errs = Object.keys(rangeIssues(r, ranges, d.numbering.seqLength)).length;
+                return (
+                  <tr key={r.id}>
+                    <td><span className="flex items-center gap-2 text-[13px] font-medium">{c?.name ?? "Deleted category"}{errs > 0 && <AlertTriangle className="size-3.5 text-destructive" aria-label="Has errors" />}</span></td>
+                    <td className="num text-[12px] text-muted-foreground">{fmt(r.start)} – {fmt(r.end)}</td>
+                    <td className="num text-[12px]">{full ? <span className="text-warning">Full — uses company sequence</span> : previewAssetId(d, c)}</td>
+                    <td>
+                      <div className="flex items-center gap-2"><div className="h-1.5 w-16 overflow-hidden rounded-full bg-subtle"><div className={cn("h-full rounded-full", used / total > 0.9 ? "bg-warning" : "bg-primary")} style={{ width: `${Math.min(100, (used / total) * 100)}%` }} /></div><span className="num text-[11px] text-muted-foreground">{used}/{total}</span></div>
+                    </td>
+                    <td><div className="flex justify-end gap-0.5"><IconBtn label="Edit range" icon={Pencil} onClick={() => setEdit({ r: structuredClone(r), isNew: false })} /><IconBtn label="Remove range" icon={Trash2} danger onClick={() => setDel(r)} /></div></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="mt-3 flex items-start gap-1.5 rounded-md bg-warning-soft px-3 py-2 text-[12px] text-warning"><Info className="mt-0.5 size-3.5 shrink-0" /> Changing the format or ranges won't renumber existing assets. New rules apply from the next asset registered.</p>
+      {edit && <RangeDialog init={edit.r} isNew={edit.isNew} d={d} onClose={() => setEdit(null)} onSave={(r) => { set((x) => { x.ranges ??= []; const i = x.ranges.findIndex((y) => y.id === r.id); if (i >= 0) x.ranges[i] = r; else x.ranges.push(r); }); setEdit(null); }} />}
+      <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove the {catOf(del?.categoryId ?? "")?.name} range?</AlertDialogTitle>
+            <AlertDialogDescription>New {catOf(del?.categoryId ?? "")?.name?.toLowerCase()} assets will use the company-wide sequence. IDs already issued from this range stay as they are.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Keep range</AlertDialogCancel><AlertDialogAction onClick={() => { const id = del!.id; set((x) => { x.ranges = (x.ranges ?? []).filter((y) => y.id !== id); }); setDel(null); }}>Remove</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
+function RangeDialog({ init, isNew, d, onClose, onSave }: { init: NumberRange; isNew: boolean; d: AssetSettings; onClose: () => void; onSave: (r: NumberRange) => void }) {
+  const [r, setR] = useState(init);
+  const [tried, setTried] = useState(false);
+  const all = (d.ranges ?? []).filter((x) => x.id !== r.id).concat(r);
+  const e = rangeIssues(r, all, d.numbering.seqLength);
+  const issued = !isNew && init.next > init.start;
+  const up = (p: Partial<NumberRange>) => setR((x) => { const n = { ...x, ...p }; if (!issued) n.next = n.start; return n; });
+  const cat = d.categories.find((c) => c.id === r.categoryId);
+  const sample = cat ? previewAssetId({ ...d, ranges: [{ ...r, next: Math.max(r.next, r.start) }] }, cat) : "";
+  const submit = () => { setTried(true); if (Object.keys(e).length) return; onSave({ ...r, next: Math.max(r.next, r.start) }); };
+  const err = (k: string) => (tried ? e[k] : undefined);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{isNew ? "Add number range" : "Edit number range"}</DialogTitle><DialogDescription>Assets in this category get IDs from this block until it's used up, then fall back to the company-wide sequence.</DialogDescription></DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Category" htmlFor="rg-cat" error={err("categoryId")}>
+            <Select id="rg-cat" value={r.categoryId} disabled={issued} invalid={!!err("categoryId")} onChange={(ev) => { const c = d.categories.find((x) => x.id === ev.target.value); up({ categoryId: ev.target.value, prefix: r.prefix || (c?.code.slice(0, 3) ?? "") }); }}>
+              <option value="">Choose…</option>{d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Prefix" htmlFor="rg-prefix" error={err("prefix")}>
+            <TextInput id="rg-prefix" value={r.prefix} maxLength={6} invalid={!!err("prefix")} onChange={(ev) => up({ prefix: ev.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} placeholder="FLT" />
+          </Field>
+          <Field label="First number" htmlFor="rg-start" error={err("start")} hint={issued ? "Locked — numbers were already issued." : undefined}>
+            <TextInput id="rg-start" className="num" inputMode="numeric" disabled={issued} value={r.start} invalid={!!err("start")} onChange={(ev) => up({ start: int(ev.target.value) })} />
+          </Field>
+          <Field label="Last number" htmlFor="rg-end" error={err("end")}>
+            <TextInput id="rg-end" className="num" inputMode="numeric" value={r.end} invalid={!!err("end")} onChange={(ev) => up({ end: int(ev.target.value) })} />
+          </Field>
+        </div>
+        {sample && !Object.keys(e).length && <p className="rounded-md bg-subtle px-3 py-2 text-[12px] text-muted-foreground">Next {cat?.name.toLowerCase()} asset: <span className="num font-medium text-foreground">{sample}</span></p>}
+        <DialogFooter>
+          <button type="button" onClick={onClose} className="h-8 rounded-md px-3 text-[13px] text-muted-foreground hover:bg-subtle hover:text-foreground">Cancel</button>
+          <button type="button" onClick={submit} className="h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:opacity-90">{isNew ? "Add range" : "Done"}</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ───────────── Integrations ───────────── */
+function IntegrationsSection({ d, setDraft, canEdit }: { d: AssetSettings; setDraft: (fn: (p: AssetSettings) => AssetSettings) => void; canEdit: boolean }) {
+  const me = useMe();
+  const db = useDB();
+  const [open, setOpen] = useState<IntegrationId | null>(null);
+  const [disc, setDisc] = useState<IntegrationId | null>(null);
+  const saved = db.assets?.integrations ?? {};
+  // Connections apply right away (like signing in to a service), so they don't wait for Save.
+  const apply = (id: IntegrationId, v: AssetSettings["integrations"] extends infer T ? NonNullable<T>[IntegrationId] : never) => {
+    mutate((x) => { if (!x.assets) return; x.assets.integrations = { ...(x.assets.integrations ?? {}), [id]: v }; });
+    setDraft((p) => ({ ...p, integrations: { ...(p.integrations ?? {}), [id]: v } }));
+  };
+  const meta = INTEGRATIONS.find((i) => i.id === open);
+  const cur = open ? saved[open] : undefined;
+  const [account, setAccount] = useState("");
+  const [events, setEvents] = useState<string[]>([]);
+  const [tried, setTried] = useState(false);
+  const start = (id: IntegrationId) => { const m = INTEGRATIONS.find((i) => i.id === id)!; const s = saved[id]; setAccount(s?.account ?? ""); setEvents(s?.syncEvents ?? m.events.map((e) => e.id)); setTried(false); setOpen(id); };
+  const accErr = !account.trim() ? `Enter the ${meta?.accountLabel.toLowerCase()}.` : open === "api" && !/^https:\/\/\S+\.\S+/.test(account.trim()) ? "Use a full https:// address." : undefined;
+  const evErr = events.length ? undefined : "Choose at least one thing to sync.";
+  const submit = () => {
+    setTried(true);
+    if (accErr || evErr || !open) return;
+    apply(open, { connected: true, connectedAt: cur?.connectedAt ?? new Date().toISOString(), connectedBy: cur?.connectedBy ?? me?.id, account: account.trim(), syncEvents: events });
+    toast.success(cur?.connected ? `${meta!.name} updated` : `${meta!.name} connected`, { description: "Demo connection — no data leaves ProcureDesk." });
+    setOpen(null);
+  };
+  const connectedCount = INTEGRATIONS.filter((i) => saved[i.id]?.connected).length;
+  return (
+    <>
+      <Card title="Connected apps" desc={`${connectedCount} of ${INTEGRATIONS.length} connected. Connections take effect straight away — no need to save.`}>
+        <div className="divide-y divide-border">
+          {INTEGRATIONS.map((i) => {
+            const st = saved[i.id];
+            const by = db.users.find((u) => u.id === st?.connectedBy);
+            return (
+              <div key={i.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-subtle text-[12px] font-semibold text-muted-foreground ring-1 ring-border">{i.name.slice(0, 2)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-[13px] font-medium">{i.name}{st?.connected && <span className="inline-flex h-5 items-center gap-1 rounded-full bg-success-soft px-2 text-[11px] font-medium text-success"><Check className="size-3" />Connected</span>}</p>
+                  <p className="truncate text-[12px] text-muted-foreground">{st?.connected ? <><span className="num">{st.account}</span> · {st.syncEvents.length} {st.syncEvents.length === 1 ? "event" : "events"} synced{by ? ` · by ${by.name}` : ""}</> : i.desc}</p>
+                </div>
+                {st?.connected ? (
+                  <div className="flex gap-1.5">
+                    <button type="button" disabled={!canEdit} onClick={() => start(i.id)} className="h-8 rounded-md border border-border bg-surface px-3 text-[13px] font-medium hover:bg-subtle disabled:opacity-50">Settings</button>
+                    <button type="button" disabled={!canEdit} onClick={() => setDisc(i.id)} className="h-8 rounded-md px-3 text-[13px] text-muted-foreground hover:bg-subtle hover:text-destructive disabled:opacity-50">Disconnect</button>
+                  </div>
+                ) : (
+                  <button type="button" disabled={!canEdit} onClick={() => start(i.id)} className="h-8 rounded-md border border-border bg-surface px-3 text-[13px] font-medium hover:bg-subtle disabled:opacity-50">Connect</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+      <p className="flex items-start gap-1.5 text-[12px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" /> These connections are a demo. Disconnecting stops future syncs; records already sent keep their external IDs.</p>
+
+      <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{cur?.connected ? `${meta?.name} settings` : `Connect ${meta?.name}`}</DialogTitle><DialogDescription>{meta?.desc}</DialogDescription></DialogHeader>
+          <Field label={meta?.accountLabel ?? ""} htmlFor="int-acc" error={tried ? accErr : undefined}>
+            <TextInput id="int-acc" autoFocus value={account} placeholder={meta?.placeholder} invalid={tried && !!accErr} onChange={(e) => setAccount(e.target.value)} />
+          </Field>
+          <div>
+            <p className="pd-label">What to sync</p>
+            <div className="space-y-2">
+              {meta?.events.map((e) => (
+                <label key={e.id} className="flex cursor-pointer items-center gap-2 text-[13px]"><input type="checkbox" checked={events.includes(e.id)} onChange={(ev) => setEvents((p) => (ev.target.checked ? [...p, e.id] : p.filter((x) => x !== e.id)))} />{e.label}</label>
+              ))}
+            </div>
+            {tried && evErr && <FieldHint error>{evErr}</FieldHint>}
+          </div>
+          <DialogFooter>
+            <button type="button" onClick={() => setOpen(null)} className="h-8 rounded-md px-3 text-[13px] text-muted-foreground hover:bg-subtle hover:text-foreground">Cancel</button>
+            <button type="button" onClick={submit} className="h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:opacity-90">{cur?.connected ? "Save" : "Connect"}</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!disc} onOpenChange={(o) => !o && setDisc(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect {INTEGRATIONS.find((i) => i.id === disc)?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>Future changes stop syncing. Records already sent stay linked, and you can reconnect anytime.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Stay connected</AlertDialogCancel><AlertDialogAction onClick={() => { const id = disc!; apply(id, { connected: false, syncEvents: [] }); toast(`${INTEGRATIONS.find((i) => i.id === id)?.name} disconnected`); setDisc(null); }}>Disconnect</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
