@@ -327,7 +327,7 @@ function CategoriesSection({ d, set, canEdit }: SP & { canEdit: boolean }) {
                         </div>
                         <p className="max-w-[280px] truncate text-[12px] text-muted-foreground">{c.description || IDENTIFIER_LABEL[c.identifier]}</p>
                       </td>
-                      <td className="num text-[12px]">{formatAssetId(d.numbering, c)}</td>
+                      <td className="num whitespace-nowrap text-[12px]">{formatAssetId(d.numbering, c)}</td>
                       <td className="text-[12px]">{rule.method === "none" ? "None" : <>{METHOD_LABEL[rule.method]} · {Math.round(rule.usefulLifeMonths / 12 * 10) / 10} yrs</>}{!c.depreciation && <span className="text-muted-foreground"> (default)</span>}</td>
                       <td className="num text-right">{c.assetCount.toLocaleString()}</td>
                       <td className="text-right">
