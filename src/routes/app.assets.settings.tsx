@@ -138,7 +138,7 @@ function AssetSettingsPage() {
       )}
 
       <div className="grid gap-5 md:grid-cols-[184px_1fr]">
-        <nav aria-label="Asset settings sections" className="pd-scroll-hide -mx-4 flex gap-1 overflow-x-auto px-4 md:pd-panel md:sticky md:top-[84px] md:mx-0 md:block md:space-y-0.5 md:self-start md:p-1.5">
+        <nav aria-label="Asset settings sections" className="pd-scroll-hide -mx-4 flex gap-1 overflow-x-auto px-4 md:sticky md:rounded-lg md:border md:border-border md:bg-surface md:top-[84px] md:mx-0 md:block md:space-y-0.5 md:self-start md:p-1.5">
           {SECTIONS.map((s) => (
             <button key={s.id} type="button" onClick={() => go(s.id)} aria-current={s.id === active ? "true" : undefined}
               className={cn("flex h-8 w-full shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-[13px] transition-colors", s.id === active ? "bg-primary/10 font-medium text-primary" : "text-foreground hover:bg-subtle")}>
@@ -249,39 +249,7 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
   return (
     <>
       <Card>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
-            <div className="flex items-center justify-between gap-2">
-              <p className="pd-section-title">Next asset ID</p>
-              <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
-                {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
-            </div>
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="num truncate text-xl font-semibold tracking-tight" aria-live="polite">{id}</span>
-              <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">{range ? <>From the {pc?.name} range · {(range.end - range.next + 1).toLocaleString()} numbers left</> : "From the company-wide sequence"}</p>
-          </div>
-          <div className="rounded-lg bg-subtle p-4">
-            <p className="pd-section-title">Last issued</p>
-            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued || (n.nextSeq > n.startAt ? formatAssetId(n, pc, new Date(), n.nextSeq - 1) : "")) || "None yet"}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {parts.map((p, i) => (
-            <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-              {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
-              <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
-            </span>
-          ))}
-        </div>
-        {!range && left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
-      </Card>
-
-      <Card title="Format" desc="Changes apply to new assets only. Existing IDs never change, so labels and records stay valid.">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Short company code, e.g. AST or ACME. Leave blank to start with the category code.">
             <TextInput id="n-prefix" value={n.prefix} maxLength={6} invalid={!!err.prefix} onChange={(e) => up({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} placeholder="AST" />
           </Field>
@@ -314,6 +282,38 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
           <ToggleRow label="Allow editing an ID after it's issued" desc="Useful when migrating tagged assets. Changes are recorded in the asset's history." checked={n.allowManualOverride} onChange={(v) => up({ allowManualOverride: v })} />
         </div>
       </Card>
+      <Card>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
+            <div className="flex items-center justify-between gap-2">
+              <p className="pd-section-title">Next asset ID</p>
+              <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
+                {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </div>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="num truncate text-xl font-semibold tracking-tight" aria-live="polite">{id}</span>
+              <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">{range ? <>From the {pc?.name} range · {(range.end - range.next + 1).toLocaleString()} numbers left</> : "From the company-wide sequence"}</p>
+          </div>
+          <div className="rounded-lg bg-subtle p-4">
+            <p className="pd-section-title">Last issued</p>
+            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued || (n.nextSeq > n.startAt ? formatAssetId(n, pc, new Date(), n.nextSeq - 1) : "")) || "None yet"}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {parts.map((p, i) => (
+            <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
+              <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
+            </span>
+          ))}
+        </div>
+        {!range && left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
+      </Card>
+
       <RangesCard d={d} set={set} />
     </>
   );
