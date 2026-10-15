@@ -22,6 +22,8 @@ export interface Numbering {
   resetMode?: ResetMode;
   /** Last ID handed out from the global sequence. */
   lastIssued?: string;
+  /** Year segment follows the fiscal year instead of the calendar year. */
+  fiscalYear?: boolean;
 }
 
 export type ResetMode = "never" | "calendar" | "fiscal";
@@ -134,6 +136,8 @@ export interface AssetSettings {
   ranges?: NumberRange[];
   /** 1–12; month the fiscal year starts. */
   fiscalYearStartMonth?: number;
+  /** 1–31; day of the month the fiscal year starts. */
+  fiscalYearStartDay?: number;
   integrations?: Partial<Record<IntegrationId, IntegrationState>>;
   updatedAt?: string;
   updatedBy?: string;
@@ -153,7 +157,7 @@ export const resetModeOf = (n: Numbering): ResetMode => n.resetMode ?? (n.resetY
 
 /** The year used in IDs; a fiscal reset uses the fiscal year (named after the year it ends). */
 export function idYear(n: Numbering, date: Date, fiscalStartMonth = 1): Date {
-  if (resetModeOf(n) !== "fiscal" || fiscalStartMonth <= 1) return date;
+  if ((!n.fiscalYear && resetModeOf(n) !== "fiscal") || fiscalStartMonth <= 1) return date;
   const y = date.getMonth() + 1 >= fiscalStartMonth ? date.getFullYear() + 1 : date.getFullYear();
   return new Date(y, 5, 1);
 }
@@ -218,14 +222,14 @@ export function defaultAssetSettings(): AssetSettings {
       { id: "cat-sw", name: "Software licenses", code: "SW", description: "Perpetual licenses capitalised as assets.", identifier: "license", depreciation: { method: "straight_line", usefulLifeMonths: 36, salvagePct: 0 }, checkoutAllowed: true, active: true, assetCount: 4 },
     ],
     statuses: [
-      st("draft", "Draft", "setup", "neutral", "Record created; details still being filled in.", { depreciates: false, next: ["available", "disposed"], assetCount: 12 }),
-      st("available", "Available", "active", "green", "Ready to assign or check out.", { checkoutable: true, next: ["in_use", "checked_out", "in_repair", "decommissioned"], assetCount: 205 }),
-      st("in_use", "In use", "active", "blue", "Permanently assigned to a person or location.", { next: ["available", "in_repair", "at_vendor", "decommissioned"], assetCount: 902 }),
-      st("checked_out", "Checked out", "active", "violet", "Temporarily with someone; due back on a set date.", { next: ["available", "in_repair"], assetCount: 48 }),
-      st("in_repair", "In repair", "service", "amber", "Being repaired in-house.", { next: ["available", "in_use", "at_vendor", "decommissioned"], assetCount: 19 }),
-      st("at_vendor", "At vendor", "service", "amber", "Sent to the supplier for repair or warranty service.", { next: ["available", "in_repair", "decommissioned"], assetCount: 6 }),
-      st("decommissioned", "Decommissioned", "retired", "red", "Removed from service; waiting for disposal.", { depreciates: false, next: ["disposed", "available"], assetCount: 44 }),
-      st("disposed", "Disposed", "retired", "neutral", "Sold, recycled or written off. Final status.", { depreciates: false, next: [], assetCount: 12 }),
+      st("draft", "Draft", "setup", "neutral", "Saved but not yet part of the register", { depreciates: false, next: ["available", "disposed"], assetCount: 12 }),
+      st("available", "Available", "active", "green", "Ready to be checked out or assigned", { checkoutable: true, next: ["in_use", "checked_out", "in_repair", "decommissioned"], assetCount: 205 }),
+      st("in_use", "In use", "active", "blue", "Currently assigned to a person or crew", { next: ["available", "in_repair", "at_vendor", "decommissioned"], assetCount: 902 }),
+      st("checked_out", "Checked out", "active", "violet", "Temporarily released to a user with a return date", { next: ["available", "in_repair"], assetCount: 48 }),
+      st("in_repair", "In repair", "service", "amber", "Out of service pending maintenance completion", { next: ["available", "in_use", "at_vendor", "decommissioned"], assetCount: 19 }),
+      st("at_vendor", "At vendor", "service", "amber", "Sent off site to a vendor for service or repair", { next: ["available", "in_repair", "decommissioned"], assetCount: 6 }),
+      st("decommissioned", "Decommissioned", "retired", "red", "Retired from service but not yet disposed", { depreciates: false, next: ["disposed", "available"], assetCount: 44 }),
+      st("disposed", "Disposed", "retired", "neutral", "Removed from the books", { depreciates: false, next: [], assetCount: 12 }),
     ],
     defaultStatusId: "draft",
     depreciation: { enabled: true, method: "straight_line", usefulLifeMonths: 60, salvagePct: 10, ddbFactor: 2, convention: "full_month", frequency: "monthly", capitalizationThreshold: 2500, expenseAccount: "Depreciation Expense", accumulatedAccount: "Accumulated Depreciation" },
