@@ -31,3 +31,16 @@ describe("depreciation", () => {
     expect(s.every((r) => r.book >= 4500)).toBe(true);
   });
 });
+
+import { issueAssetId } from "../assets";
+describe("category number ranges", () => {
+  it("issues from the range, then falls back to the company sequence when full", () => {
+    const s = defaultAssetSettings();
+    const veh = s.categories.find((c) => c.id === "cat-veh")!;
+    const d = new Date(2026, 3, 1);
+    s.ranges = [{ id: "r", categoryId: "cat-veh", prefix: "FLT", start: 1, end: 2, next: 2 }];
+    expect(issueAssetId(s, veh, d)).toBe("FLT-VEH-26-00002");
+    expect(issueAssetId(s, veh, d)).toBe("AST-VEH-26-01248");
+    expect(s.numbering.nextSeq).toBe(1249);
+  });
+});
