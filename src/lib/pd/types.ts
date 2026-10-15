@@ -239,6 +239,7 @@ export interface DB {
   requests: PRequest[];
   session: { userId: string | null };
   seq: number;
+  assets?: import("./assets").AssetSettings;
 }
 
 export const CATEGORIES = [
