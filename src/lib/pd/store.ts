@@ -124,6 +124,7 @@ function migrate(d: DB): DB {
   const seed = seedDB();
   d.org.budgetLevel ??= "header";
   d.assets ??= seed.assets;
+  d.assetItems ??= seed.assetItems;
   const oldNames = new Map<string, string>();
   d.catalog.forEach((c) => {
     oldNames.set(c.id, c.name);
