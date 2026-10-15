@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, Bell, Boxes, CalendarClock, Check, ChevronRight, CircleDot, Copy, Hash, Info, Lock, Pencil, Plug, Plus, RotateCcw, Search, Shapes, Trash2, TrendingDown, type LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,14 +17,13 @@ import { mutate, useDB, useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
-  { id: "numbering", label: "Asset ID numbering", icon: Hash, desc: "How every new asset is numbered." },
-  { id: "categories", label: "Categories", icon: Shapes, desc: "Group assets and set rules per type." },
-  { id: "statuses", label: "Statuses & lifecycle", icon: CircleDot, desc: "The stages an asset moves through." },
-  { id: "depreciation", label: "Depreciation", icon: TrendingDown, desc: "How book value reduces over time." },
-  { id: "alerts", label: "Notifications & alerts", icon: Bell, desc: "Who hears about what, and when." },
-  { id: "fields", label: "Custom fields", icon: Boxes, desc: "Extra details captured on assets." },
-  { id: "checkout", label: "Check-out & audits", icon: CalendarClock, desc: "Lending rules and physical checks." },
-  { id: "integrations", label: "Integrations", icon: Plug, desc: "Sync asset data with your ERP, service desk and label printers." },
+  { id: "numbering", label: "Numbering", title: "Asset ID numbering", icon: Hash, desc: "Rules used to auto-generate new asset IDs." },
+  { id: "categories", label: "Categories", title: "Categories", icon: Shapes, desc: "Used to group assets and drive default depreciation." },
+  { id: "statuses", label: "Statuses", title: "Statuses & lifecycle", icon: CircleDot, desc: "The states an asset can be in and which moves are allowed between them." },
+  { id: "depreciation", label: "Depreciation", title: "Depreciation defaults", icon: TrendingDown, desc: "Applied when a new asset is created — can be overridden per category." },
+  { id: "fields", label: "Custom fields", title: "Custom fields", icon: Boxes, desc: "Fields specific to your organization. They appear on asset detail and forms." },
+  { id: "alerts", label: "Notifications", title: "Notifications & alerts", icon: Bell, desc: "When ProcureDesk should send reminders." },
+  { id: "integrations", label: "Integrations", title: "Integrations", icon: Plug, desc: "Sync asset data with your ERP, service desk and label printers." },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -103,21 +102,32 @@ function AssetSettingsPage() {
   };
   const discard = () => { setDraft(structuredClone(saved)); toast("Changes discarded"); };
   const updatedBy = db.users.find((u) => u.id === saved.updatedBy);
-  const meta = SECTIONS.find((s) => s.id === section)!;
+  const [active, setActive] = useState<SectionId>(section);
+  // Deep link: scroll to ?section= on first load.
+  useEffect(() => { if (section !== "numbering") document.getElementById(`as-${section}`)?.scrollIntoView({ block: "start" }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Scroll-spy: highlight the section nearest the top of the screen.
+  useEffect(() => {
+    const els = SECTIONS.map((s) => document.getElementById(`as-${s.id}`)).filter(Boolean) as HTMLElement[];
+    const io = new IntersectionObserver((entries) => {
+      const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (vis[0]) setActive(vis[0].target.id.slice(3) as SectionId);
+    }, { rootMargin: "-90px 0px -65% 0px" });
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+  const go = (id: SectionId) => { setActive(id); document.getElementById(`as-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
 
   return (
     <TooltipProvider delayDuration={200}>
     <div className="mx-auto max-w-6xl p-4 pb-28 md:p-8 md:pb-28">
-      <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
-        <span>Assets</span><ChevronRight className="size-3" /><span className="text-foreground">Settings</span>
-      </nav>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="pd-h1">Asset settings</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Set the rules once — every laptop, vehicle or machine you register follows them.</p>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {saved.updatedAt ? <>Last saved {relTime(saved.updatedAt)}{updatedBy ? ` by ${updatedBy.name}` : ""}</> : "Using recommended defaults"}
+      <div className="mb-5">
+        <nav aria-label="Breadcrumb" className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <Link to="/app/assets/register" className="hover:text-foreground">Assets</Link><ChevronRight className="size-3" /><span>Settings</span>
+        </nav>
+        <h1 className="pd-h1">Asset settings</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">
+          Configure how assets are numbered, categorized and depreciated across your organization.
+          {saved.updatedAt && <span className="text-muted-foreground/80"> · Saved {relTime(saved.updatedAt)}{updatedBy ? ` by ${updatedBy.name}` : ""}</span>}
         </p>
       </div>
 
@@ -127,36 +137,40 @@ function AssetSettingsPage() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-[208px_1fr]">
-        <nav aria-label="Asset settings sections" className="pd-scroll-hide -mx-4 flex gap-1 overflow-x-auto px-4 md:sticky md:top-[84px] md:mx-0 md:block md:space-y-0.5 md:self-start md:px-0">
+      <div className="grid gap-5 md:grid-cols-[184px_1fr]">
+        <nav aria-label="Asset settings sections" className="pd-scroll-hide -mx-4 flex gap-1 overflow-x-auto px-4 md:sticky md:rounded-lg md:border md:border-border md:bg-surface md:top-[84px] md:mx-0 md:block md:space-y-0.5 md:self-start md:p-1.5">
           {SECTIONS.map((s) => (
-            <Link key={s.id} to="/app/assets/settings" search={{ section: s.id }} replace aria-current={s.id === section ? "page" : undefined}
-              className={cn("flex h-8 shrink-0 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors hover:bg-subtle", s.id === section ? "bg-subtle font-medium text-primary" : "text-foreground")}>
-              <s.icon className="size-4 shrink-0" />
+            <button key={s.id} type="button" onClick={() => go(s.id)} aria-current={s.id === active ? "true" : undefined}
+              className={cn("flex h-8 w-full shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-[13px] transition-colors", s.id === active ? "bg-primary/10 font-medium text-primary" : "text-foreground hover:bg-subtle")}>
               <span className="flex-1 truncate">{s.label}</span>
               {(s.id === "numbering" && numErrCount) || (s.id === "categories" && catErrCount)
                 ? <span className="size-1.5 rounded-full bg-destructive" title="Has errors" />
                 : sectionDirty(s.id) ? <span className="size-1.5 rounded-full bg-primary" title="Unsaved changes" /> : null}
-            </Link>
+            </button>
           ))}
         </nav>
 
-        <div className="min-w-0">
-          <div className="mb-4">
-            <h2 className="text-[15px] font-semibold">{meta.label}</h2>
-            <p className="text-[13px] text-muted-foreground">{meta.desc}</p>
-          </div>
-          <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
-            {section === "numbering" && <NumberingSection d={draft} set={set} err={numErr} />}
-            {section === "categories" && <CategoriesSection d={draft} set={set} canEdit={canEdit} />}
-            {section === "statuses" && <StatusesSection d={draft} set={set} canEdit={canEdit} />}
-            {section === "depreciation" && <DepreciationSection d={draft} set={set} />}
-            {section === "alerts" && <AlertsSection d={draft} set={set} />}
-            {section === "fields" && <FieldsSection d={draft} set={set} canEdit={canEdit} />}
-            {section === "checkout" && <CheckoutSection d={draft} set={set} />}
-            {section === "integrations" && <IntegrationsSection d={draft} setDraft={setDraft} canEdit={canEdit} />}
-          </fieldset>
-        </div>
+        <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
+          {SECTIONS.map((m) => (
+            <section key={m.id} id={`as-${m.id}`} className="pd-panel scroll-mt-24 p-4 md:p-5">
+              <div className="mb-4">
+                <h2 className="text-sm font-semibold">{m.title}</h2>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">{m.desc}</p>
+              </div>
+              <Nested.Provider value>
+                <div className="space-y-5">
+                  {m.id === "numbering" && <NumberingSection d={draft} set={set} err={numErr} />}
+                  {m.id === "categories" && <CategoriesSection d={draft} set={set} canEdit={canEdit} />}
+                  {m.id === "statuses" && <StatusesSection d={draft} set={set} canEdit={canEdit} />}
+                  {m.id === "depreciation" && <DepreciationSection d={draft} set={set} />}
+                  {m.id === "fields" && <FieldsSection d={draft} set={set} canEdit={canEdit} />}
+                  {m.id === "alerts" && <AlertsSection d={draft} set={set} />}
+                  {m.id === "integrations" && <IntegrationsSection d={draft} setDraft={setDraft} canEdit={canEdit} />}
+                </div>
+              </Nested.Provider>
+            </section>
+          ))}
+        </fieldset>
       </div>
 
       {canEdit && (
@@ -176,17 +190,20 @@ function AssetSettingsPage() {
 
 type SP = { d: AssetSettings; set: (fn: (d: AssetSettings) => void) => void };
 
+const Nested = createContext(false);
+/** Sub-block inside a section panel: separated by a hairline instead of its own box. */
 function Card({ title, desc, children, action }: { title?: string; desc?: ReactNode; children: ReactNode; action?: ReactNode }) {
+  const nested = useContext(Nested);
   return (
-    <section className="pd-panel p-4 md:p-5">
+    <div className={nested ? "border-t border-border pt-5 first:border-t-0 first:pt-0" : "pd-panel p-4 md:p-5"}>
       {(title || action) && (
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>{title && <h3 className="text-sm font-semibold">{title}</h3>}{desc && <p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p>}</div>
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>{title && <h3 className="text-[13px] font-semibold">{title}</h3>}{desc && <p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p>}</div>
           {action}
         </div>
       )}
       {children}
-    </section>
+    </div>
   );
 }
 
@@ -232,40 +249,8 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
   return (
     <>
       <Card>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
-            <div className="flex items-center justify-between gap-2">
-              <p className="pd-section-title">Next asset ID</p>
-              <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
-                {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
-            </div>
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="num truncate text-xl font-semibold tracking-tight" aria-live="polite">{id}</span>
-              <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">{range ? <>From the {pc?.name} range · {(range.end - range.next + 1).toLocaleString()} numbers left</> : "From the company-wide sequence"}</p>
-          </div>
-          <div className="rounded-lg bg-subtle p-4">
-            <p className="pd-section-title">Last issued</p>
-            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued || (n.nextSeq > n.startAt ? formatAssetId(n, pc, new Date(), n.nextSeq - 1) : "")) || "None yet"}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {parts.map((p, i) => (
-            <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-              {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
-              <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
-            </span>
-          ))}
-        </div>
-        {!range && left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
-      </Card>
-
-      <Card title="Format" desc="Changes apply to new assets only. Existing IDs never change, so labels and records stay valid.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Short company code, e.g. AST or ACME. Leave blank to start with the category code.">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Up to 6 characters, e.g. AST.">
             <TextInput id="n-prefix" value={n.prefix} maxLength={6} invalid={!!err.prefix} onChange={(e) => up({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} placeholder="AST" />
           </Field>
           <Field label="Separator" htmlFor="n-sep">
@@ -297,6 +282,38 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
           <ToggleRow label="Allow editing an ID after it's issued" desc="Useful when migrating tagged assets. Changes are recorded in the asset's history." checked={n.allowManualOverride} onChange={(v) => up({ allowManualOverride: v })} />
         </div>
       </Card>
+      <Card>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
+            <div className="flex items-center justify-between gap-2">
+              <p className="pd-section-title">Next asset ID</p>
+              <Select aria-label="Preview for category" value={pc?.id} onChange={(e) => setPreviewCat(e.target.value)} className="h-7 w-auto text-xs" disabled={false}>
+                {d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </div>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="num truncate text-xl font-semibold tracking-tight" aria-live="polite">{id}</span>
+              <button type="button" onClick={() => { void navigator.clipboard?.writeText(id); toast.success("Copied example ID"); }} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground" aria-label="Copy example ID"><Copy className="size-3.5" /></button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">{range ? <>From the {pc?.name} range · {(range.end - range.next + 1).toLocaleString()} numbers left</> : "From the company-wide sequence"}</p>
+          </div>
+          <div className="rounded-lg bg-subtle p-4">
+            <p className="pd-section-title">Last issued</p>
+            <p className="num mt-2 truncate text-xl font-semibold tracking-tight text-muted-foreground">{(range ? range.lastIssued : n.lastIssued || (n.nextSeq > n.startAt ? formatAssetId(n, pc, new Date(), n.nextSeq - 1) : "")) || "None yet"}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Already on labels and records — never changes</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {parts.map((p, i) => (
+            <span key={p.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              {i > 0 && n.separator && <span className="num text-foreground/50">{n.separator}</span>}
+              <span className="rounded border border-border bg-surface px-1.5 py-0.5"><span className="num text-foreground">{p.v}</span> · {p.k}</span>
+            </span>
+          ))}
+        </div>
+        {!range && left < 500 && <p className="mt-3 flex items-center gap-1.5 text-[12px] text-warning"><AlertTriangle className="size-3.5" /> Only {left.toLocaleString()} numbers left at {n.seqLength} digits. Add a digit to avoid running out.</p>}
+      </Card>
+
       <RangesCard d={d} set={set} />
     </>
   );
