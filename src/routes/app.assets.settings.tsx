@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHint, Select, TextArea, TextInput } from "@/components/pd/form";
 import {
   ALERT_META, IDENTIFIER_LABEL, METHOD_LABEL, PHASE_LABEL, RECIPIENT_LABEL, capacityLeft, categoryIssues, defaultAssetSettings, depreciationSchedule, formatAssetId, numberingIssues, slug, suggestCode,
@@ -103,6 +103,7 @@ function AssetSettingsPage() {
   const meta = SECTIONS.find((s) => s.id === section)!;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="mx-auto max-w-6xl p-4 pb-28 md:p-8 md:pb-28">
       <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
         <span>Assets</span><ChevronRight className="size-3" /><span className="text-foreground">Settings</span>
@@ -165,6 +166,7 @@ function AssetSettingsPage() {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
