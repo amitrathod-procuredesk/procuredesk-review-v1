@@ -58,7 +58,7 @@ function NewAssetPage() {
   const me = useMe();
   const s = db.assets!;
   const navigate = useNavigate();
-  const [a, setA] = useState<Asset>(() => blankAsset(s));
+  const [a, setA] = useState<Asset>(() => { const b = blankAsset(s); if (b.statusId === "draft") b.statusId = "available"; return b; });
   const pristine = useRef(JSON.stringify(a));
   const [tried, setTried] = useState(false);
   const [active, setActive] = useState<string>("identification");
@@ -76,7 +76,7 @@ function NewAssetPage() {
   const draftIssues = Object.fromEntries(Object.entries(issues).filter(([k]) => k === "name" || k === "categoryId"));
   const shown = tried ? issues : {};
   const dirty = JSON.stringify(a) !== pristine.current;
-  const startOptions = s.statuses.filter((x) => x.enabled && (x.phase === "setup" || x.phase === "active") && (x.id !== "checked_out" || cat?.checkoutAllowed));
+  const startOptions = s.statuses.filter((x) => x.enabled && x.id !== "draft" && (x.phase === "setup" || x.phase === "active") && (x.id !== "checked_out" || cat?.checkoutAllowed));
   const status = s.statuses.find((x) => x.id === a.statusId);
 
   useEffect(() => {
@@ -129,7 +129,6 @@ function NewAssetPage() {
       setTried(true);
       const first = Object.keys(errs)[0];
       go(FIELD_SECTION[first] ?? (first.startsWith("cf_") ? "identification" : "identification"));
-      toast.error(asDraft ? "Add a name and category to save a draft" : "A few details are missing", { description: asDraft ? undefined : `${Object.keys(errs).length} ${Object.keys(errs).length === 1 ? "field needs" : "fields need"} attention. Or save as a draft and finish later.` });
       return;
     }
     const rec: Asset = structuredClone({ ...a, statusId: asDraft ? "draft" : a.statusId, depOverride: customDep ? a.depOverride : undefined, checkout: asDraft ? undefined : a.checkout, assignedTo: asDraft ? undefined : a.assignedTo });
@@ -224,7 +223,7 @@ function NewAssetPage() {
 
           {/* Status & location */}
           <Card id="assignment" title="Status & location" desc="Where it lives and whether it's ready to use.">
-            <p className="pd-label">Starting status</p>
+            <p className="pd-label">Starting status <span className="font-normal">· not ready yet? Use Save as draft</span></p>
             <div role="radiogroup" aria-label="Starting status" className="mb-4 grid gap-2 sm:grid-cols-2">
               {startOptions.map((x) => {
                 const on = x.id === a.statusId;
@@ -403,7 +402,7 @@ function NewAssetPage() {
       <div className="fixed inset-x-0 bottom-14 z-30 flex justify-center px-4 md:bottom-6">
         <div role="region" aria-label="Save asset" className="flex w-full max-w-2xl items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2.5 shadow-lg">
           <p className="hidden min-w-0 flex-1 items-center gap-1.5 truncate text-[13px] sm:flex">
-            {tried && Object.keys(issues).length ? <><AlertTriangle className="size-4 shrink-0 text-warning" />{Object.keys(issues).length} {Object.keys(issues).length === 1 ? "detail" : "details"} missing to register</> : <><UserIcon className="size-4 shrink-0 text-muted-foreground" /><span className="truncate text-muted-foreground">Will be registered as <span className="num text-foreground">{nextId}</span></span></>}
+            {tried && Object.keys(issues).length ? <><AlertTriangle className="size-4 shrink-0 text-warning" /><span className="truncate">{Object.keys(issues).length} {Object.keys(issues).length === 1 ? "detail" : "details"} missing — fill {Object.keys(issues).length === 1 ? "it" : "them"} in or save as a draft</span></> : <><UserIcon className="size-4 shrink-0 text-muted-foreground" /><span className="truncate text-muted-foreground">Will be registered as <span className="num text-foreground">{nextId}</span></span></>}
           </p>
           <div className="ml-auto flex gap-2">
             <Link to="/app/assets/register" className={BTN_GHOST} onClick={(e) => { if (dirty && !confirm("Leave without saving? Your changes will be lost.")) e.preventDefault(); }}>Cancel</Link>
