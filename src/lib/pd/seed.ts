@@ -1,4 +1,5 @@
 import { defaultAssetSettings } from "./assets";
+import { seedAssets } from "./assetRegister";
 import type { DB, LineItem, PRequest } from "./types";
 
 const day = 86400000;
@@ -111,6 +112,7 @@ export function seedDB(): DB {
     policies: { quoteThreshold: 5000, duplicateWindowDays: 30, warnNonPreferredVendor: true },
     seq: 80000172,
     assets: defaultAssetSettings(),
+    assetItems: seedAssets(),
     session: { userId: null },
     requests: [
       req({

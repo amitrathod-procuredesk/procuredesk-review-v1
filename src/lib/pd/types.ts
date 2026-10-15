@@ -240,6 +240,7 @@ export interface DB {
   session: { userId: string | null };
   seq: number;
   assets?: import("./assets").AssetSettings;
+  assetItems?: import("./assetRegister").Asset[];
 }
 
 export const CATEGORIES = [

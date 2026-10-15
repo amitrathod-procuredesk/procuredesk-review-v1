@@ -139,7 +139,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
     { label: "Insights", icon: Lightbulb, children: [{ label: "Spend" }, { label: "Reports" }] },
     { label: "Expenses", icon: CircleDollarSign },
     { label: "Contracts", icon: FileText },
-    { label: "Assets", icon: Box, children: [{ label: "Register" }, { label: "Maintenance" }, { label: "Check in / out" }, { label: "Reports" }, { label: "Settings", to: "/app/assets/settings" }] },
+    { label: "Assets", icon: Box, children: [{ label: "Register", to: "/app/assets/register" }, { label: "Maintenance" }, { label: "Check in / out" }, { label: "Reports" }, { label: "Settings", to: "/app/assets/settings" }] },
     { label: "Inventory", icon: Briefcase },
     { label: "Sell", icon: HeartHandshake, children: [{ label: "Customers" }, { label: "Invoices" }] },
     { label: "Cards", icon: WalletCards, children: [{ label: "My cards" }, { label: "Transactions" }] },

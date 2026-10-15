@@ -14,8 +14,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
+import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$assetId'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
+import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
+import { Route as AppAssetsRegisterNewRouteImport } from './routes/app.assets.register.new'
 import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
 import { Route as AppRequestsIdEditRouteImport } from './routes/app.requests.$id.edit'
 
@@ -44,6 +47,11 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssetsAssetIdRoute = AppAssetsAssetIdRouteImport.update({
+  id: '/assets/$assetId',
+  path: '/assets/$assetId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
   id: '/assets/settings',
   path: '/assets/settings',
@@ -52,6 +60,16 @@ const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
 const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
   id: '/requests/',
   path: '/requests/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRegisterIndexRoute = AppAssetsRegisterIndexRouteImport.update({
+  id: '/assets/register/',
+  path: '/assets/register/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRegisterNewRoute = AppAssetsRegisterNewRouteImport.update({
+  id: '/assets/register/new',
+  path: '/assets/register/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRequestsIdIndexRoute = AppRequestsIdIndexRouteImport.update({
@@ -71,9 +89,12 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
+  '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -81,9 +102,12 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
+  '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id': typeof AppRequestsIdIndexRoute
 }
 export interface FileRoutesById {
@@ -93,9 +117,12 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
+  '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
+  '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -106,9 +133,12 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests/'
+    | '/app/assets/register/new'
     | '/app/requests/$id/edit'
+    | '/app/assets/register/'
     | '/app/requests/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,9 +146,12 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests'
+    | '/app/assets/register/new'
     | '/app/requests/$id/edit'
+    | '/app/assets/register'
     | '/app/requests/$id'
   id:
     | '__root__'
@@ -127,9 +160,12 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/assets/$assetId'
     | '/app/assets/settings'
     | '/app/requests/'
+    | '/app/assets/register/new'
     | '/app/requests/$id/edit'
+    | '/app/assets/register/'
     | '/app/requests/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -175,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets/$assetId': {
+      id: '/app/assets/$assetId'
+      path: '/assets/$assetId'
+      fullPath: '/app/assets/$assetId'
+      preLoaderRoute: typeof AppAssetsAssetIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/assets/settings': {
       id: '/app/assets/settings'
       path: '/assets/settings'
@@ -187,6 +230,20 @@ declare module '@tanstack/react-router' {
       path: '/requests'
       fullPath: '/app/requests/'
       preLoaderRoute: typeof AppRequestsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/assets/register/': {
+      id: '/app/assets/register/'
+      path: '/assets/register'
+      fullPath: '/app/assets/register/'
+      preLoaderRoute: typeof AppAssetsRegisterIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/assets/register/new': {
+      id: '/app/assets/register/new'
+      path: '/assets/register/new'
+      fullPath: '/app/assets/register/new'
+      preLoaderRoute: typeof AppAssetsRegisterNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/requests/$id/': {
@@ -210,9 +267,12 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAssetsAssetIdRoute: typeof AppAssetsAssetIdRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
+  AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
+  AppAssetsRegisterIndexRoute: typeof AppAssetsRegisterIndexRoute
   AppRequestsIdIndexRoute: typeof AppRequestsIdIndexRoute
 }
 
@@ -220,9 +280,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppApprovalsRoute: AppApprovalsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAssetsAssetIdRoute: AppAssetsAssetIdRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
+  AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
+  AppAssetsRegisterIndexRoute: AppAssetsRegisterIndexRoute,
   AppRequestsIdIndexRoute: AppRequestsIdIndexRoute,
 }
 
