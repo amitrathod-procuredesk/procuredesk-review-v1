@@ -1,5 +1,6 @@
 import { INVENTORY, fromStock} from "@/lib/pd/inventory";
-import { Package, ChevronDown, LayoutList, Table2, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse } from "lucide-react";
+import { Package, ChevronDown, LayoutList, Table2, ImageIcon, Copy, MoreHorizontal, Pencil, Plus, Trash2, Warehouse, Hash, BookText, Store, Wallet } from "lucide-react";
+const MI = "size-3 shrink-0 text-muted-foreground/60";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -77,11 +78,11 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     const v = db.vendors.find((x) => x.id === l.vendorId);
     // Card subtext order: Item # · Account · Supplier (clickable); UOM shows once, beside the unit price. Prices live in the right column.
     const meta: ReactNode[] = [
-      <span key="p" className={cn("num", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #">{l.partNumber || "No item #"}</span>,
-      <span key="a" title="GL account"><span className="text-muted-foreground/70">Account: </span><span className={cn(!l.account && "text-warning")}>{l.account || "None"}</span></span>,
+      <span key="p" className={cn("inline-flex items-center gap-1", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #"><Hash className={MI} aria-label="Item #" /><span className="num">{l.partNumber || "No item #"}</span></span>,
+      <span key="a" className="inline-flex items-center gap-1" title="GL account"><BookText className={MI} aria-label="Account" /><span className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span></span>,
       !hideSupplier && (v ? (
         <Popover key="s">
-          <PopoverTrigger asChild><button type="button" className="font-medium text-primary hover:underline">{sup}</button></PopoverTrigger>
+          <PopoverTrigger asChild><button type="button" title="Supplier" className="inline-flex items-center gap-1 font-medium text-primary hover:underline"><Store className="size-3 shrink-0" aria-label="Supplier" />{sup}</button></PopoverTrigger>
           <PopoverContent align="start" className="w-60 p-3 text-xs">
             <p className="text-sm font-medium">{v.name}</p>
             <p className="mt-1 text-muted-foreground">{[v.preferred && "Preferred", v.verified && "Verified", v.contractActive ? "Active contract" : "No contract"].filter(Boolean).join(" · ")}</p>
@@ -89,8 +90,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
             <p className="mt-2 border-t border-border pt-2 text-muted-foreground">{r.items.filter((x) => x.vendorId === v.id).length} line(s) from this supplier</p>
           </PopoverContent>
         </Popover>
-      ) : <span key="s" className="text-warning">No supplier</span>),
-      lineBudgets && !fromStock(l) && !l.declined && <span key="b" title="Budget"><span className="text-muted-foreground/70">Budget: </span><span className={cn(!budgetName(l) && "text-warning")}>{budgetName(l) ?? "None"}</span></span>,
+      ) : <span key="s" className="inline-flex items-center gap-1 text-warning" title="Supplier"><Store className="size-3 shrink-0" aria-label="Supplier" />No supplier</span>),
+      lineBudgets && !fromStock(l) && !l.declined && <span key="b" className="inline-flex items-center gap-1" title="Budget"><Wallet className={MI} aria-label="Budget" /><span className={cn(!budgetName(l) && "text-warning")}>{budgetName(l) ?? "No budget"}</span></span>,
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
