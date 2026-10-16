@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeftRight, Check, LogIn, LogOut, ScanLine, Search, X } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Check, LayoutList, LogIn, LogOut, ScanLine, Search, Table2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -38,6 +38,7 @@ function CheckoutPage() {
   const nav = useNavigate({ from: "/app/assets/checkout" });
   const { mode = "out", asset } = Route.useSearch();
   const setMode = (m: "out" | "in") => nav({ search: { mode: m }, replace: true });
+  const [layout, setLayout] = useState<Layout>("cards");
 
   const out = all.filter((a) => a.statusId === "checked_out" && a.checkout);
   const overdue = out.filter((a) => daysUntil(a.checkout!.due) < 0);
@@ -56,8 +57,12 @@ function CheckoutPage() {
             <h1 className="text-lg font-semibold tracking-tight">Check in / out</h1>
             <p className="text-[13px] text-muted-foreground">Lend assets to a person or job site, and record them when they come back.</p>
           </div>
-          <Seg label="Mode" value={mode} onChange={setMode} options={[{ id: "out", label: "Check out" }, { id: "in", label: `Check in${out.length ? ` · ${out.length}` : ""}` }]} />
         </div>
+      </div>
+
+      <div role="tablist" aria-label="What do you want to do?" className="grid gap-3 sm:grid-cols-2">
+        <ModeTab active={mode === "out"} onClick={() => setMode("out")} icon={LogOut} title="Check out" desc="Lend assets to a person or job site" meta={`${lendable.length} available`} />
+        <ModeTab active={mode === "in"} onClick={() => setMode("in")} icon={LogIn} title="Check in" desc="Record assets coming back" meta={`${out.length} out${overdue.length ? ` · ${overdue.length} overdue` : ""}`} tone={overdue.length ? "danger" : undefined} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -67,7 +72,7 @@ function CheckoutPage() {
         <Kpi label="Overdue" value={overdue.length} tone={overdue.length ? "danger" : undefined} onClick={() => setMode("in")} />
       </div>
 
-      {mode === "out" ? <CheckOutFlow key="out" initial={asset} meId={me?.id} /> : <CheckInFlow key="in" initial={asset} meId={me?.id} />}
+      {mode === "out" ? <CheckOutFlow key="out" initial={asset} meId={me?.id} layout={layout} setLayout={setLayout} /> : <CheckInFlow key="in" initial={asset} meId={me?.id} layout={layout} setLayout={setLayout} />}
 
       <Card title="Recent activity" desc="Latest check-outs and returns across all assets.">
         {recent.length === 0 ? <p className="text-[13px] text-muted-foreground">Nothing yet. Check-outs and returns appear here.</p> : (
@@ -83,6 +88,61 @@ function CheckoutPage() {
           </ul>
         )}
       </Card>
+    </div>
+  );
+}
+
+type Layout = "cards" | "table";
+type LayoutProps = { layout: Layout; setLayout: (l: Layout) => void };
+
+function ModeTab({ active, onClick, icon: I, title, desc, meta, tone }: { active: boolean; onClick: () => void; icon: typeof LogIn; title: string; desc: string; meta: string; tone?: "danger" }) {
+  return (
+    <button type="button" role="tab" aria-selected={active} onClick={onClick}
+      className={cn("pd-panel flex items-center gap-3 p-3 text-left transition-[border-color,box-shadow]", active ? "border-primary/50 ring-[3px] ring-primary/10" : "hover:border-primary/30")}>
+      <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full", active ? "bg-primary text-primary-foreground" : "bg-subtle text-muted-foreground")}><I className="size-4" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold">{title}</span>
+        <span className="block truncate text-[12px] text-muted-foreground">{desc}</span>
+      </span>
+      <span className={cn("shrink-0 rounded-full bg-subtle px-2 py-0.5 text-[11px] font-medium", tone === "danger" ? "text-destructive" : "text-muted-foreground")}>{meta}</span>
+    </button>
+  );
+}
+
+function LayoutToggle({ layout, setLayout }: LayoutProps) {
+  return (
+    <div role="group" aria-label="Layout" className="inline-flex rounded-md border border-border bg-subtle/60 p-0.5">
+      {([["cards", "Card view", LayoutList], ["table", "Table view", Table2]] as const).map(([k, l, I]) => (
+        <button key={k} type="button" aria-label={l} title={l} aria-pressed={layout === k} onClick={() => setLayout(k)} className={cn("grid size-6 place-items-center rounded transition-colors", layout === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}><I className="size-3.5" /></button>
+      ))}
+    </div>
+  );
+}
+
+type PickerProps = { items: Asset[]; layout: Layout; selected: (a: Asset) => boolean; onToggle: (a: Asset) => void; disabled?: (a: Asset) => string | undefined; right?: (a: Asset) => React.ReactNode; rightLabel?: string; className?: string };
+
+function AssetPicker({ items, layout, selected, onToggle, disabled, right, rightLabel = "Status", className }: PickerProps) {
+  const db = useDB();
+  if (layout === "cards") return <ul className={cn("divide-y divide-border/70 overflow-y-auto", className)}>{items.map((a) => <AssetRow key={a.id} a={a} selected={selected(a)} onToggle={() => onToggle(a)} disabled={disabled?.(a)} right={right?.(a)} />)}</ul>;
+  return (
+    <div className={cn("overflow-auto", className)}>
+      <table className="pd-table min-w-[560px]">
+        <thead><tr><th className="w-10" /><th>Asset</th><th>Asset ID</th><th>Location</th><th className="text-right">{rightLabel}</th></tr></thead>
+        <tbody>
+          {items.map((a) => {
+            const dis = disabled?.(a); const on = selected(a);
+            return (
+              <tr key={a.id} onClick={() => !dis && onToggle(a)} aria-selected={on} className={cn(dis ? "cursor-not-allowed opacity-60" : "cursor-pointer", on && "bg-primary/5")}>
+                <td><span className={cn("inline-flex size-4 items-center justify-center rounded border", on ? "border-primary bg-primary text-primary-foreground" : "border-input")}>{on && <Check className="size-3" />}</span></td>
+                <td className="py-2"><span className="flex items-center gap-2"><AssetThumb a={a} /><span className="max-w-[200px] truncate text-[13px] font-medium">{a.name}</span></span></td>
+                <td className="num whitespace-nowrap text-[12px]">{a.tag}{a.identifier && <span className="block text-muted-foreground">{a.identifier}</span>}</td>
+                <td className="text-[13px]"><span className="block max-w-[160px] truncate">{a.site || "—"}</span></td>
+                <td className="text-right">{right?.(a) ?? (dis ? <span className="text-[11px] text-muted-foreground">{dis}</span> : <StatusPill s={db.assets!.statuses.find((x) => x.id === a.statusId)} />)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -126,7 +186,7 @@ function SearchBox({ q, setQ, placeholder }: { q: string; setQ: (v: string) => v
 }
 
 /* ─────────── Check out ─────────── */
-function CheckOutFlow({ initial, meId }: { initial?: string; meId?: string }) {
+function CheckOutFlow({ initial, meId, layout, setLayout }: { initial?: string; meId?: string } & LayoutProps) {
   const db = useDB();
   const s = db.assets!;
   const all = db.assetItems ?? [];
@@ -164,19 +224,17 @@ function CheckOutFlow({ initial, meId }: { initial?: string; meId?: string }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <Card title="1. Choose assets" desc="Search by name, asset ID, serial or barcode. You can check out several at once.">
+      <Card title="1. Choose assets" desc="Search by name, asset ID, serial or barcode. You can check out several at once." action={<LayoutToggle layout={layout} setLayout={setLayout} />}>
         <SearchBox q={q} setQ={setQ} placeholder="Search or scan an asset…" />
         <div className="mt-3 overflow-hidden rounded-lg border border-border">
           {ok.length === 0 ? <p className="p-4 text-center text-[13px] text-muted-foreground">{needle ? "No available asset matches your search." : "No assets are available to lend right now."}</p> : (
-            <ul className="max-h-[420px] divide-y divide-border/70 overflow-y-auto">
-              {ok.map((a) => <AssetRow key={a.id} a={a} selected={sel.includes(a.id)} onToggle={() => toggle(a.id)} />)}
-            </ul>
+            <AssetPicker className="max-h-[420px]" items={ok} layout={layout} selected={(a) => sel.includes(a.id)} onToggle={(a) => toggle(a.id)} />
           )}
         </div>
         {blocked.length > 0 && (
           <div className="mt-2">
             <button type="button" onClick={() => setShowBlocked((v) => !v)} className="text-[12px] text-muted-foreground hover:text-foreground">{showBlocked ? "Hide" : "Show"} {blocked.length} that can't be checked out</button>
-            {showBlocked && <ul className="mt-2 max-h-56 divide-y divide-border/70 overflow-y-auto rounded-lg border border-border">{blocked.map((a) => <AssetRow key={a.id} a={a} selected={false} onToggle={() => {}} disabled={checkoutBlock(a, s)} />)}</ul>}
+            {showBlocked && <div className="mt-2 overflow-hidden rounded-lg border border-border"><AssetPicker className="max-h-56" items={blocked} layout={layout} selected={() => false} onToggle={() => {}} disabled={(a) => checkoutBlock(a, s)} rightLabel="Reason" /></div>}
           </div>
         )}
       </Card>
@@ -218,7 +276,7 @@ function CheckOutFlow({ initial, meId }: { initial?: string; meId?: string }) {
 /* ─────────── Check in ─────────── */
 type Ret = { cond: Condition; to: "available" | "in_repair"; note: string };
 
-function CheckInFlow({ initial, meId }: { initial?: string; meId?: string }) {
+function CheckInFlow({ initial, meId, layout, setLayout }: { initial?: string; meId?: string } & LayoutProps) {
   const db = useDB();
   const all = db.assetItems ?? [];
   const [q, setQ] = useState("");
@@ -251,20 +309,18 @@ function CheckInFlow({ initial, meId }: { initial?: string; meId?: string }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <Card title="1. Choose returning assets" desc="Overdue items come first. Search by asset or by who has it."
-        action={<Seg label="Filter" value={filter} onChange={setFilter} options={[{ id: "all", label: "All" }, { id: "overdue", label: "Overdue" }, { id: "week", label: "Due soon" }]} />}>
+        action={<div className="flex items-center gap-2"><Seg label="Filter" value={filter} onChange={setFilter} options={[{ id: "all", label: "All" }, { id: "overdue", label: "Overdue" }, { id: "week", label: "Due soon" }]} /><LayoutToggle layout={layout} setLayout={setLayout} /></div>}>
         <SearchBox q={q} setQ={setQ} placeholder="Search, scan or type a name…" />
         <div className="mt-3 overflow-hidden rounded-lg border border-border">
           {out.length === 0 ? <p className="p-4 text-center text-[13px] text-muted-foreground">{needle || filter !== "all" ? "No checked-out asset matches." : "Nothing is checked out right now."}</p> : (
-            <ul className="max-h-[420px] divide-y divide-border/70 overflow-y-auto">
-              {out.map((a) => {
-                const d = daysUntil(a.checkout!.due);
-                return <AssetRow key={a.id} a={a} selected={sel.includes(a.id)} onToggle={() => toggle(a.id)} right={
-                  <span className="shrink-0 text-right text-[11px]">
-                    <span className="block font-medium">{holderName(a.checkout!.to, db)}</span>
-                    <span className={cn(d < 0 ? "text-destructive" : d <= 7 ? "text-warning" : "text-muted-foreground")}>{d < 0 ? `${-d} ${d === -1 ? "day" : "days"} overdue` : `Due ${relDays(d)}`}</span>
-                  </span>} />;
-              })}
-            </ul>
+            <AssetPicker className="max-h-[420px]" items={out} layout={layout} rightLabel="With / due" selected={(a) => sel.includes(a.id)} onToggle={(a) => toggle(a.id)} right={(a) => {
+              const d = daysUntil(a.checkout!.due);
+              return (
+                <span className="shrink-0 text-right text-[11px]">
+                  <span className="block font-medium">{holderName(a.checkout!.to, db)}</span>
+                  <span className={cn(d < 0 ? "text-destructive" : d <= 7 ? "text-warning" : "text-muted-foreground")}>{d < 0 ? `${-d} ${d === -1 ? "day" : "days"} overdue` : `Due ${relDays(d)}`}</span>
+                </span>);
+            }} />
           )}
         </div>
       </Card>
