@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { seed } from "../seed";
+import { seedDB as seed } from "../seed";
 import { applyFilters, REPORTS } from "../reports";
 
 const spend = REPORTS.find((r) => r.id === "spend-supplier")!;
