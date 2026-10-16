@@ -553,7 +553,7 @@ function ActionBody({ action, close, a, stageTo, run, meId }: { action: Action; 
       <Field label="Cost" htmlFor="act-mc"><TextInput id="act-mc" inputMode="decimal" className="num" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="0.00" /></Field>
       {errLine}
     </div>
-    {foot("Save", () => { if (!note.trim()) return setErr("Describe the work done."); run((d) => logMaintenance(d, a.id, note.trim(), Math.max(0, parseFloat(cost) || 0), by), "Maintenance logged"); })}
+    {foot("Save", () => { if (!note.trim()) return setErr("Describe the work done."); try { run((d) => logMaintenance(d, a.id, note.trim(), cost.trim() ? Number(cost) : 0, by), "Maintenance logged"); } catch (e) { setErr(e instanceof Error ? e.message : "Unable to log maintenance."); } })}
   </>);
 
   if (action === "status") {
