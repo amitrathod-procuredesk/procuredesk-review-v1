@@ -211,7 +211,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td className="num whitespace-nowrap pr-3.5! text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l, isOpen)}</div></td>
               </tr>,
-              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={20} className="px-4 py-3"><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></td></tr>,
+              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={(editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div className="sticky left-0 px-4 py-3" style={{ width: "min(100%, var(--pd-detail-w, 100%))" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
             ];
           })}
         </tbody>
