@@ -418,7 +418,7 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
         ))}
       </div>
 
-      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} orgDep={d.depreciation} onClose={() => setEdit(null)}
+      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} orgDep={d.depreciation} numbering={d.numbering} onClose={() => setEdit(null)}
         onSave={(c) => { set((x) => { const i = x.categories.findIndex((y) => y.id === c.id); if (i >= 0) x.categories[i] = c; else x.categories.push(c); }); setEdit(null); }} />}
 
       <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
@@ -437,7 +437,7 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
   );
 }
 
-function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
+function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; numbering: AssetSettings["numbering"]; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
   const [c, setC] = useState(cat);
   const [codeTouched, setCodeTouched] = useState(!!cat.code);
   const [tried, setTried] = useState(false);
@@ -486,6 +486,36 @@ function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: Ass
               placeholder={c.depreciation?.method === "none" ? "Not depreciated" : undefined}
               onChange={(e) => { const base = c.depreciation ?? { method: (orgDep?.method ?? "straight_line") as DepMethod, usefulLifeMonths: orgDep?.usefulLifeMonths ?? 60, salvagePct: orgDep?.salvagePct ?? 0 }; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...base, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
           </Field>
+        </div>
+        <div className="rounded-lg border border-border">
+          <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium">Custom ID format</p>
+              <p className="text-xs text-muted-foreground">{c.idFormat ? "Only assets in this category use this format." : <>Optional. Uses the global format: <span className="num text-foreground">{formatAssetId(numbering, c)}</span></>}</p>
+            </div>
+            <Switch checked={!!c.idFormat} aria-label="Use a custom ID format" onCheckedChange={(v) => setC({ ...c, idFormat: v ? { prefix: numbering.prefix, separator: numbering.separator, includeCategory: numbering.includeCategory, yearFormat: numbering.yearFormat, seqLength: numbering.seqLength } : undefined })} />
+          </label>
+          {c.idFormat && (() => { const f = c.idFormat; const uf = (p: Partial<typeof f>) => setC({ ...c, idFormat: { ...f, ...p } }); return (
+            <div className="grid gap-3 border-t border-border px-3 py-3 sm:grid-cols-2">
+              <Field label="Prefix" htmlFor="cf-prefix" error={show("fmtPrefix")}>
+                <TextInput id="cf-prefix" className="num" maxLength={6} value={f.prefix} invalid={!!show("fmtPrefix")} onChange={(e) => uf({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} />
+              </Field>
+              <Field label="Separator" htmlFor="cf-sep">
+                <Select id="cf-sep" value={f.separator} onChange={(e) => uf({ separator: e.target.value as typeof f.separator })}>
+                  {SEPS.map((o) => <option key={o.label} value={o.v}>{o.v ? o.label : "None"}</option>)}
+                </Select>
+              </Field>
+              <Field label="Year segment" htmlFor="cf-year">
+                <Select id="cf-year" value={f.yearFormat} onChange={(e) => uf({ yearFormat: e.target.value as typeof f.yearFormat })}>
+                  <option value="none">Don't include</option><option value="YY">YY</option><option value="YYYY">YYYY</option>
+                </Select>
+              </Field>
+              <Field label="Sequence digits" htmlFor="cf-seq" error={show("fmtSeq")}>
+                <TextInput id="cf-seq" className="num" inputMode="numeric" value={String(f.seqLength || "")} invalid={!!show("fmtSeq")} onChange={(e) => uf({ seqLength: parseInt(e.target.value.replace(/\D/g, "")) || 0 })} />
+              </Field>
+              <label className="flex items-center gap-2 text-[13px] sm:col-span-2"><input type="checkbox" checked={f.includeCategory} onChange={(e) => uf({ includeCategory: e.target.checked })} /> Include category code{c.code ? <span className="num text-muted-foreground">({c.code})</span> : null}</label>
+              <p className="text-xs text-muted-foreground sm:col-span-2">Example: <span className="num font-medium text-foreground">{formatAssetId(numbering, c)}</span> · existing assets keep their IDs.</p>
+            </div>); })()}
         </div>
         <DialogFooter>
           <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
