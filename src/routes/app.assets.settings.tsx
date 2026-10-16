@@ -419,7 +419,7 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
   const [edit, setEdit] = useState<AssetCategory | null>(null);
   const [del, setDel] = useState<AssetCategory | null>(null);
   const isNew = !!edit && !d.categories.some((c) => c.id === edit.id);
-  const blank = (): AssetCategory => ({ id: uidx("cat"), name: "", code: "", description: "", identifier: "serial", checkoutAllowed: true, active: true, assetCount: 0 });
+  const blank = (): AssetCategory => ({ id: uidx("cat"), name: "", code: "", description: "", icon: "box", identifier: "serial", checkoutAllowed: true, active: true, assetCount: 0 });
   const delCount = del ? count(del.id) : 0;
 
   return (
@@ -438,7 +438,7 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
         ))}
       </div>
 
-      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} onClose={() => setEdit(null)}
+      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} orgDep={d.depreciation} onClose={() => setEdit(null)}
         onSave={(c) => { set((x) => { const i = x.categories.findIndex((y) => y.id === c.id); if (i >= 0) x.categories[i] = c; else x.categories.push(c); }); setEdit(null); }} />}
 
       <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
@@ -457,14 +457,13 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
   );
 }
 
-function CategoryDialog({ cat, isNew, all, onClose, onSave }: { cat: AssetCategory; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
+function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
   const [c, setC] = useState(cat);
   const [codeTouched, setCodeTouched] = useState(!!cat.code);
   const [tried, setTried] = useState(false);
   const baseErr = categoryIssues(c, all);
   const life = c.depreciation?.usefulLifeMonths;
   const err: Record<string, string> = { ...baseErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
-  const orgDep = useDB().assetSettings?.depreciation;
   const show = (k: string) => (tried ? err[k] : undefined);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
