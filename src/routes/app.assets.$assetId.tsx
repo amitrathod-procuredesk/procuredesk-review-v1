@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AssetThumb, BTN, BTN_GHOST, BTN_PRIMARY, Card, Field, HolderPick, HolderToggle, Meta, StatusPill, fmtDate, fmtDateTime, relDays } from "@/components/pd/assetUi";
 import { UserAvatar } from "@/components/pd/bits";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
-import { IDENTIFIER_LABEL, METHOD_LABEL, PHASE_LABEL, type StatusPhase } from "@/lib/pd/assets";
+import { IDENTIFIER_LABEL, METHOD_LABEL } from "@/lib/pd/assets";
 import {
   activationIssues, addDays, assign, bookValue, canMove, checkIn, checkOut, completeRepair, CONDITION_LABEL, daysUntil, depRuleFor, DISPOSAL_METHODS, dispose, DOC_KIND, holderName, logMaintenance, moveRepair, openRepair,
   PRIORITY_LABEL, REPAIR_STAGES, repairCost, setStatus, SITES, today, updateAsset, type Asset, type Condition, type Holder, type Priority, type RepairStage,
@@ -32,7 +32,6 @@ export const Route = createFileRoute("/app/assets/$assetId")({
 });
 
 type Action = "activate" | "assign" | "unassign" | "checkout" | "checkin" | "repair" | "stage" | "complete" | "maintenance" | "status" | "decommission" | "dispose" | "edit" | "part";
-const PHASES: StatusPhase[] = ["setup", "active", "service", "retired"];
 const TABS = [{ id: "overview", label: "Overview" }, { id: "repairs", label: "Repairs" }, { id: "maintenance", label: "Maintenance" }, { id: "warranty", label: "Warranty" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
 
 function AssetPage() {
