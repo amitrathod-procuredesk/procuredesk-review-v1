@@ -384,27 +384,6 @@ function RangeDialog({ init, isNew, d, onClose, onSave }: { init: NumberRange; i
             <TextInput id="rg-end" className="num" inputMode="numeric" value={r.end} invalid={!!err("end")} onChange={(ev) => up({ end: int(ev.target.value) })} />
           </Field>
         </div>
-        <div>
-          <span className="pd-label">Icon</span>
-          <div role="radiogroup" aria-label="Category icon" className="flex flex-wrap gap-1.5">
-            {(Object.keys(CATEGORY_ICONS) as CatIconKey[]).map((k) => { const I = CATEGORY_ICONS[k]; const on = (c.icon ?? "box") === k; return (
-              <button key={k} type="button" role="radio" aria-checked={on} aria-label={k} title={k} onClick={() => setC({ ...c, icon: k })}
-                className={cn("inline-flex size-8 items-center justify-center rounded-md border transition-colors", on ? "border-primary bg-accent text-primary" : "border-border text-muted-foreground hover:bg-subtle hover:text-foreground")}><I className="size-4" /></button>); })}
-          </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
-          <Field label="Default depreciation" htmlFor="c-dep">
-            <Select id="c-dep" value={c.depreciation?.method ?? "inherit"} onChange={(e) => { const v = e.target.value; setC({ ...c, depreciation: v === "inherit" ? undefined : { method: v as DepMethod, usefulLifeMonths: c.depreciation?.usefulLifeMonths ?? orgDep?.usefulLifeMonths ?? 60, salvagePct: c.depreciation?.salvagePct ?? orgDep?.salvagePct ?? 0 } }); }}>
-              <option value="inherit">Use org default{orgDep ? ` (${orgDep.method === "straight_line" ? "Straight line" : METHOD_LABEL[orgDep.method as DepMethod]})` : ""}</option>
-              {(Object.keys(METHOD_LABEL) as DepMethod[]).map((k) => <option key={k} value={k}>{k === "straight_line" ? "Straight line" : METHOD_LABEL[k]}</option>)}
-            </Select>
-          </Field>
-          <Field label="Default useful life (months)" htmlFor="c-life" error={show("life")}>
-            <TextInput id="c-life" className="num" inputMode="numeric" invalid={!!show("life")} disabled={!c.depreciation || c.depreciation.method === "none"}
-              value={c.depreciation && c.depreciation.method !== "none" ? String(life ?? "") : String(orgDep?.usefulLifeMonths ?? "")}
-              onChange={(e) => { if (!c.depreciation) return; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...c.depreciation, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
-          </Field>
-        </div>
         <DialogFooter>
           <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
           <button type="button" onClick={submit} className={BTN_PRIMARY}>{isNew ? "Add range" : "Save"}</button>
@@ -475,6 +454,27 @@ function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: Ass
           </Field>
           <Field label="Code" htmlFor="c-code" error={show("code")}>
             <TextInput id="c-code" className="num" maxLength={5} value={c.code} invalid={!!show("code")} onChange={(e) => { setCodeTouched(true); setC({ ...c, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") }); }} />
+          </Field>
+        </div>
+        <div>
+          <span className="pd-label">Icon</span>
+          <div role="radiogroup" aria-label="Category icon" className="flex flex-wrap gap-1.5">
+            {(Object.keys(CATEGORY_ICONS) as CatIconKey[]).map((k) => { const I = CATEGORY_ICONS[k]; const on = (c.icon ?? "box") === k; return (
+              <button key={k} type="button" role="radio" aria-checked={on} aria-label={k} title={k} onClick={() => setC({ ...c, icon: k })}
+                className={cn("inline-flex size-8 items-center justify-center rounded-md border transition-colors", on ? "border-primary bg-accent text-primary" : "border-border text-muted-foreground hover:bg-subtle hover:text-foreground")}><I className="size-4" /></button>); })}
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
+          <Field label="Default depreciation" htmlFor="c-dep">
+            <Select id="c-dep" value={c.depreciation?.method ?? "inherit"} onChange={(e) => { const v = e.target.value; setC({ ...c, depreciation: v === "inherit" ? undefined : { method: v as DepMethod, usefulLifeMonths: c.depreciation?.usefulLifeMonths ?? orgDep?.usefulLifeMonths ?? 60, salvagePct: c.depreciation?.salvagePct ?? orgDep?.salvagePct ?? 0 } }); }}>
+              <option value="inherit">Use org default{orgDep ? ` (${orgDep.method === "straight_line" ? "Straight line" : METHOD_LABEL[orgDep.method as DepMethod]})` : ""}</option>
+              {(Object.keys(METHOD_LABEL) as DepMethod[]).map((k) => <option key={k} value={k}>{k === "straight_line" ? "Straight line" : METHOD_LABEL[k]}</option>)}
+            </Select>
+          </Field>
+          <Field label="Default useful life (months)" htmlFor="c-life" error={show("life")}>
+            <TextInput id="c-life" className="num" inputMode="numeric" invalid={!!show("life")} disabled={!c.depreciation || c.depreciation.method === "none"}
+              value={c.depreciation && c.depreciation.method !== "none" ? String(life ?? "") : String(orgDep?.usefulLifeMonths ?? "")}
+              onChange={(e) => { if (!c.depreciation) return; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...c.depreciation, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
           </Field>
         </div>
         <DialogFooter>
