@@ -43,6 +43,12 @@ export interface AssetEvent { id: string; at: string; by?: string; kind: "create
 export interface AssetDoc { id: string; name: string; size: number; kind: "invoice" | "warranty" | "manual" | "insurance" | "registration" | "other"; at: string }
 export interface MaintenanceLog { id: string; at: string; by?: string; note: string; cost: number }
 
+export interface Lease { company: string; type: "operating" | "finance" | ""; monthly: number; buyout: number; start?: string; end?: string }
+export type WarrantyCoverage = "full" | "parts" | "labor" | "extended";
+export const COVERAGE_LABEL: Record<WarrantyCoverage, string> = { full: "Full", parts: "Parts only", labor: "Labor only", extended: "Extended" };
+export interface MaintenancePlan { name: string; type: "preventive" | "inspection" | "calibration" | "corrective"; instructions: string; due?: string; assigneeId?: string; vendorId?: string; cost: number; repeats: boolean }
+export const MAINT_TYPE_LABEL: Record<MaintenancePlan["type"], string> = { preventive: "Preventive", inspection: "Inspection", calibration: "Calibration", corrective: "Corrective" };
+
 export interface Asset {
   id: string;
   tag: string;
@@ -80,6 +86,24 @@ export interface Asset {
   repairs: Repair[];
   disposal?: { at: string; method: string; proceeds: number; note?: string };
   history: AssetEvent[];
+  /* Optional registration details (all optional so older records stay valid). */
+  assetTag?: string;
+  barcode?: string;
+  businessUnit?: string;
+  ownership?: "owned" | "leased";
+  lease?: Lease;
+  poLine?: string;
+  glAccount?: string;
+  costCenter?: string;
+  depStart?: string;
+  depGl?: string;
+  warrantyStart?: string;
+  warrantyCoverage?: WarrantyCoverage;
+  warrantyTerms?: string;
+  plan?: MaintenancePlan;
+  retirementDate?: string;
+  insurancePolicy?: string;
+  compliance?: string;
   createdAt: string;
   createdBy?: string;
 }
@@ -138,7 +162,9 @@ export function activationIssues(a: Asset, s: AssetSettings): Record<string, str
   if (!c) e.categoryId = "Choose a category.";
   if (c && c.identifier !== "none" && !a.identifier.trim()) e.identifier = "Required for this category.";
   if (!a.site) e.site = "Choose where the asset is kept.";
-  if (!(a.cost > 0)) e.cost = "Enter the purchase cost.";
+  if (a.ownership === "leased") { if (!a.lease?.company.trim()) e.leaseCompany = "Enter the leasing company."; if (a.lease?.start && a.lease.end && a.lease.end <= a.lease.start) e.leaseEnd = "Lease must end after it starts."; }
+  else if (!(a.cost > 0)) e.cost = "Enter the purchase price.";
+  if (a.warrantyStart && a.warrantyEnd && a.warrantyEnd < a.warrantyStart) e.warrantyEnd = "End date must be after the start date.";
   s.fields.filter((f) => f.required && (!f.categoryIds.length || f.categoryIds.includes(a.categoryId))).forEach((f) => { if (!a.custom[f.id]?.trim()) e[`cf_${f.id}`] = `${f.label} is required.`; });
   if (a.statusId === "in_use" && !a.assignedTo) e.assignedTo = "Choose who or where it's assigned to.";
   if (a.statusId === "checked_out") {

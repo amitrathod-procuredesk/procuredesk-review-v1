@@ -90,3 +90,15 @@ export function HolderPick({ kind, value, people, onChange, error }: { kind: "us
     </>
   );
 }
+
+/** Compact segmented choice used for short option sets (status, condition, coverage, ownership). */
+export function Seg<T extends string>({ value, options, onChange, label, className }: { value: T | undefined; options: { id: T; label: string }[]; onChange: (v: T) => void; label: string; className?: string }) {
+  return (
+    <div role="radiogroup" aria-label={label} className={cn("inline-flex flex-wrap rounded-md bg-subtle p-0.5 text-[12px]", className)}>
+      {options.map((o) => (
+        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} onClick={() => onChange(o.id)}
+          className={cn("h-7 rounded px-2.5 transition-colors", value === o.id ? "bg-surface font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
