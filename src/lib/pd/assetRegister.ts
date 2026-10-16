@@ -41,7 +41,7 @@ export interface Repair {
 export interface Holder { kind: "user" | "site"; userId?: string; site?: string }
 export interface AssetEvent { id: string; at: string; by?: string; kind: "create" | "status" | "edit" | "checkout" | "checkin" | "repair" | "maintenance" | "doc"; text: string; note?: string }
 export interface AssetDoc { id: string; name: string; size: number; kind: "invoice" | "warranty" | "manual" | "insurance" | "registration" | "other"; at: string }
-export interface MaintenanceLog { id: string; at: string; by?: string; note: string; cost: number }
+export interface MaintenanceLog { id: string; at: string; by?: string; note: string; cost: number; name?: string; type?: MaintenancePlan["type"]; assigneeId?: string; vendorId?: string }
 
 export interface Lease { company: string; type: "operating" | "finance" | ""; monthly: number; buyout: number; start?: string; end?: string }
 export type WarrantyCoverage = "full" | "parts" | "labor" | "extended";
@@ -101,6 +101,7 @@ export interface Asset {
   warrantyCoverage?: WarrantyCoverage;
   warrantyTerms?: string;
   plan?: MaintenancePlan;
+  service?: { stage: "in_progress" | "waiting_parts" | "at_vendor"; startedAt: string; note?: string };
   retirementDate?: string;
   insurancePolicy?: string;
   compliance?: string;
@@ -293,10 +294,51 @@ export function completeRepair(d: DB, id: string, to: string, resolution: string
   ev(a, by, "repair", `Repair completed · back to ${sname(d, a.statusId)} · cost ${repairCost(r).toFixed(2)}`, resolution);
 }
 
-export function logMaintenance(d: DB, id: string, note: string, cost: number, by?: string) {
+export function maintenanceBlock(a: Asset) {
+  if (["draft", "disposed", "decommissioned"].includes(a.statusId)) return "This asset is not in service.";
+  if (a.checkout) return "Check this asset in before starting maintenance.";
+  if (a.repair || ["in_repair", "at_vendor"].includes(a.statusId)) return "Finish the open repair before starting maintenance.";
+  return undefined;
+}
+
+export function scheduleMaintenance(d: DB, id: string, plan: MaintenancePlan, months: number | undefined, by?: string) {
+  const a = find(d, id); if (!a) throw new Error("Asset not found.");
+  if (["draft", "disposed", "decommissioned"].includes(a.statusId)) throw new Error("This asset is not in service.");
+  if (!plan.name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(plan.due ?? "") || !Number.isFinite(new Date(plan.due ?? "").getTime())) throw new Error("Enter a maintenance name and valid due date.");
+  if (!Number.isFinite(plan.cost) || plan.cost < 0) throw new Error("Estimated cost must be zero or more.");
+  if (plan.repeats && (!months || !Number.isInteger(months) || months < 1 || months > 120)) throw new Error("Repeat interval must be between 1 and 120 months.");
+  a.plan = { ...plan, name: plan.name.trim() };
+  a.nextMaintenance = plan.due;
+  a.maintenanceEveryMonths = plan.repeats ? months : undefined;
+  ev(a, by, "maintenance", `Maintenance scheduled · ${plan.name.trim()} · due ${plan.due}`);
+}
+
+export function progressMaintenance(d: DB, id: string, stage: "in_progress" | "waiting_parts" | "at_vendor", note: string, by?: string) {
+  const a = find(d, id); if (!a) throw new Error("Asset not found.");
+  const block = maintenanceBlock(a); if (block) throw new Error(block);
+  if (!a.nextMaintenance) throw new Error("Schedule maintenance first.");
+  if (stage !== "in_progress" && !note.trim()) throw new Error("Add a note about the delay or vendor handover.");
+  if (stage === "at_vendor" && !a.plan?.vendorId) throw new Error("Choose a service vendor first.");
+  a.service = { stage, startedAt: a.service?.startedAt ?? now(), note: note.trim() || undefined };
+  ev(a, by, "maintenance", `Maintenance: ${stage === "in_progress" ? "In progress" : stage === "waiting_parts" ? "Waiting for parts" : "At vendor"}`, note);
+}
+
+export function cancelMaintenance(d: DB, id: string, reason: string, by?: string) {
+  const a = find(d, id); if (!a) throw new Error("Asset not found.");
+  if (!reason.trim()) throw new Error("Give a reason for cancelling.");
+  a.service = undefined; a.plan = undefined; a.nextMaintenance = undefined; a.maintenanceEveryMonths = undefined;
+  ev(a, by, "maintenance", "Maintenance cancelled · schedule removed", reason);
+}
+
+export function logMaintenance(d: DB, id: string, note: string, cost: number, by?: string, completedOn = today()) {
   const a = find(d, id); if (!a) return;
-  a.maintenanceLog.unshift({ id: rid("mt"), at: now(), by, note, cost });
-  if (a.maintenanceEveryMonths) a.nextMaintenance = addMonths(today(), a.maintenanceEveryMonths);
+  const block = maintenanceBlock(a); if (block) throw new Error(block);
+  if (!note.trim() || !Number.isFinite(cost) || cost < 0) throw new Error("Describe the work and enter a non-negative cost.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(completedOn) || !Number.isFinite(new Date(completedOn).getTime()) || completedOn > today()) throw new Error("Completion date cannot be in the future.");
+  a.maintenanceLog.unshift({ id: rid("mt"), at: `${completedOn}T12:00:00Z`, by, note: note.trim(), cost, name: a.plan?.name, type: a.plan?.type, assigneeId: a.plan?.assigneeId, vendorId: a.plan?.vendorId });
+  a.service = undefined;
+  a.nextMaintenance = a.maintenanceEveryMonths ? addMonths(completedOn, a.maintenanceEveryMonths) : undefined;
+  if (a.plan) a.plan.due = a.nextMaintenance;
   ev(a, by, "maintenance", `Maintenance done${a.nextMaintenance ? ` · next due ${a.nextMaintenance}` : ""}`, note);
 }
 
