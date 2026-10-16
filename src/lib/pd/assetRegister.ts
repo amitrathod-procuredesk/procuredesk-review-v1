@@ -338,3 +338,27 @@ export function seedAssets(): Asset[] {
     base({ tag: "AST-IT-21-00611", name: "Dell Latitude 5420", categoryId: "cat-it", statusId: "disposed", cost: 1250, make: "Dell", model: "Latitude 5420", identifier: "7HZK9F3", purchaseDate: "2021-05-04", inServiceDate: "2021-05-04", disposal: { at: "2026-06-30T12:00:00Z", method: "Recycled", proceeds: 0 } }),
   ];
 }
+
+/** Why an asset can't be checked out right now (undefined = it can). Follows category and status settings. */
+export function checkoutBlock(a: Asset, s: AssetSettings): string | undefined {
+  const c = s.categories.find((x) => x.id === a.categoryId);
+  const st = s.statuses.find((x) => x.id === a.statusId);
+  if (a.statusId === "checked_out") return "Already checked out";
+  if (a.statusId === "draft") return "Still a draft";
+  if (a.repair) return "In repair";
+  if (c && !c.checkoutAllowed) return `${c.name} can't be checked out`;
+  if (!st?.checkoutable) return `${st?.name ?? "This status"} can't be checked out`;
+  return undefined;
+}
+
+/** Validates a check-out request against the org's check-out rules. */
+export function checkoutIssues(p: { holder?: Holder; due: string; ack: boolean; meId?: string }, s: AssetSettings): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!p.holder || (!p.holder.userId && !p.holder.site)) e.holder = "Choose who is taking it.";
+  else if (!s.checkout.allowSelfCheckout && p.holder.kind === "user" && p.holder.userId === p.meId) e.holder = "Your organization doesn't allow checking out to yourself.";
+  const d = daysUntil(p.due);
+  if (!p.due || d < 1) e.due = "Pick a return date after today.";
+  else if (d > s.checkout.maxDays) e.due = `Loans can't be longer than ${s.checkout.maxDays} days.`;
+  if (s.checkout.requireAcknowledgement && !p.ack) e.ack = "The borrower must accept responsibility.";
+  return e;
+}
