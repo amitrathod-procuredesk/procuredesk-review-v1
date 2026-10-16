@@ -3,7 +3,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox, Select, TextArea, TextInput } from "@/components/pd/form";
-import { Field } from "@/components/pd/assetUi";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AssetThumb, Field } from "@/components/pd/assetUi";
+import { cn } from "@/lib/utils";
 import { cancelMaintenance, holderName, logMaintenance, MAINT_TYPE_LABEL, progressMaintenance, scheduleMaintenance, today, type Asset, type MaintenancePlan } from "@/lib/pd/assetRegister";
 import { mutate, useDB, useMe } from "@/lib/pd/store";
 
@@ -45,7 +49,7 @@ export function ServiceDialog({ action, initialId, onClose, onCancel }: { action
         <Field label="Vendor" htmlFor="mt-v" required><Select id="mt-v" value={plan.vendorId || ""} onChange={(e) => up({ vendorId: e.target.value || undefined })}><option value="">Choose a vendor…</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</Select></Field>
         <Field label="Handover note" htmlFor="mt-vn" required><TextArea id="mt-vn" rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
       </> : action === "schedule" ? <>
-        {!initialId && <Field label="Asset" htmlFor="mt-asset" required><Select id="mt-asset" value={id} onChange={(e) => { setId(e.target.value); const a = db.assetItems?.find((x) => x.id === e.target.value); setPlan(a?.plan ? { ...a.plan, due: dueDate(a) || today() } : { name: "", type: "preventive", instructions: "", due: a ? dueDate(a) || today() : today(), cost: 0, repeats: !!a?.maintenanceEveryMonths }); setMonths(a?.maintenanceEveryMonths ?? 12); }}><option value="">Choose an asset…</option>{db.assetItems?.filter((a) => !retired(a) && !a.service).map((a) => <option key={a.id} value={a.id}>{a.name} · {a.tag}{dueDate(a) ? " · Existing schedule" : ""}</option>)}</Select></Field>}
+        {!initialId && <Field label="Asset" htmlFor="mt-asset" required><AssetPicker value={id} onChange={(v) => { setId(v); const a = db.assetItems?.find((x) => x.id === v); setPlan(a?.plan ? { ...a.plan, due: dueDate(a) || today() } : { name: "", type: "preventive", instructions: "", due: a ? dueDate(a) || today() : today(), cost: 0, repeats: !!a?.maintenanceEveryMonths }); setMonths(a?.maintenanceEveryMonths ?? 12); }} /></Field>}
         {asset?.plan && !initialId && <p className="text-[12px] text-warning">Saving updates this asset’s existing maintenance plan.</p>}
         <div className="grid gap-3 sm:grid-cols-2"><Field label="Maintenance name" htmlFor="mt-name" required><TextInput id="mt-name" value={plan.name} onChange={(e) => up({ name: e.target.value })} /></Field><Field label="Maintenance type" htmlFor="mt-type"><Select id="mt-type" value={plan.type} onChange={(e) => up({ type: e.target.value as MaintenancePlan["type"] })}>{Object.entries(MAINT_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field></div>
         <Field label="Description / instructions" htmlFor="mt-instructions"><TextArea id="mt-instructions" rows={2} value={plan.instructions} onChange={(e) => up({ instructions: e.target.value })} /></Field>
@@ -71,4 +75,36 @@ export function ServiceDialog({ action, initialId, onClose, onCancel }: { action
       </div>
     </form>
   </DialogContent></Dialog>;
+}
+/** Searchable asset chooser: type a name, ID, serial or site and pick from suggestions. */
+function AssetPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const db = useDB();
+  const [open, setOpen] = useState(false);
+  const list = (db.assetItems ?? []).filter((a) => !retired(a) && !a.service);
+  const cur = list.find((a) => a.id === value);
+  const cat = (id: string) => db.assets?.categories.find((c) => c.id === id)?.name;
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <button id="mt-asset" type="button" role="combobox" aria-expanded={open} className="pd-input flex items-center gap-2 text-left">
+        {cur ? <><span className="min-w-0 flex-1 truncate">{cur.name}</span><span className="num text-[11px] text-muted-foreground">{cur.tag}</span></> : <span className="flex-1 text-muted-foreground">Search by name, asset ID or serial…</span>}
+        <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+      <Command filter={(v, q) => (v.toLowerCase().includes(q.toLowerCase()) ? 1 : 0)}>
+        <CommandInput placeholder="Type to search assets…" />
+        <CommandList className="max-h-64">
+          <CommandEmpty>No matching assets.</CommandEmpty>
+          <CommandGroup>
+            {list.map((a) => <CommandItem key={a.id} value={`${a.name} ${a.tag} ${a.identifier} ${a.site} ${cat(a.categoryId) ?? ""}`} onSelect={() => { onChange(a.id); setOpen(false); }} className="gap-2.5">
+              <AssetThumb a={a} />
+              <div className="min-w-0 flex-1"><p className="truncate text-[13px] font-medium">{a.name}</p><p className="truncate text-[11px] text-muted-foreground"><span className="num">{a.tag}</span>{cat(a.categoryId) ? ` · ${cat(a.categoryId)}` : ""}{a.site ? ` · ${a.site}` : ""}</p></div>
+              {dueDate(a) && <span className="rounded bg-subtle px-1.5 py-0.5 text-[10px] text-muted-foreground">Scheduled</span>}
+              <Check className={cn("size-3.5", a.id === value ? "opacity-100" : "opacity-0")} />
+            </CommandItem>)}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>;
 }
