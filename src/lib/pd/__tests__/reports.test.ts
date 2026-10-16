@@ -20,3 +20,14 @@ describe("reports", () => {
     expect(applyFilters(spend, rows, { from: "2026-02-01", to: "2026-12-31" })).toEqual([{ date: "2026-03-01" }]);
   });
 });
+
+describe("warranty report", () => {
+  const w = REPORTS.find((r) => r.id === "warranty")!;
+  const rows = [{ left: 10 }, { left: 80 }, { left: 200 }, { left: -5 }];
+  it("defaults to warranties expiring within 90 days", () => {
+    expect(applyFilters(w, rows, {})).toEqual([{ left: 10 }, { left: 80 }]);
+  });
+  it("can show already expired warranties", () => {
+    expect(applyFilters(w, rows, { window: "expired" })).toEqual([{ left: -5 }]);
+  });
+});
