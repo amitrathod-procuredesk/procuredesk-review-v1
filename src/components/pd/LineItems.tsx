@@ -156,7 +156,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-border focus:border-primary/60 focus:bg-card";
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
-    <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface">
+    <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
         <colgroup>
           {editable && <col className="w-9" />}
@@ -211,7 +211,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td className="num whitespace-nowrap pr-3.5! text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l, isOpen)}</div></td>
               </tr>,
-              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={20} className="px-4 py-3"><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></td></tr>,
+              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={(editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
             ];
           })}
         </tbody>
