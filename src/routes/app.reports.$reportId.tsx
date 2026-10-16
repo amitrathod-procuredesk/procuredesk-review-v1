@@ -77,7 +77,7 @@ function ReportPage() {
   return <div className="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[12px] text-muted-foreground"><Link to="/app/reports" className="hover:text-foreground">Reports</Link><ChevronRight className="size-3" /><span>{GROUP_LABEL[rep.group]}</span><ChevronRight className="size-3" /><span className="text-foreground">{rep.name}</span></nav>
     <header className="flex flex-wrap items-start justify-between gap-3">
-      <div className="flex min-w-0 items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-subtle text-muted-foreground"><Icon className="size-4" /></span><div><h1 className="pd-h1">{rep.name}</h1><p className="mt-0.5 text-[13px] text-muted-foreground">{rep.desc}</p></div></div>
+      <div className="flex min-w-0 items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-subtle text-muted-foreground"><Icon className="size-4" /></span><div><h1 className="pd-h1 flex items-center gap-2">{rep.name}{rep.tag && <span className="pd-chip">{rep.tag}</span>}</h1><p className="mt-0.5 text-[13px] text-muted-foreground">{rep.desc}</p></div></div>
       <button className={BTN} onClick={exportCsv} disabled={!rows.length}><Download className="size-3.5" />Export CSV</button>
     </header>
 
