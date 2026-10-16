@@ -56,7 +56,7 @@ function ReportsHome() {
             <div className="min-w-0 flex-1"><p className="flex items-center gap-1.5 text-[14px] font-medium">{r.name}{r.tag && <span className="pd-chip">{r.tag}</span>}</p><p className="mt-0.5 text-[12px] text-muted-foreground">{r.desc}</p></div>
             <ChevronRight className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
-          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[11px] text-muted-foreground"><span>{GROUP_LABEL[r.group]} · <span className="num">{rows.length}</span> {rows.length === 1 ? "record" : "records"}</span>{top && <span className="truncate">Top: {top.k}</span>}</div>
+          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[11px] text-muted-foreground"><span>{GROUP_LABEL[r.group]} · <span className="num">{rows.length}</span> {rows.length === 1 ? "record" : "records"}</span>{top && top.k !== "—" && <span className="truncate">Top: {top.k}</span>}</div>
         </Link>); })}
     </div> : <p className="py-14 text-center text-sm text-muted-foreground">No reports match “{q}”.</p>}
   </div>;
