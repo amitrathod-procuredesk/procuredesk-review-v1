@@ -32,7 +32,7 @@ export const Route = createFileRoute("/app/assets/$assetId")({
 });
 
 type Action = "activate" | "assign" | "unassign" | "checkout" | "checkin" | "repair" | "stage" | "complete" | "maintenance" | "status" | "decommission" | "dispose" | "edit" | "part";
-const TABS = [{ id: "overview", label: "Overview" }, { id: "repairs", label: "Repairs" }, { id: "maintenance", label: "Maintenance" }, { id: "warranty", label: "Warranty" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
+const TABS = [{ id: "overview", label: "Overview" }, { id: "maintenance", label: "Maintenance" }, { id: "warranty", label: "Warranty" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
 
 function AssetPage() {
   const { assetId } = Route.useParams();
@@ -65,7 +65,6 @@ function AssetPage() {
   }
   if (a.statusId === "in_use" && can("available")) primary.push({ label: "Unassign", icon: ArrowRightLeft, act: "unassign" });
   if (a.statusId === "checked_out") primary.push({ label: "Check in", icon: LogIn, act: "checkin", tone: "primary" });
-  if (!a.repair && (can("in_repair") || a.statusId === "checked_out") && st?.phase === "active") primary.push({ label: "Report issue", icon: Wrench, act: "repair" });
   if (a.statusId === "decommissioned" && can("disposed")) primary.push({ label: "Dispose", icon: Trash2, act: "dispose", tone: "primary" });
 
   const moves = st?.next.map((id) => s.statuses.find((x) => x.id === id)).filter((x) => x && x.enabled) ?? [];
@@ -154,24 +153,6 @@ function AssetPage() {
             </div>
           )}
 
-          {tab === "repairs" && (
-            <Card title="Repair history" action={!a.repair && primary.some((p) => p.act === "repair") ? <button onClick={() => setAction("repair")} className={BTN}><Plus className="size-3.5" />Report issue</button> : undefined}>
-              {[...(a.repair ? [a.repair] : []), ...a.repairs].length ? (
-                <ul className="divide-y divide-border">
-                  {[...(a.repair ? [a.repair] : []), ...a.repairs].map((r) => (
-                    <li key={r.id} className="py-3 first:pt-0 last:pb-0">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-[13px] font-medium">{r.issue}</p>
-                        <span className={cn("rounded-full px-2 py-0.5 text-[11px]", r.closedAt ? "bg-success-soft text-success" : "bg-warning-soft text-warning")}>{r.closedAt ? "Completed" : REPAIR_STAGES.find((x) => x.id === r.stage)?.label}</span>
-                      </div>
-                      <p className="mt-0.5 text-[12px] text-muted-foreground">Opened {fmtDate(r.openedAt)} by {userName(r.openedBy)}{r.closedAt && ` · closed ${fmtDate(r.closedAt)}`} · {PRIORITY_LABEL[r.priority]} priority · <span className="num">{money(repairCost(r))}</span>{r.vendorId && ` · ${vendorName(r.vendorId)}`}</p>
-                      {r.resolution && <p className="mt-1 text-[12px]">{r.resolution}</p>}
-                    </li>
-                  ))}
-                </ul>
-              ) : <Empty text="No repairs yet. If something breaks, use Report issue to start a repair." />}
-            </Card>
-          )}
 
           {tab === "maintenance" && (
             <Card title="Maintenance log" desc={a.maintenanceEveryMonths ? `Serviced every ${a.maintenanceEveryMonths} months${a.nextMaintenance ? ` · next due ${fmtDate(a.nextMaintenance)}` : ""}.` : "No service interval set."}
