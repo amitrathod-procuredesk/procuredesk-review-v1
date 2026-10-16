@@ -19,6 +19,7 @@ import { Route as AppAssetsCheckoutRouteImport } from './routes/app.assets.check
 import { Route as AppAssetsMaintenanceRouteImport } from './routes/app.assets.maintenance'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
+import { Route as AppAssetsMaintenanceAssetIdRouteImport } from './routes/app.assets.maintenance_.$assetId'
 import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
 import { Route as AppAssetsRegisterNewRouteImport } from './routes/app.assets.register.new'
 import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
@@ -74,6 +75,12 @@ const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
   path: '/requests/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssetsMaintenanceAssetIdRoute =
+  AppAssetsMaintenanceAssetIdRouteImport.update({
+    id: '/assets/maintenance_/$assetId',
+    path: '/assets/maintenance/$assetId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAssetsRegisterIndexRoute = AppAssetsRegisterIndexRouteImport.update({
   id: '/assets/register/',
   path: '/assets/register/',
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
+  '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
@@ -121,6 +129,7 @@ export interface FileRoutesByTo {
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
+  '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register': typeof AppAssetsRegisterIndexRoute
@@ -138,6 +147,7 @@ export interface FileRoutesById {
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
+  '/app/assets/maintenance_/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/app/assets/maintenance'
     | '/app/assets/settings'
     | '/app/requests/'
+    | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
     | '/app/requests/$id/edit'
     | '/app/assets/register/'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/app/assets/maintenance'
     | '/app/assets/settings'
     | '/app/requests'
+    | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
     | '/app/requests/$id/edit'
     | '/app/assets/register'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
     | '/app/assets/maintenance'
     | '/app/assets/settings'
     | '/app/requests/'
+    | '/app/assets/maintenance_/$assetId'
     | '/app/assets/register/new'
     | '/app/requests/$id/edit'
     | '/app/assets/register/'
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRequestsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets/maintenance_/$assetId': {
+      id: '/app/assets/maintenance_/$assetId'
+      path: '/assets/maintenance/$assetId'
+      fullPath: '/app/assets/maintenance/$assetId'
+      preLoaderRoute: typeof AppAssetsMaintenanceAssetIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/assets/register/': {
       id: '/app/assets/register/'
       path: '/assets/register'
@@ -310,6 +330,7 @@ interface AppRouteChildren {
   AppAssetsMaintenanceRoute: typeof AppAssetsMaintenanceRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
+  AppAssetsMaintenanceAssetIdRoute: typeof AppAssetsMaintenanceAssetIdRoute
   AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
   AppAssetsRegisterIndexRoute: typeof AppAssetsRegisterIndexRoute
@@ -325,6 +346,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssetsMaintenanceRoute: AppAssetsMaintenanceRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
+  AppAssetsMaintenanceAssetIdRoute: AppAssetsMaintenanceAssetIdRoute,
   AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
   AppAssetsRegisterIndexRoute: AppAssetsRegisterIndexRoute,

@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { CalendarDays, Check, Clock3, LayoutList, Plus, Search, Table2, Wrench } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox, Select, TextArea, TextInput } from "@/components/pd/form";
+import { Checkbox, Select, TextInput } from "@/components/pd/form";
+import { dueDate, retired, ServiceDialog, stageNames, type MaintAction } from "@/components/pd/MaintenanceDialog";
 import { AssetThumb, Field, StatusPill, fmtDate } from "@/components/pd/assetUi";
-import { cancelMaintenance, daysUntil, holderName, logMaintenance, maintenanceBlock, MAINT_TYPE_LABEL, progressMaintenance, scheduleMaintenance, today, type Asset, type MaintenancePlan } from "@/lib/pd/assetRegister";
-import { mutate, useDB, useMe } from "@/lib/pd/store";
+import { daysUntil, maintenanceBlock, MAINT_TYPE_LABEL, today, type Asset } from "@/lib/pd/assetRegister";
+import { useDB, useMe } from "@/lib/pd/store";
 import { money } from "@/lib/pd/engine";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +21,7 @@ export const Route = createFileRoute("/app/assets/maintenance")({
 });
 
 type Tab = "scheduled" | "active" | "repairs" | "history";
-type Action = "schedule" | "progress" | "complete" | "cancel";
-const stageNames = { in_progress: "In progress", waiting_parts: "Waiting for parts", at_vendor: "At vendor" };
-const dueDate = (a: Asset) => a.nextMaintenance || a.plan?.due;
-const retired = (a: Asset) => ["draft", "disposed", "decommissioned"].includes(a.statusId);
+type Action = MaintAction;
 
 function MaintenancePage() {
   const db = useDB();
@@ -73,8 +69,8 @@ function MaintenancePage() {
     </div>
     {tab === "history" ? <div className="overflow-x-auto pd-scroll-quiet"><table className="pd-table min-w-[650px]"><thead><tr><th>Asset</th><th>Work completed</th><th>Completed</th><th>Recorded by</th><th className="text-right">Actual cost</th></tr></thead><tbody>{logs.map(({ a, log }) => <tr key={log.id}><td>{assetName(a)}</td><td><p className="text-[13px] font-medium">{log.name || "Maintenance"}</p><p className="max-w-xs whitespace-normal text-[12px] text-muted-foreground">{log.note}</p></td><td>{fmtDate(log.at)}</td><td>{db.users.find((u) => u.id === log.by)?.name || "System"}</td><td className="num text-right">{money(log.cost)}</td></tr>)}</tbody></table>{!logs.length && <Empty title="No completed work" />}</div>
     : !items.length ? <Empty title={q || category || mine || filter !== "all" ? "No matching maintenance" : tab === "repairs" ? "No open repairs" : tab === "active" ? "No service in progress" : "No scheduled maintenance"} action={tab === "scheduled" ? () => setModal({ action: "schedule" }) : undefined} />
-    : layout === "table" ? <div className="overflow-x-auto pd-scroll-quiet"><table className="pd-table min-w-[850px]"><thead><tr><th>Asset / location</th><th>{tab === "repairs" ? "Repair" : "Maintenance"}</th><th>Due / status</th><th>Assigned to</th><th className="text-right">Actions</th></tr></thead><tbody>{items.map((a) => <tr key={a.id}><td className="max-w-64 py-3">{assetName(a)}<p className="mt-1 pl-11 text-[11px] text-muted-foreground">{a.site}</p></td><td><p className="max-w-52 whitespace-normal text-[13px] font-medium">{tab === "repairs" ? a.repair?.issue : a.plan?.name || "Scheduled service"}</p><p className="text-[11px] text-muted-foreground">{tab === "repairs" ? a.repair?.stage.replaceAll("_", " ") : a.plan ? MAINT_TYPE_LABEL[a.plan.type] : a.maintenanceEveryMonths ? `Every ${a.maintenanceEveryMonths} months` : "One-time"}</p></td><td><p className="mb-1 whitespace-nowrap text-[12px]">{fmtDate(tab === "repairs" ? a.repair?.eta : dueDate(a)) || "No date"}</p>{tab === "repairs" ? <StatusPill s={db.assets?.statuses.find((s) => s.id === a.statusId)} /> : status(a)}</td><td className="text-[12px]">{db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-1 max-w-44 whitespace-normal text-[11px] text-warning">{maintenanceBlock(a)}</p>}</td><td>{actions(a)}</td></tr>)}</tbody></table></div>
-    : <div className="grid gap-3 md:grid-cols-2">{items.map((a) => <article key={a.id} className="rounded-lg border border-border bg-surface p-4"><div className="flex items-start justify-between gap-2">{assetName(a)}{tab !== "repairs" && status(a)}</div><p className="mt-3 text-[13px] font-medium">{tab === "repairs" ? a.repair?.issue : a.plan?.name || "Scheduled service"}</p><p className="mt-1 text-[12px] text-muted-foreground">{a.site} · {fmtDate(dueDate(a)) || "No date"}</p><p className="mt-1 text-[12px] text-muted-foreground">Assigned to: {db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}</p>{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-2 text-[12px] text-warning">{maintenanceBlock(a)}</p>}<div className="mt-3">{actions(a)}</div></article>)}</div>}
+    : layout === "table" ? <div className="overflow-x-auto pd-scroll-quiet"><table className="pd-table min-w-[850px]"><thead><tr><th>Asset / location</th><th>{tab === "repairs" ? "Repair" : "Maintenance"}</th><th>Due / status</th><th>Assigned to</th><th className="text-right">Actions</th></tr></thead><tbody>{items.map((a) => <tr key={a.id}><td className="max-w-64 py-3">{assetName(a)}<p className="mt-1 pl-11 text-[11px] text-muted-foreground">{a.site}</p></td><td>{tab === "repairs" ? <p className="max-w-52 whitespace-normal text-[13px] font-medium">{a.repair?.issue}</p> : <Link to="/app/assets/maintenance/$assetId" params={{ assetId: a.id }} className="block max-w-52 whitespace-normal text-[13px] font-medium hover:text-primary">{a.plan?.name || "Scheduled service"}</Link>}<p className="text-[11px] text-muted-foreground">{tab === "repairs" ? a.repair?.stage.replaceAll("_", " ") : a.plan ? MAINT_TYPE_LABEL[a.plan.type] : a.maintenanceEveryMonths ? `Every ${a.maintenanceEveryMonths} months` : "One-time"}</p></td><td><p className="mb-1 whitespace-nowrap text-[12px]">{fmtDate(tab === "repairs" ? a.repair?.eta : dueDate(a)) || "No date"}</p>{tab === "repairs" ? <StatusPill s={db.assets?.statuses.find((s) => s.id === a.statusId)} /> : status(a)}</td><td className="text-[12px]">{db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-1 max-w-44 whitespace-normal text-[11px] text-warning">{maintenanceBlock(a)}</p>}</td><td>{actions(a)}</td></tr>)}</tbody></table></div>
+    : <div className="grid gap-3 md:grid-cols-2">{items.map((a) => <article key={a.id} className="rounded-lg border border-border bg-surface p-4"><div className="flex items-start justify-between gap-2">{assetName(a)}{tab !== "repairs" && status(a)}</div>{tab === "repairs" ? <p className="mt-3 text-[13px] font-medium">{a.repair?.issue}</p> : <Link to="/app/assets/maintenance/$assetId" params={{ assetId: a.id }} className="mt-3 block text-[13px] font-medium hover:text-primary">{a.plan?.name || "Scheduled service"}</Link>}<p className="mt-1 text-[12px] text-muted-foreground">{a.site} · {fmtDate(dueDate(a)) || "No date"}</p><p className="mt-1 text-[12px] text-muted-foreground">Assigned to: {db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}</p>{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-2 text-[12px] text-warning">{maintenanceBlock(a)}</p>}<div className="mt-3">{actions(a)}</div></article>)}</div>}
     {modal && <ServiceDialog key={`${modal.action}-${modal.id || "new"}`} action={modal.action} initialId={modal.id} onClose={() => setModal(undefined)} onCancel={() => setModal({ action: "cancel", id: modal.id })} />}
   </div>;
 }
@@ -83,56 +79,3 @@ function Empty({ title, action }: { title: string; action?: () => void }) {
   return <div className="py-14 text-center"><CalendarDays className="mx-auto mb-3 size-6 text-muted-foreground" /><p className="text-sm font-medium">{title}</p>{action && <Button variant="outline" size="sm" className="mt-3" onClick={action}><Plus />Schedule maintenance</Button>}</div>;
 }
 
-function ServiceDialog({ action, initialId, onClose, onCancel }: { action: Action; initialId?: string; onClose: () => void; onCancel: () => void }) {
-  const db = useDB(); const me = useMe();
-  const [id, setId] = useState(initialId ?? "");
-  const asset = db.assetItems?.find((a) => a.id === id);
-  const [plan, setPlan] = useState<MaintenancePlan>(() => asset?.plan ? { ...asset.plan, due: dueDate(asset) || today() } : { name: "", type: "preventive", instructions: "", due: asset ? dueDate(asset) || today() : today(), cost: 0, repeats: !!asset?.maintenanceEveryMonths });
-  const [months, setMonths] = useState(asset?.maintenanceEveryMonths ?? 12);
-  const [stage, setStage] = useState<"in_progress" | "waiting_parts" | "at_vendor">(asset?.service?.stage ?? "in_progress");
-  const [note, setNote] = useState(""); const [cost, setCost] = useState("0"); const [date, setDate] = useState(today()); const [error, setError] = useState("");
-  const title = action === "schedule" ? initialId ? "Edit maintenance schedule" : "Schedule maintenance" : action === "complete" ? "Complete maintenance" : action === "cancel" ? "Cancel maintenance" : asset?.service ? "Update service" : "Start service";
-  const up = (p: Partial<MaintenancePlan>) => setPlan((v) => ({ ...v, ...p }));
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault(); setError("");
-    if (!id) return setError("Choose an asset.");
-    try {
-      mutate((d) => {
-        if (action === "schedule") scheduleMaintenance(d, id, plan, plan.repeats ? months : undefined, me?.id);
-        if (action === "progress") progressMaintenance(d, id, stage, note, me?.id);
-        if (action === "complete") logMaintenance(d, id, note, cost.trim() ? Number(cost) : NaN, me?.id, date);
-        if (action === "cancel") cancelMaintenance(d, id, note, me?.id);
-      });
-      toast.success(action === "complete" ? "Maintenance completed" : action === "cancel" ? "Maintenance cancelled" : action === "schedule" ? "Maintenance scheduled" : "Service updated"); onClose();
-    } catch (err) { setError(err instanceof Error ? err.message : "Unable to save maintenance."); }
-  };
-  return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto bg-surface"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{asset ? `${asset.name} · ${asset.tag}` : "Choose an asset and its service details."}</DialogDescription></DialogHeader>
-    <form onSubmit={submit} className="space-y-4">
-      {action === "schedule" ? <>
-        {!initialId && <Field label="Asset" htmlFor="mt-asset" required><Select id="mt-asset" value={id} onChange={(e) => { setId(e.target.value); const a = db.assetItems?.find((x) => x.id === e.target.value); setPlan(a?.plan ? { ...a.plan, due: dueDate(a) || today() } : { name: "", type: "preventive", instructions: "", due: a ? dueDate(a) || today() : today(), cost: 0, repeats: !!a?.maintenanceEveryMonths }); setMonths(a?.maintenanceEveryMonths ?? 12); }}><option value="">Choose an asset…</option>{db.assetItems?.filter((a) => !retired(a) && !a.service).map((a) => <option key={a.id} value={a.id}>{a.name} · {a.tag}{dueDate(a) ? " · Existing schedule" : ""}</option>)}</Select></Field>}
-        {asset?.plan && !initialId && <p className="text-[12px] text-warning">Saving updates this asset’s existing maintenance plan.</p>}
-        <div className="grid gap-3 sm:grid-cols-2"><Field label="Maintenance name" htmlFor="mt-name" required><TextInput id="mt-name" value={plan.name} onChange={(e) => up({ name: e.target.value })} /></Field><Field label="Maintenance type" htmlFor="mt-type"><Select id="mt-type" value={plan.type} onChange={(e) => up({ type: e.target.value as MaintenancePlan["type"] })}>{Object.entries(MAINT_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field></div>
-        <Field label="Description / instructions" htmlFor="mt-instructions"><TextArea id="mt-instructions" rows={2} value={plan.instructions} onChange={(e) => up({ instructions: e.target.value })} /></Field>
-        <div className="grid gap-3 sm:grid-cols-2"><Field label="Due date" htmlFor="mt-due" required><TextInput id="mt-due" type="date" value={plan.due || ""} onChange={(e) => up({ due: e.target.value })} /></Field><Field label="Assigned to" htmlFor="mt-assignee"><Select id="mt-assignee" value={plan.assigneeId || ""} onChange={(e) => up({ assigneeId: e.target.value || undefined })}><option value="">Unassigned</option>{db.users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select></Field><Field label="Vendor" htmlFor="mt-vendor"><Select id="mt-vendor" value={plan.vendorId || ""} onChange={(e) => up({ vendorId: e.target.value || undefined })}><option value="">No vendor</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</Select></Field><Field label="Estimated cost ($)" htmlFor="mt-cost"><TextInput id="mt-cost" type="number" min={0} step="0.01" value={plan.cost} onChange={(e) => up({ cost: Number(e.target.value) })} /></Field></div>
-        <Checkbox label="This service repeats on a schedule" checked={plan.repeats} onChange={(e) => up({ repeats: e.target.checked })} />
-        {plan.repeats && <Field label="Repeat every (months)" htmlFor="mt-months" hint="The next date is calculated from when the service is completed."><TextInput id="mt-months" type="number" min={1} max={120} value={months} onChange={(e) => setMonths(Number(e.target.value))} /></Field>}
-        {asset?.checkout && <p className="text-[12px] text-warning">Currently with {holderName(asset.checkout.to, db)}. You can schedule now; check it in before starting service.</p>}
-      </> : action === "progress" ? <>
-        {asset?.plan?.instructions && <p className="rounded-md bg-subtle p-3 text-[13px]">{asset.plan.instructions}</p>}
-        <Field label="Service stage" htmlFor="mt-stage"><Select id="mt-stage" value={stage} onChange={(e) => setStage(e.target.value as typeof stage)}>{Object.entries(stageNames).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
-        <Field label={stage === "in_progress" ? "Note (optional)" : "Delay / handover note"} htmlFor="mt-note" required={stage !== "in_progress"}><TextArea id="mt-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-        <p className="text-[12px] text-muted-foreground">Service progress does not change the asset’s assignment or lifecycle status.</p>
-      </> : action === "complete" ? <>
-        <div className="grid gap-3 sm:grid-cols-2"><Field label="Completed on" htmlFor="mt-date" required><TextInput id="mt-date" type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field><Field label="Actual cost ($)" htmlFor="mt-actual" required><TextInput id="mt-actual" type="number" min={0} step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} /></Field></div>
-        <Field label="Work completed / findings" htmlFor="mt-work" required><TextArea id="mt-work" rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-        <p className="text-[12px] text-muted-foreground">{asset?.maintenanceEveryMonths ? `Next service will be due ${asset.maintenanceEveryMonths} months after completion.` : "This is a one-time service. Completion clears the due date."}</p>
-        <p className="text-[12px] text-muted-foreground">If further repair is needed, open a repair from the asset record.</p>
-      </> : <Field label="Cancellation reason" htmlFor="mt-cancel" required hint="Removes this schedule and any recurring service. Completed history is kept."><TextArea id="mt-cancel" rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>}
-      {error && <p role="alert" className="text-[13px] text-destructive">{error}</p>}
-      <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
-        {initialId && (action === "schedule" || action === "progress") && <Button type="button" variant="ghost" size="sm" className="mr-auto text-destructive" onClick={onCancel}>Cancel schedule</Button>}
-        <Button type="button" variant="outline" size="sm" onClick={onClose}>Close</Button><Button type="submit" size="sm" variant={action === "cancel" ? "destructive" : "default"}>{action === "schedule" ? "Save schedule" : action === "complete" ? "Complete maintenance" : action === "cancel" ? "Cancel schedule" : "Save service"}</Button>
-      </div>
-    </form>
-  </DialogContent></Dialog>;
-}
