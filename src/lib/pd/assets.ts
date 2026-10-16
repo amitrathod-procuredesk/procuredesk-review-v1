@@ -49,6 +49,8 @@ export interface AssetCategory {
   name: string;
   code: string;
   description: string;
+  /** Lucide icon key from CATEGORY_ICONS. */
+  icon?: string;
   /** Overrides the global prefix for this category's IDs. */
   prefixOverride?: string;
   identifier: "serial" | "vin" | "license" | "none";
