@@ -75,7 +75,7 @@ function MaintenancePage() {
     : !items.length ? <Empty title={q || category || mine || filter !== "all" ? "No matching maintenance" : tab === "repairs" ? "No open repairs" : tab === "active" ? "No service in progress" : "No scheduled maintenance"} action={tab === "scheduled" ? () => setModal({ action: "schedule" }) : undefined} />
     : layout === "table" ? <div className="overflow-x-auto pd-scroll-quiet"><table className="pd-table min-w-[850px]"><thead><tr><th>Asset / location</th><th>{tab === "repairs" ? "Repair" : "Maintenance"}</th><th>Due / status</th><th>Assigned to</th><th className="text-right">Actions</th></tr></thead><tbody>{items.map((a) => <tr key={a.id}><td className="max-w-64 py-3">{assetName(a)}<p className="mt-1 pl-11 text-[11px] text-muted-foreground">{a.site}</p></td><td><p className="max-w-52 whitespace-normal text-[13px] font-medium">{tab === "repairs" ? a.repair?.issue : a.plan?.name || "Scheduled service"}</p><p className="text-[11px] text-muted-foreground">{tab === "repairs" ? a.repair?.stage.replaceAll("_", " ") : a.plan ? MAINT_TYPE_LABEL[a.plan.type] : a.maintenanceEveryMonths ? `Every ${a.maintenanceEveryMonths} months` : "One-time"}</p></td><td><p className="mb-1 whitespace-nowrap text-[12px]">{fmtDate(tab === "repairs" ? a.repair?.eta : dueDate(a)) || "No date"}</p>{tab === "repairs" ? <StatusPill s={db.assets?.statuses.find((s) => s.id === a.statusId)} /> : status(a)}</td><td className="text-[12px]">{db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-1 max-w-44 whitespace-normal text-[11px] text-warning">{maintenanceBlock(a)}</p>}</td><td>{actions(a)}</td></tr>)}</tbody></table></div>
     : <div className="grid gap-3 md:grid-cols-2">{items.map((a) => <article key={a.id} className="rounded-lg border border-border bg-surface p-4"><div className="flex items-start justify-between gap-2">{assetName(a)}{tab !== "repairs" && status(a)}</div><p className="mt-3 text-[13px] font-medium">{tab === "repairs" ? a.repair?.issue : a.plan?.name || "Scheduled service"}</p><p className="mt-1 text-[12px] text-muted-foreground">{a.site} · {fmtDate(dueDate(a)) || "No date"}</p><p className="mt-1 text-[12px] text-muted-foreground">Assigned to: {db.users.find((u) => u.id === a.plan?.assigneeId)?.name || "Unassigned"}</p>{maintenanceBlock(a) && tab !== "repairs" && <p className="mt-2 text-[12px] text-warning">{maintenanceBlock(a)}</p>}<div className="mt-3">{actions(a)}</div></article>)}</div>}
-    {modal && <ServiceDialog key={`${modal.action}-${modal.id || "new"}`} action={modal.action} initialId={modal.id} onClose={() => setModal(undefined)} />}
+    {modal && <ServiceDialog key={`${modal.action}-${modal.id || "new"}`} action={modal.action} initialId={modal.id} onClose={() => setModal(undefined)} onCancel={() => setModal({ action: "cancel", id: modal.id })} />}
   </div>;
 }
 
@@ -83,7 +83,7 @@ function Empty({ title, action }: { title: string; action?: () => void }) {
   return <div className="py-14 text-center"><CalendarDays className="mx-auto mb-3 size-6 text-muted-foreground" /><p className="text-sm font-medium">{title}</p>{action && <Button variant="outline" size="sm" className="mt-3" onClick={action}><Plus />Schedule maintenance</Button>}</div>;
 }
 
-function ServiceDialog({ action, initialId, onClose }: { action: Action; initialId?: string; onClose: () => void }) {
+function ServiceDialog({ action, initialId, onClose, onCancel }: { action: Action; initialId?: string; onClose: () => void; onCancel: () => void }) {
   const db = useDB(); const me = useMe();
   const [id, setId] = useState(initialId ?? "");
   const asset = db.assetItems?.find((a) => a.id === id);
@@ -130,7 +130,7 @@ function ServiceDialog({ action, initialId, onClose }: { action: Action; initial
       </> : <Field label="Cancellation reason" htmlFor="mt-cancel" required hint="Removes this schedule and any recurring service. Completed history is kept."><TextArea id="mt-cancel" rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>}
       {error && <p role="alert" className="text-[13px] text-destructive">{error}</p>}
       <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
-        {initialId && action === "schedule" && <Button type="button" variant="ghost" size="sm" className="mr-auto text-destructive" onClick={() => { setNote(""); setError(""); onClose(); queueMicrotask(() => window.dispatchEvent(new CustomEvent("pd-cancel-maintenance", { detail: initialId }))); }}>Cancel schedule</Button>}
+        {initialId && (action === "schedule" || action === "progress") && <Button type="button" variant="ghost" size="sm" className="mr-auto text-destructive" onClick={onCancel}>Cancel schedule</Button>}
         <Button type="button" variant="outline" size="sm" onClick={onClose}>Close</Button><Button type="submit" size="sm" variant={action === "cancel" ? "destructive" : "default"}>{action === "schedule" ? "Save schedule" : action === "complete" ? "Complete maintenance" : action === "cancel" ? "Cancel schedule" : "Save service"}</Button>
       </div>
     </form>

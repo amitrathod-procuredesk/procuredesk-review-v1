@@ -244,6 +244,7 @@ export function assign(d: DB, id: string, to: Holder, by?: string, note?: string
 
 export function checkOut(d: DB, id: string, to: Holder, due: string, condition: Condition, by?: string, note?: string) {
   const a = find(d, id); if (!a) return;
+  if (a.service) throw new Error("Finish maintenance before checking out this asset.");
   setStatus(d, id, "checked_out", by);
   a.checkout = { to, at: now(), due, condition, note };
   a.condition = condition;
@@ -262,6 +263,7 @@ export function checkIn(d: DB, id: string, condition: Condition, to: string, by?
 
 export function openRepair(d: DB, id: string, issue: string, priority: Priority, by?: string) {
   const a = find(d, id); if (!a) return;
+  if (a.service) throw new Error("Complete or cancel maintenance before opening a repair.");
   const returnTo = a.statusId === "checked_out" ? "available" : a.statusId;
   a.checkout = undefined;
   a.repair = { id: rid("rep"), issue, priority, stage: "reported", openedAt: now(), openedBy: by, parts: [], labourCost: 0, returnTo, stages: [{ stage: "reported", at: now(), by }] };
@@ -387,6 +389,7 @@ export function checkoutBlock(a: Asset, s: AssetSettings): string | undefined {
   const st = s.statuses.find((x) => x.id === a.statusId);
   if (a.statusId === "checked_out") return "Already checked out";
   if (a.statusId === "draft") return "Still a draft";
+  if (a.service) return "Maintenance in progress";
   if (a.repair) return "In repair";
   if (c && !c.checkoutAllowed) return `${c.name} can't be checked out`;
   if (!st?.checkoutable) return `${st?.name ?? "This status"} can't be checked out`;
