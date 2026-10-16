@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AssetThumb, BTN, BTN_GHOST, BTN_PRIMARY, Card, Field, HolderPick, HolderToggle, Meta, StatusPill, fmtDate, fmtDateTime, relDays } from "@/components/pd/assetUi";
 import { UserAvatar } from "@/components/pd/bits";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
-import { IDENTIFIER_LABEL, METHOD_LABEL, PHASE_LABEL, type StatusPhase } from "@/lib/pd/assets";
+import { IDENTIFIER_LABEL, METHOD_LABEL } from "@/lib/pd/assets";
 import {
   activationIssues, addDays, assign, bookValue, canMove, checkIn, checkOut, completeRepair, CONDITION_LABEL, daysUntil, depRuleFor, DISPOSAL_METHODS, dispose, DOC_KIND, holderName, logMaintenance, moveRepair, openRepair,
   PRIORITY_LABEL, REPAIR_STAGES, repairCost, setStatus, SITES, today, updateAsset, type Asset, type Condition, type Holder, type Priority, type RepairStage,
@@ -32,7 +32,6 @@ export const Route = createFileRoute("/app/assets/$assetId")({
 });
 
 type Action = "activate" | "assign" | "unassign" | "checkout" | "checkin" | "repair" | "stage" | "complete" | "maintenance" | "status" | "decommission" | "dispose" | "edit" | "part";
-const PHASES: StatusPhase[] = ["setup", "active", "service", "retired"];
 const TABS = [{ id: "overview", label: "Overview" }, { id: "repairs", label: "Repairs" }, { id: "maintenance", label: "Maintenance" }, { id: "warranty", label: "Warranty" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
 
 function AssetPage() {
@@ -102,20 +101,6 @@ function AssetPage() {
         </div>
       </header>
 
-      {/* Lifecycle */}
-      <ol className="pd-panel mb-4 grid grid-cols-4 overflow-hidden" aria-label="Lifecycle">
-        {PHASES.map((p, i) => {
-          const cur = st?.phase === p;
-          const done = PHASES.indexOf(st?.phase ?? "setup") > i;
-          return (
-            <li key={p} aria-current={cur ? "step" : undefined} className={cn("relative flex items-center gap-2 border-r border-border px-3 py-2.5 text-[12px] last:border-r-0", cur ? "bg-primary/5 font-medium text-primary" : done ? "text-foreground" : "text-muted-foreground")}>
-              <span className={cn("inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px]", cur ? "bg-primary text-primary-foreground" : done ? "bg-success-soft text-success" : "bg-subtle")}>{done ? <Check className="size-2.5" strokeWidth={3} /> : i + 1}</span>
-              <span className="truncate">{PHASE_LABEL[p]}</span>
-              {cur && <span className="ml-auto hidden truncate text-[11px] font-normal text-muted-foreground sm:block">{st?.name}</span>}
-            </li>
-          );
-        })}
-      </ol>
 
       {a.statusId === "draft" && (
         <Banner tone="neutral" icon={<Pencil className="size-4" />} title="This asset is a draft" text={Object.keys(activationIssues({ ...a, statusId: "available" }, s)).length ? "Finish the missing details, then activate it to start tracking and depreciation." : "Everything required is filled in — activate it to put it into service."} action={<button onClick={() => setAction("activate")} className={BTN}>Activate</button>} />
