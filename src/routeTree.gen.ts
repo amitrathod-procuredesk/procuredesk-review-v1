@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
 import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$assetId'
+import { Route as AppAssetsCheckoutRouteImport } from './routes/app.assets.checkout'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
 import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
@@ -50,6 +51,11 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
 const AppAssetsAssetIdRoute = AppAssetsAssetIdRouteImport.update({
   id: '/assets/$assetId',
   path: '/assets/$assetId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsCheckoutRoute = AppAssetsCheckoutRouteImport.update({
+  id: '/assets/checkout',
+  path: '/assets/checkout',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
+  '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
+  '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
+  '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/app/approvals'
     | '/app/'
     | '/app/assets/$assetId'
+    | '/app/assets/checkout'
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/assets/register/new'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/app/approvals'
     | '/app'
     | '/app/assets/$assetId'
+    | '/app/assets/checkout'
     | '/app/assets/settings'
     | '/app/requests'
     | '/app/assets/register/new'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/app/approvals'
     | '/app/'
     | '/app/assets/$assetId'
+    | '/app/assets/checkout'
     | '/app/assets/settings'
     | '/app/requests/'
     | '/app/assets/register/new'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsAssetIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets/checkout': {
+      id: '/app/assets/checkout'
+      path: '/assets/checkout'
+      fullPath: '/app/assets/checkout'
+      preLoaderRoute: typeof AppAssetsCheckoutRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/assets/settings': {
       id: '/app/assets/settings'
       path: '/assets/settings'
@@ -268,6 +287,7 @@ interface AppRouteChildren {
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetsAssetIdRoute: typeof AppAssetsAssetIdRoute
+  AppAssetsCheckoutRoute: typeof AppAssetsCheckoutRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
@@ -281,6 +301,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppApprovalsRoute: AppApprovalsRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetsAssetIdRoute: AppAssetsAssetIdRoute,
+  AppAssetsCheckoutRoute: AppAssetsCheckoutRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
