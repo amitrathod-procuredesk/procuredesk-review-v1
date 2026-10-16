@@ -11,6 +11,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Sign in to ProcureDesk, the AI-first procurement workspace for requestors, approvers and admins." },
       { property: "og:title", content: "Sign in · ProcureDesk" },
       { property: "og:description", content: "AI-first procurement: describe what you need, get a policy-aware purchase request." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Login,
