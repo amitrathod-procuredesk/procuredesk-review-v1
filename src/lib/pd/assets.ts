@@ -26,6 +26,8 @@ export interface Numbering {
   fiscalYear?: boolean;
 }
 
+export interface CategoryIdFormat { prefix: string; separator: Separator; includeCategory: boolean; yearFormat: YearFormat; seqLength: number }
+
 export type ResetMode = "never" | "calendar" | "fiscal";
 
 /** A reserved block of numbers for one category, with its own prefix. */
@@ -53,6 +55,8 @@ export interface AssetCategory {
   icon?: string;
   /** Overrides the global prefix for this category's IDs. */
   prefixOverride?: string;
+  /** Optional category-specific ID format; falls back to global numbering when unset. Sequence stays shared. */
+  idFormat?: CategoryIdFormat;
   identifier: "serial" | "vin" | "license" | "none";
   /** Inherit org default when undefined. */
   depreciation?: DepRule;
@@ -170,7 +174,7 @@ export const activeRange = (s: AssetSettings, categoryId?: string) => s.ranges?.
 export function previewAssetId(s: AssetSettings, cat?: AssetCategory, date = new Date()): string {
   const r = activeRange(s, cat?.id);
   const d = idYear(s.numbering, date, s.fiscalYearStartMonth);
-  if (r) return formatAssetId(s.numbering, { code: cat?.code ?? "", prefixOverride: r.prefix }, d, r.next);
+  if (r) return formatAssetId(s.numbering, { code: cat?.code ?? "", prefixOverride: r.prefix, idFormat: cat?.idFormat }, d, r.next);
   return formatAssetId(s.numbering, cat, d);
 }
 
@@ -265,7 +269,8 @@ export function defaultAssetSettings(): AssetSettings {
 const yearPart = (f: YearFormat, d: Date) => (f === "YYYY" ? String(d.getFullYear()) : f === "YY" ? String(d.getFullYear()).slice(-2) : "");
 
 /** Builds an asset ID, e.g. AST-IT-26-01248. */
-export function formatAssetId(n: Numbering, cat?: Pick<AssetCategory, "code" | "prefixOverride">, date = new Date(), seq = n.nextSeq): string {
+export function formatAssetId(base: Numbering, cat?: Pick<AssetCategory, "code" | "prefixOverride"> & { idFormat?: CategoryIdFormat }, date = new Date(), seq = base.nextSeq): string {
+  const n = cat?.idFormat ? { ...base, ...cat.idFormat } : base;
   const prefix = (cat?.prefixOverride || n.prefix).trim();
   const parts = [prefix, n.includeCategory && cat?.code ? cat.code : "", yearPart(n.yearFormat, date), String(Math.max(0, seq)).padStart(n.seqLength, "0")];
   return parts.filter(Boolean).join(n.separator);
@@ -291,6 +296,11 @@ export function categoryIssues(c: AssetCategory, all: AssetCategory[]): Record<s
   if (!/^[A-Z0-9]{2,5}$/.test(c.code)) e.code = "Use 2–5 capital letters or numbers.";
   else if (all.some((x) => x.id !== c.id && x.code === c.code)) e.code = "Another category already uses this code.";
   if (c.prefixOverride && !/^[A-Z0-9]{1,6}$/.test(c.prefixOverride)) e.prefixOverride = "Use 1–6 capital letters or numbers.";
+  if (c.idFormat) {
+    if (c.idFormat.prefix && !/^[A-Z0-9]{1,6}$/.test(c.idFormat.prefix)) e.fmtPrefix = "Use 1–6 capital letters or numbers.";
+    if (!c.idFormat.prefix && !c.idFormat.includeCategory) e.fmtPrefix = "Add a prefix or include the category code.";
+    if (c.idFormat.seqLength < 3 || c.idFormat.seqLength > 8) e.fmtSeq = "Choose between 3 and 8 digits.";
+  }
   return e;
 }
 
