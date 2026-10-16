@@ -128,8 +128,6 @@ function AssetPage() {
       )}
       {a.disposal && <Banner tone="neutral" icon={<Trash2 className="size-4" />} title={`${a.disposal.method} on ${fmtDate(a.disposal.at)}`} text={`${a.disposal.proceeds ? `Proceeds ${money(a.disposal.proceeds)}. ` : ""}${a.disposal.note ?? ""}This record is kept for audit.`} />}
 
-      <AssignmentStrip a={a} db={db} />
-
       {a.repair && <RepairPanel a={a} vendorName={vendorName} userName={userName} onStage={(sg) => { setStageTo(sg); setAction("stage"); }} onComplete={() => setAction("complete")} onPart={() => setAction("part")} onToggle={(pid) => mutate((d) => updateAsset(d, a.id, (x) => { const p = x.repair!.parts.find((q) => q.id === pid)!; p.received = !p.received; }, me?.id, "Repair part updated"))} />}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -232,6 +230,7 @@ function AssetPage() {
             {a.cost > 0 && <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-subtle"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (book / a.cost) * 100)}%` }} /></div>}
             {a.cost > 0 && <p className="mt-1.5 text-[11px] text-muted-foreground">{Math.round(100 - (book / a.cost) * 100)}% depreciated</p>}
           </Card>
+          <AssignmentStrip a={a} db={db} />
           <Card title="Key dates">
             <ul className="space-y-2.5 text-[13px]">
               <DateRow label="Warranty ends" iso={a.warrantyEnd} warn={30} sub={a.warrantyProvider} />
@@ -273,9 +272,11 @@ function AssignmentStrip({ a, db }: { a: Asset; db: ReturnType<typeof useDB> }) 
     { k: "Site", v: a.site || <span className="text-muted-foreground">—</span> },
   ];
   return (
-    <dl className="pd-panel mb-4 grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
-      {cells.map((c) => <div key={c.k} className="min-w-0 px-4 py-3"><dt className="text-[11px] text-muted-foreground">{c.k}</dt><dd className="mt-0.5 truncate text-[13px] font-medium">{c.v}</dd></div>)}
-    </dl>
+    <Card title={a.checkout ? "On loan" : "Assignment"}>
+      <dl className="space-y-2.5 text-[13px]">
+        {cells.map((c) => <div key={c.k} className="flex items-center justify-between gap-3"><dt className="shrink-0 text-muted-foreground">{c.k}</dt><dd className="min-w-0 truncate text-right font-medium">{c.v}</dd></div>)}
+      </dl>
+    </Card>
   );
 }
 
