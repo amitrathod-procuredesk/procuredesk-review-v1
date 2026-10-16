@@ -174,7 +174,8 @@ export const activeRange = (s: AssetSettings, categoryId?: string) => s.ranges?.
 export function previewAssetId(s: AssetSettings, cat?: AssetCategory, date = new Date()): string {
   const r = activeRange(s, cat?.id);
   const d = idYear(s.numbering, date, s.fiscalYearStartMonth);
-  if (r) return formatAssetId(s.numbering, { code: cat?.code ?? "", prefixOverride: r.prefix, idFormat: cat?.idFormat }, d, r.next);
+  // A category's own format owns the prefix; legacy ranges without one keep their own prefix.
+  if (r) return formatAssetId(s.numbering, { code: cat?.code ?? "", prefixOverride: cat?.idFormat ? undefined : r.prefix, idFormat: cat?.idFormat }, d, r.next);
   return formatAssetId(s.numbering, cat, d);
 }
 

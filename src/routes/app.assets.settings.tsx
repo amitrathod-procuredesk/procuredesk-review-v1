@@ -301,96 +301,48 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
   );
 }
 
+/** Overview of categories with their own ID format or number range; editing happens in the category window. */
 function RangesCard({ d, set }: SP) {
-  const ranges = d.ranges ?? [];
-  const [edit, setEdit] = useState<{ r: NumberRange; isNew: boolean } | null>(null);
-  const [del, setDel] = useState<NumberRange | null>(null);
-  const free = d.categories.filter((c) => !ranges.some((r) => r.categoryId === c.id));
-  const catOf = (id: string) => d.categories.find((c) => c.id === id);
-  const n = d.numbering;
-  const pad = (x: number) => String(x).padStart(n.seqLength, "0");
-  const format = (r: NumberRange) => [r.prefix, n.yearFormat === "none" ? "" : `{${n.yearFormat}}`, "#".repeat(n.seqLength)].filter(Boolean).join(n.separator);
-  const nextOf = (r: NumberRange) => (r.next > r.end ? "Full" : [r.prefix, n.yearFormat === "none" ? "" : n.yearFormat === "YY" ? String(new Date().getFullYear()).slice(-2) : String(new Date().getFullYear()), pad(r.next)].filter(Boolean).join(n.separator));
-  const add = () => {
-    const c = free[0];
-    setEdit({ isNew: true, r: { id: uidx("rg"), categoryId: c?.id ?? "", prefix: c?.code.slice(0, 3) ?? "", start: 1, end: Math.min(100, 10 ** n.seqLength - 1), next: 1 } });
-  };
+  const [edit, setEdit] = useState<AssetCategory | null>(null);
+  const rangeOf = (id: string) => d.ranges?.find((r) => r.categoryId === id);
+  const custom = d.categories.filter((c) => c.idFormat || rangeOf(c.id));
+  const others = d.categories.filter((c) => !custom.includes(c));
+  const startCustom = (c: AssetCategory) => { const x = openCategory(c, d); const n = d.numbering; x.idFormat ??= { prefix: n.prefix, separator: n.separator, includeCategory: n.includeCategory, yearFormat: n.yearFormat, seqLength: n.seqLength }; setEdit(x); };
   return (
     <div className="mt-4 rounded-lg border border-border p-3">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[13px] font-semibold">Per-Category Number Ranges</h3>
-          <p className="text-[12px] text-muted-foreground">Override the global sequence for specific asset classes.</p>
+          <h3 className="text-[13px] font-semibold">Category-specific IDs</h3>
+          <p className="text-[12px] text-muted-foreground">Categories with their own format or number range. All others use the global format above.</p>
         </div>
-        <button type="button" onClick={add} disabled={!free.length} className={BTN_OUTLINE}><Plus className="size-3.5" /> Add range</button>
+        {others.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><button type="button" className={BTN_OUTLINE}><Plus className="size-3.5" /> Customise category <ChevronDown className="size-3.5 text-muted-foreground" /></button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+              {others.map((c) => <DropdownMenuItem key={c.id} onSelect={() => startCustom(c)} className="gap-2 text-[13px]"><CatIcon icon={c.icon} />{c.name}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
-      {ranges.length > 0 && (
+      {custom.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="pd-table min-w-[560px]">
-            <thead><tr><th>Category</th><th>Format</th><th>Range</th><th>Next</th><th className="w-10" /></tr></thead>
+            <thead><tr><th>Category</th><th>Next ID</th><th>Numbering</th><th className="w-10" /></tr></thead>
             <tbody>
-              {ranges.map((r) => (
-                <tr key={r.id}>
-                  <td><span className="flex items-center gap-2 text-[13px]"><CatIcon icon={catOf(r.categoryId)?.icon} />{catOf(r.categoryId)?.name ?? "Deleted category"}</span></td>
-                  <td className="num text-[12px]">{format(r)}</td>
-                  <td className="num text-[12px]">{pad(r.start)} – {pad(r.end)}</td>
-                  <td className="num text-[12px]">{nextOf(r)}</td>
-                  <td className="text-right"><RowMenu label="Range actions" items={[{ label: "Edit", onSelect: () => setEdit({ r: structuredClone(r), isNew: false }) }, { label: "Remove", danger: true, onSelect: () => setDel(r) }]} /></td>
-                </tr>
-              ))}
+              {custom.map((c) => { const r = rangeOf(c.id); const digits = c.idFormat?.seqLength ?? d.numbering.seqLength; const pad = (x: number) => String(x).padStart(digits, "0"); const full = !!r && r.next > r.end; return (
+                <tr key={c.id}>
+                  <td><span className="flex items-center gap-2 text-[13px]"><CatIcon icon={c.icon} />{c.name}</span></td>
+                  <td className="num text-[12px]">{full ? <span className="text-destructive">Range full — uses global</span> : previewAssetId(d, c)}</td>
+                  <td className="text-[12px]">{r ? <><span className="num">{pad(r.start)} – {pad(r.end)}</span><span className="text-muted-foreground"> · {Math.max(0, r.end - r.next + 1).toLocaleString()} left</span></> : <span className="text-muted-foreground">Shared global sequence</span>}</td>
+                  <td className="text-right"><button type="button" onClick={() => setEdit(openCategory(c, d))} className={BTN_GHOST}>Edit</button></td>
+                </tr>); })}
             </tbody>
           </table>
         </div>
-      )}
-      {edit && <RangeDialog init={edit.r} isNew={edit.isNew} d={d} onClose={() => setEdit(null)} onSave={(r) => { set((x) => { x.ranges ??= []; const i = x.ranges.findIndex((y) => y.id === r.id); if (i >= 0) x.ranges[i] = r; else x.ranges.push(r); }); setEdit(null); }} />}
-      <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove the {catOf(del?.categoryId ?? "")?.name} range?</AlertDialogTitle>
-            <AlertDialogDescription>New assets in this category will use the global sequence. IDs already issued stay as they are.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { const id = del!.id; set((x) => { x.ranges = (x.ranges ?? []).filter((y) => y.id !== id); }); setDel(null); }}>Remove</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      ) : <p className="text-[12px] text-muted-foreground">No category has its own IDs yet. Use “Customise category”, or turn on “Custom asset IDs” when creating a category.</p>}
+      {edit && <CategoryDialog cat={edit} isNew={false} all={d.categories} orgDep={d.depreciation} numbering={d.numbering} range={rangeOf(edit.id)} onClose={() => setEdit(null)}
+        onSave={(c, rg) => { set((x) => applyCategory(x, c, rg)); setEdit(null); }} />}
     </div>
-  );
-}
-
-function RangeDialog({ init, isNew, d, onClose, onSave }: { init: NumberRange; isNew: boolean; d: AssetSettings; onClose: () => void; onSave: (r: NumberRange) => void }) {
-  const [r, setR] = useState(init);
-  const [tried, setTried] = useState(false);
-  const all = (d.ranges ?? []).filter((x) => x.id !== r.id).concat(r);
-  const e = rangeIssues(r, all, d.numbering.seqLength);
-  const issued = !isNew && init.next > init.start;
-  const up = (p: Partial<NumberRange>) => setR((x) => { const n = { ...x, ...p }; if (!issued) n.next = n.start; return n; });
-  const err = (k: string) => (tried ? e[k] : undefined);
-  const submit = () => { setTried(true); if (Object.keys(e).length) return; onSave({ ...r, next: Math.max(r.next, r.start) }); };
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{isNew ? "Add range" : "Edit range"}</DialogTitle><DialogDescription>Override the global sequence for specific asset classes.</DialogDescription></DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Category" htmlFor="rg-cat" error={err("categoryId")}>
-            <Select id="rg-cat" value={r.categoryId} disabled={issued} invalid={!!err("categoryId")} onChange={(ev) => { const c = d.categories.find((x) => x.id === ev.target.value); up({ categoryId: ev.target.value, prefix: r.prefix || (c?.code.slice(0, 3) ?? "") }); }}>
-              <option value="">Choose…</option>{d.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-          </Field>
-          <Field label="Prefix" htmlFor="rg-prefix" error={err("prefix")}>
-            <TextInput id="rg-prefix" value={r.prefix} maxLength={6} invalid={!!err("prefix")} onChange={(ev) => up({ prefix: ev.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} />
-          </Field>
-          <Field label="First number" htmlFor="rg-start" error={err("start")}>
-            <TextInput id="rg-start" className="num" inputMode="numeric" disabled={issued} value={r.start} invalid={!!err("start")} onChange={(ev) => up({ start: int(ev.target.value) })} />
-          </Field>
-          <Field label="Last number" htmlFor="rg-end" error={err("end")}>
-            <TextInput id="rg-end" className="num" inputMode="numeric" value={r.end} invalid={!!err("end")} onChange={(ev) => up({ end: int(ev.target.value) })} />
-          </Field>
-        </div>
-        <DialogFooter>
-          <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
-          <button type="button" onClick={submit} className={BTN_PRIMARY}>{isNew ? "Add range" : "Save"}</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -413,13 +365,13 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
               <p className="truncate text-[13px] font-medium">{c.name}</p>
               <p className="text-[11px] text-muted-foreground">{plural(count(c.id), "asset")} · {c.depreciation ? `${c.depreciation.method === "straight_line" ? "Straight line" : METHOD_LABEL[c.depreciation.method]}${c.depreciation.method !== "none" ? `, ${c.depreciation.usefulLifeMonths} mo` : ""}` : "Org default depreciation"}</p>
             </div>
-            {canEdit && <RowMenu label={`${c.name} actions`} items={[{ label: "Edit", onSelect: () => setEdit(structuredClone(c)) }, { label: "Delete", danger: true, onSelect: () => setDel(c) }]} />}
+            {canEdit && <RowMenu label={`${c.name} actions`} items={[{ label: "Edit", onSelect: () => setEdit(openCategory(c, d)) }, { label: "Delete", danger: true, onSelect: () => setDel(c) }]} />}
           </div>
         ))}
       </div>
 
-      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} orgDep={d.depreciation} numbering={d.numbering} onClose={() => setEdit(null)}
-        onSave={(c) => { set((x) => { const i = x.categories.findIndex((y) => y.id === c.id); if (i >= 0) x.categories[i] = c; else x.categories.push(c); }); setEdit(null); }} />}
+      {edit && <CategoryDialog cat={edit} isNew={isNew} all={d.categories} orgDep={d.depreciation} numbering={d.numbering} range={d.ranges?.find((r) => r.categoryId === edit.id)} onClose={() => setEdit(null)}
+        onSave={(c, rg) => { set((x) => applyCategory(x, c, rg)); setEdit(null); }} />}
 
       <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
         <AlertDialogContent>
@@ -437,14 +389,49 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
   );
 }
 
-function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; numbering: AssetSettings["numbering"]; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
+/** Saves a category together with its optional own number range (one place for both). */
+function applyCategory(x: AssetSettings, c: AssetCategory, rg: NumberRange | null) {
+  const i = x.categories.findIndex((y) => y.id === c.id);
+  if (i >= 0) x.categories[i] = c; else x.categories.push(c);
+  x.ranges = (x.ranges ?? []).filter((r) => r.categoryId !== c.id);
+  if (rg && c.idFormat) x.ranges.push({ ...rg, categoryId: c.id, prefix: c.idFormat.prefix || c.code });
+}
+
+/** Opens a category for editing; a legacy range without its own format is shown as a custom format with the same result. */
+function openCategory(c: AssetCategory, d: AssetSettings): AssetCategory {
+  const x = structuredClone(c);
+  const r = d.ranges?.find((y) => y.categoryId === c.id);
+  if (r && !x.idFormat) { const n = d.numbering; x.idFormat = { prefix: r.prefix, separator: n.separator, includeCategory: n.includeCategory, yearFormat: n.yearFormat, seqLength: n.seqLength }; }
+  return x;
+}
+
+function CategoryDialog({ cat, isNew, all, orgDep, numbering, range, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; numbering: AssetSettings["numbering"]; range?: NumberRange; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory, range: NumberRange | null) => void }) {
   const [c, setC] = useState(cat);
+  const [rg, setRg] = useState<NumberRange | null>(range ? structuredClone(range) : null);
   const [codeTouched, setCodeTouched] = useState(!!cat.code);
   const [tried, setTried] = useState(false);
+  const issued = !!range && range.next > range.start;
   const baseErr = categoryIssues(c, all);
   const life = c.depreciation?.usefulLifeMonths;
-  const err: Record<string, string> = { ...baseErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
+  const digits = c.idFormat?.seqLength ?? numbering.seqLength;
+  const rangeErr: Record<string, string> = {};
+  if (rg && c.idFormat) {
+    if (!Number.isInteger(rg.start) || rg.start < 1) rangeErr.rgStart = "Start at 1 or higher.";
+    if (!Number.isInteger(rg.end) || rg.end <= rg.start) rangeErr.rgEnd = "Must be higher than the first number.";
+    else if (String(rg.end).length > digits) rangeErr.rgEnd = `Doesn't fit in ${digits} digits.`;
+    else if (issued && rg.end < range!.next - 1) rangeErr.rgEnd = `Already issued up to ${range!.next - 1}.`;
+  }
+  const err: Record<string, string> = { ...baseErr, ...rangeErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
   const show = (k: string) => (tried ? err[k] : undefined);
+  const nextSeq = rg && c.idFormat ? Math.max(rg.next, rg.start) : numbering.nextSeq;
+  const example = formatAssetId(numbering, c, new Date(), nextSeq);
+  const left = rg ? Math.max(0, rg.end - Math.max(rg.next, rg.start) + 1) : 0;
+  const toggleCustom = (v: boolean) => {
+    setC({ ...c, idFormat: v ? { prefix: numbering.prefix, separator: numbering.separator, includeCategory: numbering.includeCategory, yearFormat: numbering.yearFormat, seqLength: numbering.seqLength } : undefined });
+    if (!v) setRg(null);
+  };
+  const setOwnRange = (own: boolean) => setRg(own ? (range ? structuredClone(range) : { id: uidx("rg"), categoryId: c.id, prefix: c.idFormat?.prefix || c.code, start: 1, end: Math.min(1000, 10 ** digits - 1), next: 1 }) : null);
+  const upRg = (p: Partial<NumberRange>) => setRg((x) => { if (!x) return x; const n = { ...x, ...p }; if (!issued) n.next = n.start; return n; });
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
@@ -490,10 +477,10 @@ function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }:
         <div className="rounded-lg border border-border">
           <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium">Custom ID format</p>
-              <p className="text-xs text-muted-foreground">{c.idFormat ? "Only assets in this category use this format." : <>Optional. Uses the global format: <span className="num text-foreground">{formatAssetId(numbering, c)}</span></>}</p>
+              <p className="text-[13px] font-medium">Custom asset IDs</p>
+              <p className="text-xs text-muted-foreground">{c.idFormat ? "Own format and, optionally, its own number range." : <>Optional. Uses the global format: <span className="num text-foreground">{formatAssetId(numbering, c)}</span></>}</p>
             </div>
-            <Switch checked={!!c.idFormat} aria-label="Use a custom ID format" onCheckedChange={(v) => setC({ ...c, idFormat: v ? { prefix: numbering.prefix, separator: numbering.separator, includeCategory: numbering.includeCategory, yearFormat: numbering.yearFormat, seqLength: numbering.seqLength } : undefined })} />
+            <Switch checked={!!c.idFormat} aria-label="Use custom asset IDs" onCheckedChange={toggleCustom} />
           </label>
           {c.idFormat && (() => { const f = c.idFormat; const uf = (p: Partial<typeof f>) => setC({ ...c, idFormat: { ...f, ...p } }); return (
             <div className="grid gap-3 border-t border-border px-3 py-3 sm:grid-cols-2">
@@ -514,12 +501,33 @@ function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }:
                 <TextInput id="cf-seq" className="num" inputMode="numeric" value={String(f.seqLength || "")} invalid={!!show("fmtSeq")} onChange={(e) => uf({ seqLength: parseInt(e.target.value.replace(/\D/g, "")) || 0 })} />
               </Field>
               <label className="flex items-center gap-2 text-[13px] sm:col-span-2"><input type="checkbox" checked={f.includeCategory} onChange={(e) => uf({ includeCategory: e.target.checked })} /> Include category code{c.code ? <span className="num text-muted-foreground">({c.code})</span> : null}</label>
-              <p className="text-xs text-muted-foreground sm:col-span-2">Example: <span className="num font-medium text-foreground">{formatAssetId(numbering, c)}</span> · existing assets keep their IDs.</p>
+
+              <div className="sm:col-span-2 border-t border-border pt-3">
+                <p className="mb-2 text-[12px] font-medium">Numbering</p>
+                <div className="grid gap-1.5" role="radiogroup" aria-label="Numbering">
+                  {[{ own: false, t: "Share the global sequence", s: `Continues from ${numbering.nextSeq} with other categories` }, { own: true, t: "Own number range", s: "Reserve a block of numbers just for this category" }].map((o) => (
+                    <label key={String(o.own)} className={cn("flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2", !!rg === o.own ? "border-primary bg-primary/5" : "border-border")}>
+                      <input type="radio" name="cf-numbering" className="mt-0.5" checked={!!rg === o.own} disabled={issued && !o.own} onChange={() => setOwnRange(o.own)} />
+                      <span className="min-w-0"><span className="block text-[13px]">{o.t}</span><span className="block text-[11px] text-muted-foreground">{o.s}</span></span>
+                    </label>
+                  ))}
+                </div>
+                {issued && <p className="mt-1.5 text-[11px] text-muted-foreground">IDs have been issued from this range, so it can't be switched off here.</p>}
+              </div>
+              {rg && <>
+                <Field label="First number" htmlFor="rg-start" error={show("rgStart")} hint={issued ? "Locked — IDs already issued" : undefined}>
+                  <TextInput id="rg-start" className="num" inputMode="numeric" disabled={issued} value={rg.start} invalid={!!show("rgStart")} onChange={(e) => upRg({ start: int(e.target.value) })} />
+                </Field>
+                <Field label="Last number" htmlFor="rg-end" error={show("rgEnd")} hint={`${left.toLocaleString()} IDs left`}>
+                  <TextInput id="rg-end" className="num" inputMode="numeric" value={rg.end} invalid={!!show("rgEnd")} onChange={(e) => upRg({ end: int(e.target.value) })} />
+                </Field>
+              </>}
+              <p className="text-xs text-muted-foreground sm:col-span-2">Next ID: <span className="num font-medium text-foreground">{example}</span> · existing assets keep their IDs.</p>
             </div>); })()}
         </div>
         <DialogFooter>
           <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
-          <button type="button" onClick={() => { setTried(true); if (!Object.keys(err).length) onSave({ ...c, name: c.name.trim() }); }} className={BTN_PRIMARY}>{isNew ? "Create" : "Save"}</button>
+          <button type="button" onClick={() => { setTried(true); if (!Object.keys(err).length) onSave({ ...c, name: c.name.trim() }, c.idFormat ? rg : null); }} className={BTN_PRIMARY}>{isNew ? "Create" : "Save"}</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
