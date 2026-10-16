@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Box, ChevronRight, Lock, Minus, MoreHorizontal, Plus } from "lucide-react";
+import { AlertTriangle, Armchair, Box, Building2, Bus, Camera, Cpu, Forklift, Laptop, Monitor, Package, Smartphone, Truck, Wrench, KeyRound, ChevronRight, Lock, Minus, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -192,8 +192,11 @@ function RowMenu({ label, items }: { label: string; items: { label: string; onSe
   );
 }
 
-function CatIcon() {
-  return <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><Box className="size-3.5" /></span>;
+const CATEGORY_ICONS = { box: Box, laptop: Laptop, monitor: Monitor, phone: Smartphone, cpu: Cpu, truck: Truck, bus: Bus, forklift: Forklift, furniture: Armchair, building: Building2, tool: Wrench, camera: Camera, license: KeyRound, package: Package } as const;
+type CatIconKey = keyof typeof CATEGORY_ICONS;
+function CatIcon({ icon }: { icon?: string }) {
+  const I = CATEGORY_ICONS[(icon as CatIconKey) ?? "box"] ?? Box;
+  return <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><I className="size-3.5" /></span>;
 }
 
 /* ───────────── Numbering ───────────── */
@@ -327,7 +330,7 @@ function RangesCard({ d, set }: SP) {
             <tbody>
               {ranges.map((r) => (
                 <tr key={r.id}>
-                  <td><span className="flex items-center gap-2 text-[13px]"><CatIcon />{catOf(r.categoryId)?.name ?? "Deleted category"}</span></td>
+                  <td><span className="flex items-center gap-2 text-[13px]"><CatIcon icon={catOf(r.categoryId)?.icon} />{catOf(r.categoryId)?.name ?? "Deleted category"}</span></td>
                   <td className="num text-[12px]">{format(r)}</td>
                   <td className="num text-[12px]">{pad(r.start)} – {pad(r.end)}</td>
                   <td className="num text-[12px]">{nextOf(r)}</td>
@@ -381,6 +384,27 @@ function RangeDialog({ init, isNew, d, onClose, onSave }: { init: NumberRange; i
             <TextInput id="rg-end" className="num" inputMode="numeric" value={r.end} invalid={!!err("end")} onChange={(ev) => up({ end: int(ev.target.value) })} />
           </Field>
         </div>
+        <div>
+          <span className="pd-label">Icon</span>
+          <div role="radiogroup" aria-label="Category icon" className="flex flex-wrap gap-1.5">
+            {(Object.keys(CATEGORY_ICONS) as CatIconKey[]).map((k) => { const I = CATEGORY_ICONS[k]; const on = (c.icon ?? "box") === k; return (
+              <button key={k} type="button" role="radio" aria-checked={on} aria-label={k} title={k} onClick={() => setC({ ...c, icon: k })}
+                className={cn("inline-flex size-8 items-center justify-center rounded-md border transition-colors", on ? "border-primary bg-accent text-primary" : "border-border text-muted-foreground hover:bg-subtle hover:text-foreground")}><I className="size-4" /></button>); })}
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
+          <Field label="Default depreciation" htmlFor="c-dep">
+            <Select id="c-dep" value={c.depreciation?.method ?? "inherit"} onChange={(e) => { const v = e.target.value; setC({ ...c, depreciation: v === "inherit" ? undefined : { method: v as DepMethod, usefulLifeMonths: c.depreciation?.usefulLifeMonths ?? orgDep?.usefulLifeMonths ?? 60, salvagePct: c.depreciation?.salvagePct ?? orgDep?.salvagePct ?? 0 } }); }}>
+              <option value="inherit">Use org default{orgDep ? ` (${orgDep.method === "straight_line" ? "Straight line" : METHOD_LABEL[orgDep.method as DepMethod]})` : ""}</option>
+              {(Object.keys(METHOD_LABEL) as DepMethod[]).map((k) => <option key={k} value={k}>{k === "straight_line" ? "Straight line" : METHOD_LABEL[k]}</option>)}
+            </Select>
+          </Field>
+          <Field label="Default useful life (months)" htmlFor="c-life" error={show("life")}>
+            <TextInput id="c-life" className="num" inputMode="numeric" invalid={!!show("life")} disabled={!c.depreciation || c.depreciation.method === "none"}
+              value={c.depreciation && c.depreciation.method !== "none" ? String(life ?? "") : String(orgDep?.usefulLifeMonths ?? "")}
+              onChange={(e) => { if (!c.depreciation) return; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...c.depreciation, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
+          </Field>
+        </div>
         <DialogFooter>
           <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
           <button type="button" onClick={submit} className={BTN_PRIMARY}>{isNew ? "Add range" : "Save"}</button>
@@ -404,10 +428,10 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {d.categories.map((c) => (
           <div key={c.id} className="flex items-center gap-2.5 rounded-lg border border-border p-2.5">
-            <CatIcon />
+            <CatIcon icon={c.icon} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium">{c.name}</p>
-              <p className="text-[11px] text-muted-foreground">{plural(count(c.id), "asset")}</p>
+              <p className="text-[11px] text-muted-foreground">{plural(count(c.id), "asset")} · {c.depreciation ? `${c.depreciation.method === "straight_line" ? "Straight line" : METHOD_LABEL[c.depreciation.method]}${c.depreciation.method !== "none" ? `, ${c.depreciation.usefulLifeMonths} mo` : ""}` : "Org default depreciation"}</p>
             </div>
             {canEdit && <RowMenu label={`${c.name} actions`} items={[{ label: "Edit", onSelect: () => setEdit(structuredClone(c)) }, { label: "Delete", danger: true, onSelect: () => setDel(c) }]} />}
           </div>
@@ -437,7 +461,10 @@ function CategoryDialog({ cat, isNew, all, onClose, onSave }: { cat: AssetCatego
   const [c, setC] = useState(cat);
   const [codeTouched, setCodeTouched] = useState(!!cat.code);
   const [tried, setTried] = useState(false);
-  const err = categoryIssues(c, all);
+  const baseErr = categoryIssues(c, all);
+  const life = c.depreciation?.usefulLifeMonths;
+  const err: Record<string, string> = { ...baseErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
+  const orgDep = useDB().assetSettings?.depreciation;
   const show = (k: string) => (tried ? err[k] : undefined);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
