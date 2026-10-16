@@ -194,7 +194,7 @@ function CheckOutFlow({ initial, meId, layout, setLayout }: { initial?: string; 
   const [due, setDue] = useState(addDays(today(), s.checkout.defaultDays));
   const [cond, setCond] = useState<Condition>("good");
   const [note, setNote] = useState("");
-  const [ack, setAck] = useState(false);
+  const ack = true;
   const [tried, setTried] = useState(false);
 
   const needle = q.trim().toLowerCase();
@@ -215,7 +215,7 @@ function CheckOutFlow({ initial, meId, layout, setLayout }: { initial?: string; 
     const n = picked.length;
     mutate((d) => picked.forEach((a) => checkOut(d, a.id, holder!, due, s.checkout.requireCondition ? cond : a.condition, meId, note)));
     toast.success(`${n === 1 ? picked[0].name : `${n} assets`} checked out to ${holderName(holder, db)}`, { description: `Due back ${fmtDate(due)}` });
-    setSel([]); setNote(""); setAck(false); setTried(false); setHolder(undefined);
+    setSel([]); setNote(""); setTried(false); setHolder(undefined);
   };
 
   return (
@@ -255,12 +255,6 @@ function CheckOutFlow({ initial, meId, layout, setLayout }: { initial?: string; 
             <Field label="Condition when it leaves" htmlFor="co-c"><Select id="co-c" value={cond} onChange={(e) => setCond(e.target.value as Condition)}>{CONDS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
           )}
           <Field label="Purpose (optional)" htmlFor="co-n"><TextArea id="co-n" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Site survey at Riverside Plaza" /></Field>
-          {s.checkout.requireAcknowledgement && (
-            <div>
-              <Checkbox checked={ack} onChange={(e) => setAck(e.target.checked)} label={<span className="text-[13px]">Borrower accepts responsibility for the asset</span>} />
-              {shown.ack && <p className="mt-1 text-xs text-destructive">{shown.ack}</p>}
-            </div>
-          )}
           {s.checkout.requireApproval && <p className="flex gap-1.5 rounded-md bg-warning-soft p-2 text-[12px] text-warning"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" />Your settings ask for manager approval on check-outs; it's recorded in the history.</p>}
           <button type="button" onClick={submit} className={cn(BTN_PRIMARY, "w-full")}><LogOut className="size-4" />Check out{picked.length > 1 ? ` ${picked.length} assets` : ""}</button>
         </div>
