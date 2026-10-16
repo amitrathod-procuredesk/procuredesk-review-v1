@@ -309,3 +309,11 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
   aside, header nav, .no-print, [data-sonner-toaster] { display: none !important; }
   body { background: white !important; }
 }
+
+/* Quiet horizontal scroll: thin, invisible until the table is hovered or focused */
+.pd-scroll-quiet { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.pd-scroll-quiet:hover, .pd-scroll-quiet:focus-within { scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent) transparent; }
+.pd-scroll-quiet::-webkit-scrollbar { height: 6px; }
+.pd-scroll-quiet::-webkit-scrollbar-track { background: transparent; }
+.pd-scroll-quiet::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
+.pd-scroll-quiet:hover::-webkit-scrollbar-thumb, .pd-scroll-quiet:focus-within::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 18%, transparent); }
