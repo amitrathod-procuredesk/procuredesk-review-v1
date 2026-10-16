@@ -437,14 +437,49 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
   );
 }
 
-function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; numbering: AssetSettings["numbering"]; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory) => void }) {
+/** Saves a category together with its optional own number range (one place for both). */
+function applyCategory(x: AssetSettings, c: AssetCategory, rg: NumberRange | null) {
+  const i = x.categories.findIndex((y) => y.id === c.id);
+  if (i >= 0) x.categories[i] = c; else x.categories.push(c);
+  x.ranges = (x.ranges ?? []).filter((r) => r.categoryId !== c.id);
+  if (rg && c.idFormat) x.ranges.push({ ...rg, categoryId: c.id, prefix: c.idFormat.prefix || c.code });
+}
+
+/** Opens a category for editing; a legacy range without its own format is shown as a custom format with the same result. */
+function openCategory(c: AssetCategory, d: AssetSettings): AssetCategory {
+  const x = structuredClone(c);
+  const r = d.ranges?.find((y) => y.categoryId === c.id);
+  if (r && !x.idFormat) { const n = d.numbering; x.idFormat = { prefix: r.prefix, separator: n.separator, includeCategory: n.includeCategory, yearFormat: n.yearFormat, seqLength: n.seqLength }; }
+  return x;
+}
+
+function CategoryDialog({ cat, isNew, all, orgDep, numbering, range, onClose, onSave }: { cat: AssetCategory; orgDep?: AssetSettings["depreciation"]; numbering: AssetSettings["numbering"]; range?: NumberRange; isNew: boolean; all: AssetCategory[]; onClose: () => void; onSave: (c: AssetCategory, range: NumberRange | null) => void }) {
   const [c, setC] = useState(cat);
+  const [rg, setRg] = useState<NumberRange | null>(range ? structuredClone(range) : null);
   const [codeTouched, setCodeTouched] = useState(!!cat.code);
   const [tried, setTried] = useState(false);
+  const issued = !!range && range.next > range.start;
   const baseErr = categoryIssues(c, all);
   const life = c.depreciation?.usefulLifeMonths;
-  const err: Record<string, string> = { ...baseErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
+  const digits = c.idFormat?.seqLength ?? numbering.seqLength;
+  const rangeErr: Record<string, string> = {};
+  if (rg && c.idFormat) {
+    if (!Number.isInteger(rg.start) || rg.start < 1) rangeErr.rgStart = "Start at 1 or higher.";
+    if (!Number.isInteger(rg.end) || rg.end <= rg.start) rangeErr.rgEnd = "Must be higher than the first number.";
+    else if (String(rg.end).length > digits) rangeErr.rgEnd = `Doesn't fit in ${digits} digits.`;
+    else if (issued && rg.end < range!.next - 1) rangeErr.rgEnd = `Already issued up to ${range!.next - 1}.`;
+  }
+  const err: Record<string, string> = { ...baseErr, ...rangeErr, ...(c.depreciation && c.depreciation.method !== "none" && (!life || life < 1 || life > 600) ? { life: "Enter 1 to 600 months" } : {}) };
   const show = (k: string) => (tried ? err[k] : undefined);
+  const nextSeq = rg && c.idFormat ? Math.max(rg.next, rg.start) : numbering.nextSeq;
+  const example = formatAssetId(numbering, c, new Date(), nextSeq);
+  const left = rg ? Math.max(0, rg.end - Math.max(rg.next, rg.start) + 1) : 0;
+  const toggleCustom = (v: boolean) => {
+    setC({ ...c, idFormat: v ? { prefix: numbering.prefix, separator: numbering.separator, includeCategory: numbering.includeCategory, yearFormat: numbering.yearFormat, seqLength: numbering.seqLength } : undefined });
+    if (!v) setRg(null);
+  };
+  const setOwnRange = (own: boolean) => setRg(own ? (range ? structuredClone(range) : { id: uidx("rg"), categoryId: c.id, prefix: c.idFormat?.prefix || c.code, start: 1, end: Math.min(1000, 10 ** digits - 1), next: 1 }) : null);
+  const upRg = (p: Partial<NumberRange>) => setRg((x) => { if (!x) return x; const n = { ...x, ...p }; if (!issued) n.next = n.start; return n; });
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
@@ -490,10 +525,10 @@ function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }:
         <div className="rounded-lg border border-border">
           <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium">Custom ID format</p>
-              <p className="text-xs text-muted-foreground">{c.idFormat ? "Only assets in this category use this format." : <>Optional. Uses the global format: <span className="num text-foreground">{formatAssetId(numbering, c)}</span></>}</p>
+              <p className="text-[13px] font-medium">Custom asset IDs</p>
+              <p className="text-xs text-muted-foreground">{c.idFormat ? "Own format and, optionally, its own number range." : <>Optional. Uses the global format: <span className="num text-foreground">{formatAssetId(numbering, c)}</span></>}</p>
             </div>
-            <Switch checked={!!c.idFormat} aria-label="Use a custom ID format" onCheckedChange={(v) => setC({ ...c, idFormat: v ? { prefix: numbering.prefix, separator: numbering.separator, includeCategory: numbering.includeCategory, yearFormat: numbering.yearFormat, seqLength: numbering.seqLength } : undefined })} />
+            <Switch checked={!!c.idFormat} aria-label="Use custom asset IDs" onCheckedChange={toggleCustom} />
           </label>
           {c.idFormat && (() => { const f = c.idFormat; const uf = (p: Partial<typeof f>) => setC({ ...c, idFormat: { ...f, ...p } }); return (
             <div className="grid gap-3 border-t border-border px-3 py-3 sm:grid-cols-2">
@@ -514,12 +549,33 @@ function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }:
                 <TextInput id="cf-seq" className="num" inputMode="numeric" value={String(f.seqLength || "")} invalid={!!show("fmtSeq")} onChange={(e) => uf({ seqLength: parseInt(e.target.value.replace(/\D/g, "")) || 0 })} />
               </Field>
               <label className="flex items-center gap-2 text-[13px] sm:col-span-2"><input type="checkbox" checked={f.includeCategory} onChange={(e) => uf({ includeCategory: e.target.checked })} /> Include category code{c.code ? <span className="num text-muted-foreground">({c.code})</span> : null}</label>
-              <p className="text-xs text-muted-foreground sm:col-span-2">Example: <span className="num font-medium text-foreground">{formatAssetId(numbering, c)}</span> · existing assets keep their IDs.</p>
+
+              <div className="sm:col-span-2 border-t border-border pt-3">
+                <p className="mb-2 text-[12px] font-medium">Numbering</p>
+                <div className="grid gap-1.5" role="radiogroup" aria-label="Numbering">
+                  {[{ own: false, t: "Share the global sequence", s: `Continues from ${numbering.nextSeq} with other categories` }, { own: true, t: "Own number range", s: "Reserve a block of numbers just for this category" }].map((o) => (
+                    <label key={String(o.own)} className={cn("flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2", !!rg === o.own ? "border-primary bg-primary/5" : "border-border")}>
+                      <input type="radio" name="cf-numbering" className="mt-0.5" checked={!!rg === o.own} disabled={issued && !o.own} onChange={() => setOwnRange(o.own)} />
+                      <span className="min-w-0"><span className="block text-[13px]">{o.t}</span><span className="block text-[11px] text-muted-foreground">{o.s}</span></span>
+                    </label>
+                  ))}
+                </div>
+                {issued && <p className="mt-1.5 text-[11px] text-muted-foreground">IDs have been issued from this range, so it can't be switched off here.</p>}
+              </div>
+              {rg && <>
+                <Field label="First number" htmlFor="rg-start" error={show("rgStart")} hint={issued ? "Locked — IDs already issued" : undefined}>
+                  <TextInput id="rg-start" className="num" inputMode="numeric" disabled={issued} value={rg.start} invalid={!!show("rgStart")} onChange={(e) => upRg({ start: int(e.target.value) })} />
+                </Field>
+                <Field label="Last number" htmlFor="rg-end" error={show("rgEnd")} hint={`${left.toLocaleString()} IDs left`}>
+                  <TextInput id="rg-end" className="num" inputMode="numeric" value={rg.end} invalid={!!show("rgEnd")} onChange={(e) => upRg({ end: int(e.target.value) })} />
+                </Field>
+              </>}
+              <p className="text-xs text-muted-foreground sm:col-span-2">Next ID: <span className="num font-medium text-foreground">{example}</span> · existing assets keep their IDs.</p>
             </div>); })()}
         </div>
         <DialogFooter>
           <button type="button" onClick={onClose} className={BTN_GHOST}>Cancel</button>
-          <button type="button" onClick={() => { setTried(true); if (!Object.keys(err).length) onSave({ ...c, name: c.name.trim() }); }} className={BTN_PRIMARY}>{isNew ? "Create" : "Save"}</button>
+          <button type="button" onClick={() => { setTried(true); if (!Object.keys(err).length) onSave({ ...c, name: c.name.trim() }, c.idFormat ? rg : null); }} className={BTN_PRIMARY}>{isNew ? "Create" : "Save"}</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
