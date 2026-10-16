@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Armchair, Box, Building2, Bus, Camera, Cpu, Forklift, Laptop, Monitor, Package, Smartphone, Truck, Wrench, KeyRound, ChevronRight, Lock, Minus, MoreHorizontal, Plus } from "lucide-react";
+import { AlertTriangle, Car, Check, ChevronDown, Cog, Printer, Router, Server, Stethoscope, Armchair, Box, Building2, Bus, Camera, Cpu, Forklift, Laptop, Monitor, Package, Smartphone, Truck, Wrench, KeyRound, ChevronRight, Lock, Minus, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -192,7 +192,8 @@ function RowMenu({ label, items }: { label: string; items: { label: string; onSe
   );
 }
 
-const CATEGORY_ICONS = { box: Box, laptop: Laptop, monitor: Monitor, phone: Smartphone, cpu: Cpu, truck: Truck, bus: Bus, forklift: Forklift, furniture: Armchair, building: Building2, tool: Wrench, camera: Camera, license: KeyRound, package: Package } as const;
+const CATEGORY_ICONS = { box: Box, package: Package, laptop: Laptop, monitor: Monitor, phone: Smartphone, cpu: Cpu, printer: Printer, network: Router, server: Server, car: Car, truck: Truck, bus: Bus, forklift: Forklift, machinery: Cog, tool: Wrench, furniture: Armchair, building: Building2, medical: Stethoscope, camera: Camera, license: KeyRound } as const;
+const CATEGORY_ICON_LABEL: Record<keyof typeof CATEGORY_ICONS, string> = { box: "General asset", package: "Package / inventory", laptop: "Laptops & computers", monitor: "Monitors & displays", phone: "Phones & tablets", cpu: "Electronics", printer: "Printers & scanners", network: "Network equipment", server: "Servers & data center", car: "Cars", truck: "Trucks", bus: "Buses", forklift: "Forklifts & heavy equipment", machinery: "Machinery", tool: "Tools", furniture: "Furniture", building: "Buildings & property", medical: "Medical equipment", camera: "Cameras & AV", license: "Software licenses" };
 type CatIconKey = keyof typeof CATEGORY_ICONS;
 function CatIcon({ icon }: { icon?: string }) {
   const I = CATEGORY_ICONS[(icon as CatIconKey) ?? "box"] ?? Box;
@@ -456,15 +457,23 @@ function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: Ass
             <TextInput id="c-code" className="num" maxLength={5} value={c.code} invalid={!!show("code")} onChange={(e) => { setCodeTouched(true); setC({ ...c, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") }); }} />
           </Field>
         </div>
-        <div>
-          <span className="pd-label">Icon</span>
-          <div role="radiogroup" aria-label="Category icon" className="flex flex-wrap gap-1.5">
-            {(Object.keys(CATEGORY_ICONS) as CatIconKey[]).map((k) => { const I = CATEGORY_ICONS[k]; const on = (c.icon ?? "box") === k; return (
-              <button key={k} type="button" role="radio" aria-checked={on} aria-label={k} title={k} onClick={() => setC({ ...c, icon: k })}
-                className={cn("inline-flex size-8 items-center justify-center rounded-md border transition-colors", on ? "border-primary bg-accent text-primary" : "border-border text-muted-foreground hover:bg-subtle hover:text-foreground")}><I className="size-4" /></button>); })}
-          </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
+        <Field label="Icon" htmlFor="c-icon">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button id="c-icon" type="button" className="pd-input flex items-center gap-2 text-left">
+                {(() => { const k = ((c.icon as CatIconKey) in CATEGORY_ICONS ? c.icon : "box") as CatIconKey; const I = CATEGORY_ICONS[k]; return <><I className="size-4 text-primary" /><span className="flex-1 truncate">{CATEGORY_ICON_LABEL[k]}</span></>; })()}
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto">
+              {(Object.keys(CATEGORY_ICONS) as CatIconKey[]).map((k) => { const I = CATEGORY_ICONS[k]; const on = (c.icon ?? "box") === k; return (
+                <DropdownMenuItem key={k} onSelect={() => setC({ ...c, icon: k })} className="gap-2 text-[13px]">
+                  <I className="size-4 text-muted-foreground" /><span className="flex-1">{CATEGORY_ICON_LABEL[k]}</span>{on && <Check className="size-3.5 text-primary" />}
+                </DropdownMenuItem>); })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Default depreciation" htmlFor="c-dep">
             <Select id="c-dep" value={c.depreciation?.method ?? "inherit"} onChange={(e) => { const v = e.target.value; setC({ ...c, depreciation: v === "inherit" ? undefined : { method: v as DepMethod, usefulLifeMonths: c.depreciation?.usefulLifeMonths ?? orgDep?.usefulLifeMonths ?? 60, salvagePct: c.depreciation?.salvagePct ?? orgDep?.salvagePct ?? 0 } }); }}>
               <option value="inherit">Use org default{orgDep ? ` (${orgDep.method === "straight_line" ? "Straight line" : METHOD_LABEL[orgDep.method as DepMethod]})` : ""}</option>
@@ -472,9 +481,10 @@ function CategoryDialog({ cat, isNew, all, orgDep, onClose, onSave }: { cat: Ass
             </Select>
           </Field>
           <Field label="Default useful life (months)" htmlFor="c-life" error={show("life")}>
-            <TextInput id="c-life" className="num" inputMode="numeric" invalid={!!show("life")} disabled={!c.depreciation || c.depreciation.method === "none"}
-              value={c.depreciation && c.depreciation.method !== "none" ? String(life ?? "") : String(orgDep?.usefulLifeMonths ?? "")}
-              onChange={(e) => { if (!c.depreciation) return; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...c.depreciation, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
+            <TextInput id="c-life" className="num" inputMode="numeric" invalid={!!show("life")} disabled={c.depreciation?.method === "none"}
+              value={c.depreciation ? (c.depreciation.method === "none" ? "" : String(life || "")) : String(orgDep?.usefulLifeMonths ?? "")}
+              placeholder={c.depreciation?.method === "none" ? "Not depreciated" : undefined}
+              onChange={(e) => { const base = c.depreciation ?? { method: (orgDep?.method ?? "straight_line") as DepMethod, usefulLifeMonths: orgDep?.usefulLifeMonths ?? 60, salvagePct: orgDep?.salvagePct ?? 0 }; const n = parseInt(e.target.value.replace(/\D/g, "")); setC({ ...c, depreciation: { ...base, usefulLifeMonths: Number.isFinite(n) ? n : 0 } }); }} />
           </Field>
         </div>
         <DialogFooter>
