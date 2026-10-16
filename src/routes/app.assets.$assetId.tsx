@@ -118,7 +118,7 @@ function AssetPage() {
         <div className="min-w-0">
           <div role="tablist" className="pd-scroll-hide mb-3 flex gap-1 overflow-x-auto border-b border-border">
             {TABS.map((t) => {
-              const n = t.id === "repairs" ? a.repairs.length + (a.repair ? 1 : 0) : t.id === "maintenance" ? a.maintenanceLog.length : t.id === "files" ? a.photos.length + a.docs.length : t.id === "history" ? a.history.length : 0;
+              const n = t.id === "maintenance" ? a.maintenanceLog.length : t.id === "files" ? a.photos.length + a.docs.length : t.id === "history" ? a.history.length : 0;
               return <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={cn("-mb-px flex h-9 shrink-0 items-center gap-1.5 border-b-2 px-2 text-[13px]", tab === t.id ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>{t.label}{n > 0 && <span className="num rounded bg-subtle px-1 text-[11px] text-muted-foreground">{n}</span>}</button>;
             })}
           </div>
