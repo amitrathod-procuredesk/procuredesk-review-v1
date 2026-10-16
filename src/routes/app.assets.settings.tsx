@@ -301,48 +301,16 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
   );
 }
 
-/** Overview of categories with their own ID format or number range; editing happens in the category window. */
-function RangesCard({ d, set }: SP) {
-  const [edit, setEdit] = useState<AssetCategory | null>(null);
-  const rangeOf = (id: string) => d.ranges?.find((r) => r.categoryId === id);
-  const custom = d.categories.filter((c) => c.idFormat || rangeOf(c.id));
-  const others = d.categories.filter((c) => !custom.includes(c));
-  const startCustom = (c: AssetCategory) => { const x = openCategory(c, d); const n = d.numbering; x.idFormat ??= { prefix: n.prefix, separator: n.separator, includeCategory: n.includeCategory, yearFormat: n.yearFormat, seqLength: n.seqLength }; setEdit(x); };
+/** Read-only pointer to categories with their own IDs; all editing lives in Categories. */
+function RangesCard({ d }: SP) {
+  const custom = d.categories.filter((c) => c.idFormat || d.ranges?.some((r) => r.categoryId === c.id));
+  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
   return (
-    <div className="mt-4 rounded-lg border border-border p-3">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[13px] font-semibold">Category-specific IDs</h3>
-          <p className="text-[12px] text-muted-foreground">Categories with their own format or number range. All others use the global format above.</p>
-        </div>
-        {others.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><button type="button" className={BTN_OUTLINE}><Plus className="size-3.5" /> Customise category <ChevronDown className="size-3.5 text-muted-foreground" /></button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-              {others.map((c) => <DropdownMenuItem key={c.id} onSelect={() => startCustom(c)} className="gap-2 text-[13px]"><CatIcon icon={c.icon} />{c.name}</DropdownMenuItem>)}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-      {custom.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="pd-table min-w-[560px]">
-            <thead><tr><th>Category</th><th>Next ID</th><th>Numbering</th><th className="w-10" /></tr></thead>
-            <tbody>
-              {custom.map((c) => { const r = rangeOf(c.id); const digits = c.idFormat?.seqLength ?? d.numbering.seqLength; const pad = (x: number) => String(x).padStart(digits, "0"); const full = !!r && r.next > r.end; return (
-                <tr key={c.id}>
-                  <td><span className="flex items-center gap-2 text-[13px]"><CatIcon icon={c.icon} />{c.name}</span></td>
-                  <td className="num text-[12px]">{full ? <span className="text-destructive">Range full — uses global</span> : previewAssetId(d, c)}</td>
-                  <td className="text-[12px]">{r ? <><span className="num">{pad(r.start)} – {pad(r.end)}</span><span className="text-muted-foreground"> · {Math.max(0, r.end - r.next + 1).toLocaleString()} left</span></> : <span className="text-muted-foreground">Shared global sequence</span>}</td>
-                  <td className="text-right"><button type="button" onClick={() => setEdit(openCategory(c, d))} className={BTN_GHOST}>Edit</button></td>
-                </tr>); })}
-            </tbody>
-          </table>
-        </div>
-      ) : <p className="text-[12px] text-muted-foreground">No category has its own IDs yet. Use “Customise category”, or turn on “Custom asset IDs” when creating a category.</p>}
-      {edit && <CategoryDialog cat={edit} isNew={false} all={d.categories} orgDep={d.depreciation} numbering={d.numbering} range={rangeOf(edit.id)} onClose={() => setEdit(null)}
-        onSave={(c, rg) => { set((x) => applyCategory(x, c, rg)); setEdit(null); }} />}
-    </div>
+    <p className="mt-4 rounded-md border border-border px-3 py-2 text-[12px] text-muted-foreground">
+      {custom.length === 0 ? <>All categories use this format. To give a category its own IDs, turn on “Custom asset IDs” in its settings under <button type="button" onClick={() => go("categories")} className="font-medium text-foreground underline-offset-2 hover:underline">Categories</button>.</>
+        : <>{custom.length === 1 ? "1 category uses" : `${custom.length} categories use`} its own IDs: {custom.map((c, i) => (
+          <span key={c.id}>{i > 0 && ", "}<button type="button" onClick={() => go(`cat-${c.id}`)} className="font-medium text-foreground underline-offset-2 hover:underline">{c.name}</button> <span className="num">({previewAssetId(d, c)})</span></span>))}. Edit them under Categories.</>}
+    </p>
   );
 }
 
@@ -359,10 +327,10 @@ function CategoriesSection({ d, set, count, canEdit }: SP & { count: (id: string
       action={canEdit && <button type="button" onClick={() => setEdit(blank())} className={BTN_OUTLINE}><Plus className="size-3.5" /> New category</button>}>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {d.categories.map((c) => (
-          <div key={c.id} className="flex items-center gap-2.5 rounded-lg border border-border p-2.5">
+          <div key={c.id} id={`cat-${c.id}`} className="flex scroll-mt-20 items-center gap-2.5 rounded-lg border border-border p-2.5">
             <CatIcon icon={c.icon} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium">{c.name}</p>
+              <p className="flex items-center gap-1.5 text-[13px] font-medium"><span className="truncate">{c.name}</span>{(c.idFormat || d.ranges?.some((r) => r.categoryId === c.id)) && <span className="num shrink-0 rounded bg-muted px-1 py-px text-[10px] font-normal text-muted-foreground" title="Own asset IDs">{previewAssetId(d, c)}</span>}</p>
               <p className="text-[11px] text-muted-foreground">{plural(count(c.id), "asset")} · {c.depreciation ? `${c.depreciation.method === "straight_line" ? "Straight line" : METHOD_LABEL[c.depreciation.method]}${c.depreciation.method !== "none" ? `, ${c.depreciation.usefulLifeMonths} mo` : ""}` : "Org default depreciation"}</p>
             </div>
             {canEdit && <RowMenu label={`${c.name} actions`} items={[{ label: "Edit", onSelect: () => setEdit(openCategory(c, d)) }, { label: "Delete", danger: true, onSelect: () => setDel(c) }]} />}
