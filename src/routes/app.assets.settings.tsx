@@ -447,7 +447,7 @@ function CategoryDialog({ cat, isNew, all, orgDep, numbering, onClose, onSave }:
   const show = (k: string) => (tried ? err[k] : undefined);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader><DialogTitle>{isNew ? "New category" : "Edit category"}</DialogTitle><DialogDescription>Used to group assets and drive default depreciation.</DialogDescription></DialogHeader>
         <div className="grid gap-4 sm:grid-cols-[1fr_110px]">
           <Field label="Name" htmlFor="c-name" error={show("name")}>
