@@ -18,6 +18,8 @@ import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$asset
 import { Route as AppAssetsCheckoutRouteImport } from './routes/app.assets.checkout'
 import { Route as AppAssetsMaintenanceRouteImport } from './routes/app.assets.maintenance'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
+import { Route as AppReportsIndexRouteImport } from './routes/app.reports.index'
+import { Route as AppReportsReportIdRouteImport } from './routes/app.reports.$reportId'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
 import { Route as AppAssetsMaintenanceAssetIdRouteImport } from './routes/app.assets.maintenance_.$assetId'
 import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
@@ -70,6 +72,16 @@ const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
   path: '/assets/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
+  id: '/reports/$reportId',
+  path: '/reports/$reportId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRequestsIndexRoute = AppRequestsIndexRouteImport.update({
   id: '/requests/',
   path: '/requests/',
@@ -112,6 +124,8 @@ export interface FileRoutesByFullPath {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -128,6 +142,8 @@ export interface FileRoutesByTo {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/reports': typeof AppReportsIndexRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -146,6 +162,8 @@ export interface FileRoutesById {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance_/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
@@ -165,6 +183,8 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/reports/$reportId'
+    | '/app/reports/'
     | '/app/requests/'
     | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
@@ -181,6 +201,8 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/reports/$reportId'
+    | '/app/reports'
     | '/app/requests'
     | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
@@ -198,6 +220,8 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/reports/$reportId'
+    | '/app/reports/'
     | '/app/requests/'
     | '/app/assets/maintenance_/$assetId'
     | '/app/assets/register/new'
@@ -276,6 +300,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports/': {
+      id: '/app/reports/'
+      path: '/reports'
+      fullPath: '/app/reports/'
+      preLoaderRoute: typeof AppReportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports/$reportId': {
+      id: '/app/reports/$reportId'
+      path: '/reports/$reportId'
+      fullPath: '/app/reports/$reportId'
+      preLoaderRoute: typeof AppReportsReportIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/requests/': {
       id: '/app/requests/'
       path: '/requests'
@@ -329,6 +367,8 @@ interface AppRouteChildren {
   AppAssetsCheckoutRoute: typeof AppAssetsCheckoutRoute
   AppAssetsMaintenanceRoute: typeof AppAssetsMaintenanceRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
+  AppReportsReportIdRoute: typeof AppReportsReportIdRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppAssetsMaintenanceAssetIdRoute: typeof AppAssetsMaintenanceAssetIdRoute
   AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
@@ -345,6 +385,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssetsCheckoutRoute: AppAssetsCheckoutRoute,
   AppAssetsMaintenanceRoute: AppAssetsMaintenanceRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
+  AppReportsReportIdRoute: AppReportsReportIdRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppAssetsMaintenanceAssetIdRoute: AppAssetsMaintenanceAssetIdRoute,
   AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
