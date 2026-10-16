@@ -256,13 +256,13 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
           );
         };
         const marker = (
-          <span className={cn("absolute left-0 flex size-6 items-center justify-center rounded-full border text-[11px] font-medium transition-colors", multi ? "top-0" : "top-0.5", done ? "border-success bg-success text-primary-foreground" : active ? "border-pending bg-pending-soft text-pending" : "border-border bg-surface text-muted-foreground")}>
-            {done ? <Check className="size-3" /> : i + 1}
+          <span aria-label={`Step ${i + 1}${done ? ", complete" : active ? ", in progress" : ""}`} className={cn("num absolute left-0 flex size-4 items-center justify-center rounded-full text-[9px] font-semibold transition-colors", multi ? "top-1" : "top-1.5", done ? "bg-success text-primary-foreground" : active ? "bg-pending text-primary-foreground" : "bg-subtle text-muted-foreground ring-1 ring-border")}>
+            {done ? <Check className="size-2.5" strokeWidth={3} /> : i + 1}
           </span>
         );
         return (
-          <li key={s.id} className="relative pb-4 pl-9 last:pb-0 animate-in fade-in" style={{ animationDelay: `${i * 40}ms` }}>
-            {!last && <span className={cn("absolute bottom-0 left-[11px] top-7 w-px", done ? "bg-success/50" : "bg-border")} />}
+          <li key={s.id} className="relative pb-3 pl-6 last:pb-0 animate-in fade-in" style={{ animationDelay: `${i * 40}ms` }}>
+            {!last && <span className={cn("absolute bottom-0 left-[7.5px] top-6 w-px", done ? "bg-success/40" : "bg-border")} />}
             {marker}
             {!multi ? (
               person(s.approvals[0])
