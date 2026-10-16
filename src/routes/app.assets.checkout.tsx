@@ -215,7 +215,7 @@ function CheckOutFlow({ initial, meId, layout, setLayout }: { initial?: string; 
     const n = picked.length;
     mutate((d) => picked.forEach((a) => checkOut(d, a.id, holder!, due, s.checkout.requireCondition ? cond : a.condition, meId, note)));
     toast.success(`${n === 1 ? picked[0].name : `${n} assets`} checked out to ${holderName(holder, db)}`, { description: `Due back ${fmtDate(due)}` });
-    setSel([]); setNote(""); setAck(false); setTried(false); setHolder(undefined);
+    setSel([]); setNote(""); setTried(false); setHolder(undefined);
   };
 
   return (
