@@ -57,12 +57,11 @@ function CheckoutPage() {
             <h1 className="text-lg font-semibold tracking-tight">Check in / out</h1>
             <p className="text-[13px] text-muted-foreground">Lend assets to a person or job site, and record them when they come back.</p>
           </div>
+          <div role="tablist" aria-label="What do you want to do?" className="inline-flex rounded-lg border border-border bg-subtle p-0.5">
+            <ModeTab active={mode === "out"} onClick={() => setMode("out")} icon={LogOut} title="Check out" meta={String(lendable.length)} />
+            <ModeTab active={mode === "in"} onClick={() => setMode("in")} icon={LogIn} title="Check in" meta={String(out.length)} tone={overdue.length ? "danger" : undefined} />
+          </div>
         </div>
-      </div>
-
-      <div role="tablist" aria-label="What do you want to do?" className="grid gap-3 sm:grid-cols-2">
-        <ModeTab active={mode === "out"} onClick={() => setMode("out")} icon={LogOut} title="Check out" desc="Lend assets to a person or job site" meta={`${lendable.length} available`} />
-        <ModeTab active={mode === "in"} onClick={() => setMode("in")} icon={LogIn} title="Check in" desc="Record assets coming back" meta={`${out.length} out${overdue.length ? ` · ${overdue.length} overdue` : ""}`} tone={overdue.length ? "danger" : undefined} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -95,16 +94,13 @@ function CheckoutPage() {
 type Layout = "cards" | "table";
 type LayoutProps = { layout: Layout; setLayout: (l: Layout) => void };
 
-function ModeTab({ active, onClick, icon: I, title, desc, meta, tone }: { active: boolean; onClick: () => void; icon: typeof LogIn; title: string; desc: string; meta: string; tone?: "danger" }) {
+function ModeTab({ active, onClick, icon: I, title, meta, tone }: { active: boolean; onClick: () => void; icon: typeof LogIn; title: string; meta: string; tone?: "danger" }) {
   return (
     <button type="button" role="tab" aria-selected={active} onClick={onClick}
-      className={cn("pd-panel flex items-center gap-3 p-3 text-left transition-[border-color,box-shadow]", active ? "border-primary/50 ring-[3px] ring-primary/10" : "hover:border-primary/30")}>
-      <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full", active ? "bg-primary text-primary-foreground" : "bg-subtle text-muted-foreground")}><I className="size-4" /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold">{title}</span>
-        <span className="block truncate text-[12px] text-muted-foreground">{desc}</span>
-      </span>
-      <span className={cn("shrink-0 rounded-full bg-subtle px-2 py-0.5 text-[11px] font-medium", tone === "danger" ? "text-destructive" : "text-muted-foreground")}>{meta}</span>
+      className={cn("inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors", active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+      <I className="size-3.5" />
+      {title}
+      <span className={cn("rounded-full px-1.5 text-[11px] tabular-nums", tone === "danger" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground")}>{meta}</span>
     </button>
   );
 }
