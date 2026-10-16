@@ -54,7 +54,8 @@ function AssetSettingsPage() {
   const db = useDB();
   const me = useMe();
   const saved = db.assets ?? defaultAssetSettings();
-  const canEdit = me?.role === "admin";
+  // Asset settings are editable by every signed-in user (prototype); every save is stamped with who made it.
+  const canEdit = !!me;
   const { section = "numbering" } = Route.useSearch();
   const [draft, setDraft] = useState<AssetSettings>(() => structuredClone(saved));
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
@@ -217,56 +218,72 @@ function NumberingSection({ d, set, err }: SP & { err: Record<string, string> })
 
   return (
     <Section id="numbering" title="Asset ID Numbering" desc="Rules used to auto-generate new asset IDs." action={<span className="rounded bg-warning-soft px-1.5 py-0.5 text-[11px] font-medium text-warning">Auto</span>}>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Up to 6 characters">
-          <TextInput id="n-prefix" value={n.prefix} maxLength={6} invalid={!!err.prefix} onChange={(e) => up({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} />
-        </Field>
-        <div>
-          <span className="pd-label">Separator</span>
-          <div role="radiogroup" aria-label="Separator" className="inline-flex rounded-md bg-subtle p-0.5">
-            {SEPS.map((s) => (
-              <button key={s.label} type="button" role="radio" aria-checked={n.separator === s.v} onClick={() => up({ separator: s.v })}
-                className={cn("h-8 min-w-9 rounded px-2.5 text-[13px] transition-colors", n.separator === s.v ? "bg-surface font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Field label="Include year segment" htmlFor="n-year">
-          <Select id="n-year" value={yearVal} onChange={(e) => {
-            const v = e.target.value;
-            if (v === "none") up({ yearFormat: "none", fiscalYear: false, resetMode: "never", resetYearly: false });
-            else { const f = v.endsWith("-f"); up({ yearFormat: v.replace("-f", "") as "YY" | "YYYY", fiscalYear: f, ...(reset !== "never" ? { resetMode: f ? "fiscal" : "calendar" } : {}) }); }
-          }}>
-            {YEAR_OPTS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-          </Select>
-        </Field>
-
-        <Field label="Sequence length" htmlFor="n-len" error={err.seqLength} hint={`Digits, zero-padded (e.g. ${"1".padStart(n.seqLength, "0")} – ${maxSample})`}>
-          <div className="flex items-center gap-1.5">
-            <button type="button" aria-label="Fewer digits" disabled={n.seqLength <= 3} onClick={() => up({ seqLength: n.seqLength - 1 })} className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground hover:bg-subtle disabled:opacity-40"><Minus className="size-3.5" /></button>
-            <TextInput id="n-len" className="num text-center" inputMode="numeric" value={n.seqLength} onChange={(e) => up({ seqLength: Math.min(8, Math.max(3, int(e.target.value, 4))) })} />
-            <button type="button" aria-label="More digits" disabled={n.seqLength >= 8} onClick={() => up({ seqLength: n.seqLength + 1 })} className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground hover:bg-subtle disabled:opacity-40"><Plus className="size-3.5" /></button>
-          </div>
-        </Field>
-        <Field label="Starting number" htmlFor="n-start" error={err.startAt}>
-          <TextInput id="n-start" inputMode="numeric" className="num" value={n.startAt} invalid={!!err.startAt} onChange={(e) => up({ startAt: int(e.target.value), nextSeq: Math.max(n.nextSeq, int(e.target.value)) })} />
-        </Field>
-        <Field label="Reset sequence" htmlFor="n-reset">
-          <Select id="n-reset" value={reset === "never" ? "never" : "yearly"} disabled={n.yearFormat === "none"} onChange={(e) => up(e.target.value === "never" ? { resetMode: "never", resetYearly: false } : { resetMode: n.fiscalYear ? "fiscal" : "calendar", resetYearly: true })}>
-            <option value="never">Never</option><option value="yearly">Yearly</option>
-          </Select>
-        </Field>
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {/* Live preview first so every change below is immediately visible */}
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg bg-primary/[0.06] p-3 ring-1 ring-primary/20">
-          <p className="text-[11px] text-muted-foreground">Preview · next ID</p>
+          <p className="text-[11px] text-muted-foreground">Next ID</p>
           <p className="num mt-1 truncate text-[15px] font-semibold" aria-live="polite">{next}</p>
+          <p className="mt-1.5 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
+            {[n.prefix && "Prefix", n.yearFormat !== "none" && (n.fiscalYear ? "Fiscal year" : "Year"), "Sequence"].filter(Boolean).map((s, i, a) => (
+              <span key={String(s)} className="inline-flex items-center gap-1"><span className="rounded bg-surface px-1.5 py-0.5 ring-1 ring-border">{s}</span>{i < a.length - 1 && <span className="num">{n.separator || "·"}</span>}</span>
+            ))}
+          </p>
         </div>
         <div className="rounded-lg bg-subtle p-3 ring-1 ring-border">
           <p className="text-[11px] text-muted-foreground">Last issued</p>
           <p className="num mt-1 truncate text-[15px] font-semibold">{last}</p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">Existing IDs never change.</p>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="pd-section-title mb-3">Format</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Prefix" htmlFor="n-prefix" error={err.prefix} hint="Letters and numbers, up to 6">
+            <TextInput id="n-prefix" value={n.prefix} maxLength={6} placeholder="e.g. AST" invalid={!!err.prefix} onChange={(e) => up({ prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })} />
+          </Field>
+          <div>
+            <span className="pd-label">Separator</span>
+            <div role="radiogroup" aria-label="Separator" className="grid h-9 grid-cols-4 rounded-md bg-subtle p-0.5">
+              {SEPS.map((s) => (
+                <button key={s.label} type="button" role="radio" aria-checked={n.separator === s.v} onClick={() => up({ separator: s.v })}
+                  className={cn("rounded text-[13px] transition-colors", n.separator === s.v ? "bg-surface font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  {s.v ? <span className="num">{s.label}</span> : "None"}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Placed between each part</p>
+          </div>
+          <Field label="Year segment" htmlFor="n-year" hint={n.yearFormat === "none" ? "IDs won't include a year" : n.fiscalYear ? "Uses your fiscal year" : "Uses the calendar year"}>
+            <Select id="n-year" value={yearVal} onChange={(e) => {
+              const v = e.target.value;
+              if (v === "none") up({ yearFormat: "none", fiscalYear: false, resetMode: "never", resetYearly: false });
+              else { const f = v.endsWith("-f"); up({ yearFormat: v.replace("-f", "") as "YY" | "YYYY", fiscalYear: f, ...(reset !== "never" ? { resetMode: f ? "fiscal" : "calendar" } : {}) }); }
+            }}>
+              {YEAR_OPTS.map((o) => <option key={o.v} value={o.v}>{o.label.replace("Yes — ", "").replace("No", "Don't include")}</option>)}
+            </Select>
+          </Field>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-border/60 pt-5">
+        <p className="pd-section-title mb-3">Sequence</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Number of digits" htmlFor="n-len" error={err.seqLength} hint={`${"1".padStart(n.seqLength, "0")} to ${maxSample}`}>
+            <div className="flex items-center gap-1.5">
+              <button type="button" aria-label="Fewer digits" disabled={n.seqLength <= 3} onClick={() => up({ seqLength: n.seqLength - 1 })} className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-input bg-surface text-muted-foreground hover:bg-subtle disabled:opacity-40"><Minus className="size-3.5" /></button>
+              <TextInput id="n-len" className="num text-center" inputMode="numeric" value={n.seqLength} onChange={(e) => up({ seqLength: Math.min(8, Math.max(3, int(e.target.value, 4))) })} />
+              <button type="button" aria-label="More digits" disabled={n.seqLength >= 8} onClick={() => up({ seqLength: n.seqLength + 1 })} className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-input bg-surface text-muted-foreground hover:bg-subtle disabled:opacity-40"><Plus className="size-3.5" /></button>
+            </div>
+          </Field>
+          <Field label="Starting number" htmlFor="n-start" error={err.startAt} hint="First number when counting begins">
+            <TextInput id="n-start" inputMode="numeric" className="num" value={n.startAt} invalid={!!err.startAt} onChange={(e) => up({ startAt: int(e.target.value), nextSeq: Math.max(n.nextSeq, int(e.target.value)) })} />
+          </Field>
+          <Field label="Restart numbering" htmlFor="n-reset" hint={n.yearFormat === "none" ? "Add a year segment to restart yearly" : reset === "never" ? "Keeps counting up forever" : `Starts again at ${n.startAt} each ${n.fiscalYear ? "fiscal " : ""}year`}>
+            <Select id="n-reset" value={reset === "never" ? "never" : "yearly"} disabled={n.yearFormat === "none"} onChange={(e) => up(e.target.value === "never" ? { resetMode: "never", resetYearly: false } : { resetMode: n.fiscalYear ? "fiscal" : "calendar", resetYearly: true })}>
+              <option value="never">Never</option><option value="yearly">Every year</option>
+            </Select>
+          </Field>
         </div>
       </div>
 
