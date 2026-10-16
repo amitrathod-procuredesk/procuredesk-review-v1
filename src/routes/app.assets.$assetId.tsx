@@ -33,7 +33,7 @@ export const Route = createFileRoute("/app/assets/$assetId")({
 
 type Action = "activate" | "assign" | "unassign" | "checkout" | "checkin" | "repair" | "stage" | "complete" | "maintenance" | "status" | "decommission" | "dispose" | "edit" | "part";
 const PHASES: StatusPhase[] = ["setup", "active", "service", "retired"];
-const TABS = [{ id: "overview", label: "Overview" }, { id: "repairs", label: "Repairs" }, { id: "maintenance", label: "Maintenance" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
+const TABS = [{ id: "overview", label: "Overview" }, { id: "repairs", label: "Repairs" }, { id: "maintenance", label: "Maintenance" }, { id: "warranty", label: "Warranty" }, { id: "files", label: "Files" }, { id: "history", label: "History" }] as const;
 
 function AssetPage() {
   const { assetId } = Route.useParams();
@@ -128,6 +128,8 @@ function AssetPage() {
       )}
       {a.disposal && <Banner tone="neutral" icon={<Trash2 className="size-4" />} title={`${a.disposal.method} on ${fmtDate(a.disposal.at)}`} text={`${a.disposal.proceeds ? `Proceeds ${money(a.disposal.proceeds)}. ` : ""}${a.disposal.note ?? ""}This record is kept for audit.`} />}
 
+      <AssignmentStrip a={a} db={db} />
+
       {a.repair && <RepairPanel a={a} vendorName={vendorName} userName={userName} onStage={(sg) => { setStageTo(sg); setAction("stage"); }} onComplete={() => setAction("complete")} onPart={() => setAction("part")} onToggle={(pid) => mutate((d) => updateAsset(d, a.id, (x) => { const p = x.repair!.parts.find((q) => q.id === pid)!; p.received = !p.received; }, me?.id, "Repair part updated"))} />}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -153,9 +155,9 @@ function AssetPage() {
               </Card>
               <Card title="Location & ownership">
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-                  <Meta k="Location" v={a.site} /><Meta k="Room, bay or desk" v={a.room} />
+                  <Meta k="Room, bay or desk" v={a.room} />
                   <Meta k="Department" v={db.departments.find((x) => x.id === a.departmentId)?.name} />
-                  <Meta k="Assigned to" v={a.assignedTo ? <HolderChip h={a.assignedTo} db={db} /> : a.checkout ? <span className="text-muted-foreground">On loan</span> : null} />
+                  <Meta k="Ownership" v={a.ownership === "leased" ? "Leased" : "Owned"} />
                 </dl>
               </Card>
               <Card title="Purchase & depreciation">
@@ -196,6 +198,8 @@ function AssetPage() {
               ) : <Empty text="No maintenance recorded yet." />}
             </Card>
           )}
+
+          {tab === "warranty" && <WarrantyTab a={a} openEdit={a.statusId !== "disposed" ? () => setAction("edit") : undefined} />}
 
           {tab === "files" && (
             <Card title="Photos & documents">
@@ -251,6 +255,58 @@ function Banner({ tone, icon, title, text, action }: { tone: "red" | "blue" | "n
       <span className={tone === "red" ? "text-destructive" : tone === "blue" ? "text-primary" : "text-muted-foreground"}>{icon}</span>
       <div className="min-w-0 flex-1"><p className="text-[13px] font-medium">{title}</p><p className="text-[12px] text-muted-foreground">{text}</p></div>
       {action}
+    </div>
+  );
+}
+
+const COVERAGE_LABEL = { full: "Full coverage", parts: "Parts only", labor: "Labor only", extended: "Extended" } as const;
+
+function AssignmentStrip({ a, db }: { a: Asset; db: ReturnType<typeof useDB> }) {
+  const h = a.checkout?.to ?? a.assignedTo;
+  const dep = db.departments.find((x) => x.id === a.departmentId);
+  const bu = a.businessUnit ?? dep?.businessUnit;
+  const since = a.checkout?.at ?? (a.assignedTo ? a.history.find((e) => e.text.startsWith("Assigned to"))?.at ?? a.inServiceDate : undefined);
+  const cells: { k: string; v: ReactNode }[] = [
+    { k: a.checkout ? "Checked out to" : "Assigned to", v: h ? <HolderChip h={h} db={db} /> : <span className="text-muted-foreground">Not assigned</span> },
+    { k: "Business unit", v: bu ?? <span className="text-muted-foreground">—</span> },
+    { k: a.checkout ? "Checked out on" : "Assigned on", v: since ? fmtDate(since) : <span className="text-muted-foreground">—</span> },
+    { k: "Site", v: a.site || <span className="text-muted-foreground">—</span> },
+  ];
+  return (
+    <dl className="pd-panel mb-4 grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+      {cells.map((c) => <div key={c.k} className="min-w-0 px-4 py-3"><dt className="text-[11px] text-muted-foreground">{c.k}</dt><dd className="mt-0.5 truncate text-[13px] font-medium">{c.v}</dd></div>)}
+    </dl>
+  );
+}
+
+function WarrantyTab({ a, openEdit }: { a: Asset; openEdit?: () => void }) {
+  if (!a.warrantyEnd && !a.warrantyProvider) return <Card title="Warranty"><Empty text="No warranty recorded for this asset." />{openEdit && <div className="text-center"><button onClick={openEdit} className={BTN}><Plus className="size-3.5" />Add warranty end date</button></div>}</Card>;
+  const left = a.warrantyEnd ? daysUntil(a.warrantyEnd) : undefined;
+  const start = a.warrantyStart ?? a.purchaseDate;
+  const total = start && a.warrantyEnd ? daysUntil(a.warrantyEnd) - daysUntil(start) : 0;
+  const pct = total > 0 && left !== undefined ? Math.min(100, Math.max(0, ((total - left) / total) * 100)) : 0;
+  const state = left === undefined ? null : left < 0 ? { t: "Expired", c: "bg-destructive/10 text-destructive" } : left <= 30 ? { t: "Expiring soon", c: "bg-warning-soft text-warning" } : { t: "Active", c: "bg-success-soft text-success" };
+  const docs = a.docs.filter((d) => d.kind === "warranty");
+  return (
+    <div className="space-y-4">
+      <Card title="Warranty" action={state && <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", state.c)}>{state.t}</span>}>
+        {left !== undefined && (
+          <div className="mb-4">
+            <div className="flex items-baseline justify-between text-[12px]"><span className="text-muted-foreground">{fmtDate(start)}</span><span className="font-medium">{left < 0 ? `Ended ${relDays(left)}` : `Ends ${relDays(left)}`}</span><span className="text-muted-foreground">{fmtDate(a.warrantyEnd)}</span></div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-subtle"><div className={cn("h-full rounded-full", left < 0 ? "bg-destructive" : left <= 30 ? "bg-warning" : "bg-success")} style={{ width: `${pct}%` }} /></div>
+          </div>
+        )}
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+          <Meta k="Provider" v={a.warrantyProvider} />
+          <Meta k="Coverage" v={a.warrantyCoverage ? COVERAGE_LABEL[a.warrantyCoverage] : undefined} />
+          <Meta k="Starts" v={fmtDate(start)} />
+          <Meta k="Ends" v={fmtDate(a.warrantyEnd)} />
+        </dl>
+        {a.warrantyTerms && <p className="mt-3 border-t border-border pt-3 text-[13px] text-muted-foreground">{a.warrantyTerms}</p>}
+      </Card>
+      <Card title="Warranty documents">
+        {docs.length ? <ul className="divide-y divide-border rounded-lg border border-border">{docs.map((d) => <li key={d.id} className="flex items-center gap-3 px-3 py-2 text-[13px]"><FileText className="size-4 text-muted-foreground" /><span className="flex-1 truncate">{d.name}</span></li>)}</ul> : <Empty text="No warranty documents attached." />}
+      </Card>
     </div>
   );
 }
