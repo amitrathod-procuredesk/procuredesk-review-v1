@@ -249,7 +249,7 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
             </div>
           ) : null}
           {/* Scrolls horizontally when space is short; Business unit stays pinned on the right */}
-          <div className={cn("overflow-x-auto", sel.length > 0 && "mt-2")}>
+          <div className={cn("pd-scroll-quiet overflow-x-auto", sel.length > 0 && "mt-2")}>
             {/* Fill the card; below the grid's summed minimum (columns + gaps + padding) scroll instead. */}
             <div className="min-w-[1002px]">
               <div className={cn(GRID, "border-b border-border/60 bg-subtle h-8 px-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground")}>
