@@ -1,8 +1,8 @@
-import { BarChart3, Box, Building2, FileText, Hammer, Inbox, LogOut, ShieldCheck, Store, Timer, TrendingDown, Wallet, Wrench, type LucideIcon } from "lucide-react";
+import { BarChart3, Box, ClipboardList, Building2, FileText, Hammer, Inbox, LogOut, ShieldCheck, Store, Timer, TrendingDown, Wallet, Wrench, type LucideIcon } from "lucide-react";
 import { money } from "@/lib/pd/engine";
 import type { ColKind } from "@/lib/pd/reports";
 
-export const REPORT_ICONS: Record<string, LucideIcon> = { store: Store, building: Building2, file: FileText, timer: Timer, inbox: Inbox, wallet: Wallet, box: Box, trending: TrendingDown, wrench: Wrench, hammer: Hammer, logout: LogOut, shield: ShieldCheck };
+export const REPORT_ICONS: Record<string, LucideIcon> = { store: Store, building: Building2, file: FileText, timer: Timer, inbox: Inbox, wallet: Wallet, box: Box, trending: TrendingDown, wrench: Wrench, hammer: Hammer, logout: LogOut, shield: ShieldCheck, clipboard: ClipboardList, chart: BarChart3 };
 export const reportIcon = (k: string) => REPORT_ICONS[k] ?? BarChart3;
 
 export function fmtCell(v: unknown, kind: ColKind = "text") {
