@@ -48,7 +48,7 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
             added.forEach((li) => x.items.push({ ...li }));
             if (dep) { x.departmentId = dep; x.businessUnit = next.request.businessUnit || x.businessUnit; }
             if (date) x.requiredBy = date;
-            if (!x.title && x.items.length) x.title = x.items.length === 1 ? x.items[0].name : `${x.items[0].name} and ${x.items.length - 1} more`;
+            if (!x.title && x.items.length) x.title = x.items.length === 1 ? (x.items[0].name ?? "") : `${x.items[0].name} and ${x.items.length - 1} more`;
           });
         }
         setPast((p) => [...p, prev]);
