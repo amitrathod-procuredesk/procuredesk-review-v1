@@ -96,7 +96,7 @@ export function ProcurementAI() {
   return <>
     <Button size="sm" variant="outline" className="border-primary/25 bg-gradient-to-r from-accent to-surface text-primary" onClick={() => setOpen(true)}><span className="pd-ai-mark size-4"><WandSparkles className="!size-2.5" /></span> Procurement AI</Button>
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className={cn("flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 transition-[max-width] duration-300 ease-out", hasItems || line ? "sm:max-w-[min(940px,calc(100vw-48px))]" : "sm:max-w-[520px]")} onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
+      <SheetContent side="right" overlayClassName="bg-foreground/15 backdrop-blur-[3px]" className={cn("flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 transition-[max-width] duration-300 ease-out", hasItems || line ? "sm:max-w-[min(1080px,calc(100vw-32px))]" : "sm:max-w-[min(680px,calc(100vw-32px))]")} onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
         <header className="flex shrink-0 items-center gap-2.5 border-b border-border/60 px-4 py-3 pr-12">
           {mark}
           <div className="min-w-0 flex-1"><SheetTitle className="text-sm font-semibold">Procurement AI</SheetTitle><SheetDescription className="text-[11px]">{db.org.name}</SheetDescription></div>
@@ -105,7 +105,7 @@ export function ProcurementAI() {
         {(hasItems || line) && r && <div className="flex shrink-0 gap-1 border-b border-border px-4 py-1.5 md:hidden" role="tablist">
           {([[false, "Conversation"], [true, `Proposal · ${money(totals(r).total)}`]] as const).map(([v, label]) => <button key={String(v)} role="tab" aria-selected={preview === v} onClick={() => setPreview(v)} className={cn("rounded-md px-2.5 py-1 text-xs font-medium transition-colors", preview === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground")}>{label}</button>)}
         </div>}
-        <div className={cn("flex min-h-0 flex-1 flex-col", (hasItems || line) && "md:grid md:grid-cols-[minmax(0,1fr)_340px]")}>
+        <div className={cn("flex min-h-0 flex-1 flex-col", (hasItems || line) && "md:grid md:grid-cols-[minmax(0,1fr)_minmax(300px,36%)]")}>
           <section aria-label="Procurement conversation" className={cn("flex min-h-0 min-w-0 flex-1 flex-col", preview && "hidden md:flex")}>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
               {!messages.length ? <div className="flex min-h-full flex-col items-center justify-center pb-10 text-center">
