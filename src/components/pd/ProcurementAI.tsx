@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUp, Check, Package, RotateCcw, Search, Sparkles, Undo2
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { TextArea, TextInput } from "./form";
+import { TextInput } from "./form";
 import { budgetStatuses, computeRoute, lineTotal, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
 import { converse, startConversation, type Msg, type ProcurementConversation } from "@/lib/pd/procurementAi";
 import { createDraft, updateRequest, useDB, useMe } from "@/lib/pd/store";
@@ -97,9 +97,9 @@ export function ProcurementAI() {
     <Button size="sm" variant="outline" className="border-primary/25 bg-gradient-to-r from-accent to-surface text-primary" onClick={() => setOpen(true)}><Sparkles /> Procurement AI</Button>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="right" className={cn("flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 transition-[max-width] duration-300 ease-out", hasItems || line ? "sm:max-w-[min(940px,calc(100vw-48px))]" : "sm:max-w-[520px]")} onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
-        <header className="flex shrink-0 items-center gap-2.5 border-b border-border bg-gradient-to-b from-accent/60 to-surface px-4 py-3 pr-12">
+        <header className="flex shrink-0 items-center gap-2.5 border-b border-border/60 px-4 py-3 pr-12">
           {mark}
-          <div className="min-w-0 flex-1"><SheetTitle className="text-sm font-semibold">Procurement AI</SheetTitle><SheetDescription className="text-[11px]">Nothing is submitted without your review</SheetDescription></div>
+          <div className="min-w-0 flex-1"><SheetTitle className="text-sm font-semibold">Procurement AI</SheetTitle><SheetDescription className="text-[11px]">{db.org.name}</SheetDescription></div>
           <Button size="icon" variant="ghost" className="size-8" aria-label="Start over" title="Start over" onClick={restart}><RotateCcw /></Button>
         </header>
         {(hasItems || line) && r && <div className="flex shrink-0 gap-1 border-b border-border px-4 py-1.5 md:hidden" role="tablist">
