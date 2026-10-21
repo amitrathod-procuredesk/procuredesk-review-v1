@@ -63,7 +63,7 @@ export function matchCatalog(db: DB, text: string): CatalogItem[] {
   const terms = productTerms(text).split(" ").filter((t) => t.length > 1);
   if (!terms.length) return [];
   return db.catalog.filter((c) => c.available).filter((c) => {
-    const hay = `${c.name} ${c.category} ${c.keywords.join(" ")} ${c.description}`.toLowerCase();
+    const hay = `${c.name} ${c.category} ${c.keywords.join(" ")}`.toLowerCase();
     return terms.some((t) => hay.includes(t));
   });
 }
