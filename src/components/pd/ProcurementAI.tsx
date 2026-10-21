@@ -107,34 +107,39 @@ export function ProcurementAI() {
         </div>}
         <div className={cn("flex min-h-0 flex-1 flex-col", (hasItems || line) && "md:grid md:grid-cols-[minmax(0,1fr)_340px]")}>
           <section aria-label="Procurement conversation" className={cn("flex min-h-0 min-w-0 flex-1 flex-col", preview && "hidden md:flex")}>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
-              {!messages.length ? <div className="flex min-h-full flex-col justify-center pb-6">
-                <h2 className="text-lg font-semibold">What do you need to buy?</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Describe it in your own words. I’ll check your catalog, budget and policies as we go.</p>
-                <div className="mt-5 space-y-1.5">{examples.map((e) => <Button key={e} variant="outline" className="h-auto w-full justify-between whitespace-normal px-3 py-2.5 text-left text-xs font-normal" onClick={() => send(e)}>{e}<ArrowRight className="text-muted-foreground" /></Button>)}</div>
-              </div> : <div className="space-y-4" role="log" aria-label="Conversation messages" aria-live="polite">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
+              {!messages.length ? <div className="flex min-h-full flex-col items-center justify-center pb-10 text-center">
+                <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent-foreground text-primary-foreground shadow-sm"><Sparkles className="size-5" /></span>
+                <h2 className="mt-4 text-xl font-semibold tracking-tight">What do you need to buy?</h2>
+                <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">Describe it naturally — I’ll check your catalog, budget and policies.</p>
+              </div> : <div className="space-y-5" role="log" aria-label="Conversation messages" aria-live="polite">
                 {messages.map((m) => <div key={m.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200">
-                  <div className={cn("flex gap-2.5", m.role === "user" && "justify-end")}>
-                    {m.role === "ai" && <Sparkles className="mt-1 size-3.5 shrink-0 text-primary" />}
-                    <p className={cn("max-w-[88%] whitespace-pre-wrap break-words text-sm leading-relaxed", m.role === "user" ? "rounded-lg bg-accent px-3 py-2 text-accent-foreground" : "pt-0.5")}>{m.text}</p>
+                  <div className={cn("flex gap-3", m.role === "user" && "justify-end")}>
+                    {m.role === "ai" && <Sparkles className="mt-1 size-4 shrink-0 text-primary" />}
+                    <p className={cn("whitespace-pre-wrap break-words text-sm leading-relaxed", m.role === "user" ? "max-w-[80%] rounded-2xl rounded-br-md bg-subtle px-3.5 py-2 text-foreground" : "max-w-[92%] pt-0.5")}>{m.text}</p>
                   </div>
-                  {m.role === "ai" && m.widget === "catalog" && <div className="mt-2.5 pl-6"><CatalogPicker db={db} query={m.query ?? ""} active={interactive(m)} onPick={(id, name) => send(id, name)} /></div>}
-                  {m.role === "ai" && m.options && interactive(m) && <div className="mt-2.5 flex flex-wrap gap-1.5 pl-6">
-                    {m.options.map((o) => <Button key={o.value + o.label} size="sm" variant="outline" className="h-auto gap-1.5 whitespace-normal py-1.5 text-xs hover:border-primary/40" onClick={() => send(o.value, o.label)}>{o.label}{o.hint && <span className="text-[10px] font-normal text-muted-foreground">{o.hint}</span>}</Button>)}
+                  {m.role === "ai" && m.widget === "catalog" && <div className="mt-3 pl-7"><CatalogPicker db={db} query={m.query ?? ""} active={interactive(m)} onPick={(id, name) => send(id, name)} /></div>}
+                  {m.role === "ai" && m.options && interactive(m) && <div className="mt-3 flex flex-wrap gap-1.5 pl-7">
+                    {m.options.map((o) => <button key={o.value + o.label} type="button" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => send(o.value, o.label)}>{o.label}{o.hint && <span className="text-[10px] font-normal text-muted-foreground">{o.hint}</span>}</button>)}
                   </div>}
-                  {m.role === "ai" && m.widget === "date" && interactive(m) && <div className="mt-2 max-w-[200px] pl-6"><label className="sr-only" htmlFor="ai-date">Choose a date</label><TextInput id="ai-date" type="date" min={new Date().toISOString().slice(0, 10)} onChange={(e) => { if (e.target.value) send(e.target.value, smartDate(e.target.value)); }} /></div>}
+                  {m.role === "ai" && m.widget === "date" && interactive(m) && <div className="mt-2 max-w-[200px] pl-7"><label className="sr-only" htmlFor="ai-date">Choose a date</label><TextInput id="ai-date" type="date" min={new Date().toISOString().slice(0, 10)} onChange={(e) => { if (e.target.value) send(e.target.value, smartDate(e.target.value)); }} /></div>}
                 </div>)}
-                {typing && <div className="flex items-center gap-2.5" aria-label="Procurement AI is typing"><Sparkles className="size-3.5 text-primary" /><span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="size-1.5 rounded-full bg-primary/60 ai-thinking-dot" style={{ animationDelay: `${i * 150}ms` }} />)}</span></div>}
+                {typing && <div className="flex items-center gap-3" aria-label="Procurement AI is typing"><Sparkles className="size-4 animate-pulse text-primary" /><span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="size-1.5 rounded-full bg-primary/60 ai-thinking-dot" style={{ animationDelay: `${i * 150}ms` }} />)}</span></div>}
               </div>}
               <div ref={end} />
             </div>
-            <form className="shrink-0 border-t border-border p-3" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+            <form className="shrink-0 px-4 pb-3 pt-1" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+              {!messages.length && <div className="mb-2.5 flex flex-wrap justify-center gap-1.5">{examples.map((e) => <button key={e} type="button" className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground" onClick={() => send(e)}>{e}</button>)}</div>}
               <label htmlFor="procurement-message" className="sr-only">Message Procurement AI</label>
-              <div className="relative">
-                <TextArea ref={input} id="procurement-message" rows={2} placeholder={conversation?.step === "pick" ? "Search the catalog or pick an item above…" : lastAi?.options ? "Choose an option or type your answer…" : "Describe what you need…"} className="resize-none pr-11" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(text); } }} />
-                <Button type="submit" size="icon" className="absolute bottom-2 right-2 size-7" aria-label="Send message" title="Send message" disabled={!text.trim() || saving || typing}><ArrowUp /></Button>
+              {/* Chat composer: borderless textarea inside one rounded surface, like modern AI assistants. */}
+              <div className="rounded-2xl border border-border bg-surface shadow-sm transition-shadow focus-within:border-primary/40 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_12%,transparent)]">
+                <textarea ref={input} id="procurement-message" rows={1} placeholder={conversation?.step === "pick" ? "Search the catalog or pick an item above…" : lastAi?.options ? "Choose an option or type your answer…" : "Ask Procurement AI…"} className="block max-h-40 min-h-[44px] w-full resize-none bg-transparent px-4 pt-3 text-sm outline-none placeholder:text-muted-foreground [field-sizing:content]" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(text); } }} />
+                <div className="flex items-center justify-between px-2 pb-2">
+                  {undo.length > 0 && !typing ? <Button type="button" size="sm" variant="ghost" className="h-7 rounded-full px-2.5 text-xs text-muted-foreground" onClick={() => { const previous = undo.at(-1); if (previous) { setConversation(previous); setUndo((h) => h.slice(0, -1)); } }}><Undo2 /> Undo</Button> : <span />}
+                  <Button type="submit" size="icon" className="size-8 rounded-full" aria-label="Send message" title="Send message" disabled={!text.trim() || saving || typing}><ArrowUp /></Button>
+                </div>
               </div>
-              {undo.length > 0 && !typing && <Button type="button" size="sm" variant="ghost" className="mt-1 h-7 text-xs" onClick={() => { const previous = undo.at(-1); if (previous) { setConversation(previous); setUndo((h) => h.slice(0, -1)); } }}><Undo2 /> Undo last step</Button>}
+              <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Uses your organization’s catalog and policies · You review before anything is submitted</p>
             </form>
           </section>
           {r && (hasItems || line) && <aside aria-label="Request proposal" className={cn("min-h-0 flex-1 flex-col border-border bg-subtle/40 md:flex md:border-l animate-in fade-in slide-in-from-right-4 duration-300", preview ? "flex" : "hidden")}>
