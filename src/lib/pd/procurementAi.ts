@@ -146,7 +146,7 @@ function askMore(c: ProcurementConversation, lead = "") {
   ai(c, `${lead ? `${lead} ` : ""}Anything else to add to this request?`.trim(), { options: [{ label: "Add another item", value: "more" }, { label: "No, I’m done", value: "done" }] });
 }
 
-const is = (t: string, ...words: string[]) => words.some((w) => t.includes(w));
+const is = (t: string, ...words: string[]) => words.some((w) => new RegExp(`\\b${w}`, "i").test(t));
 
 /** Advance the conversation with a typed message or a clicked option value. Pure: returns a new state. */
 export function converse(db: DB, current: ProcurementConversation, input: string, label?: string): ProcurementConversation {
