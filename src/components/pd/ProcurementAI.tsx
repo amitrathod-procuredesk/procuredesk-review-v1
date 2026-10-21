@@ -11,7 +11,7 @@ import { createDraft, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { DB } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
 
-function CatalogPicker({ db, query, active, onPick }: { db: DB; query: string; active: boolean; onPick: (id: string, name: string) => void }) {
+export function CatalogPicker({ db, query, active, onPick }: { db: DB; query: string; active: boolean; onPick: (id: string, name: string) => void }) {
   const [q, setQ] = useState(query);
   const [cat, setCat] = useState("All");
   const items = db.catalog.filter((c) => c.available);
