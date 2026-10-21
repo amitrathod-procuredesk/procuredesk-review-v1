@@ -1,49 +1,50 @@
 import { describe, expect, it } from "vitest";
 import { seedDB } from "../seed";
-import { converse, procurementProposal } from "../procurementAi";
+import { converse, matchCatalog, startConversation } from "../procurementAi";
 
-describe("Procurement AI proposals", () => {
-  it("confirms each product separately in a multi-item request", () => {
+describe("Procurement AI conversation", () => {
+  it("asks catalog vs manual before adding anything", () => {
     const db = seedDB();
-    let state = { request: procurementProposal(db, "u_amit"), queue: [] as string[] };
-    state = converse(db, state, "4 custom quantum widgets and 2 custom flux generators");
-    expect(state.queue).toHaveLength(1);
-    state = converse(db, state, "Create non-catalog item");
-    expect(state.request.items).toHaveLength(1);
-    expect(state.request.ai.pending).toBe("nomatch");
-    state = converse(db, state, "Create non-catalog item");
-    expect(state.request.items.map((item) => item.qty)).toEqual([4, 2]);
-    expect(state.request.status).toBe("draft");
+    const s = converse(db, startConversation(db, "u_amit"), "I want to buy a laptop");
+    expect(s.step).toBe("source");
+    expect(s.request.items).toHaveLength(0);
   });
-  it("does not add priced items until the user confirms the catalog choice", () => {
+  it("adds only the item the user picked, after quantity is confirmed", () => {
     const db = seedDB();
-    const c = db.catalog.find((item) => item.available);
-    if (!c) throw new Error("Catalog fixture missing");
-    const original = JSON.stringify(db);
-    let state = { request: procurementProposal(db, "u_amit"), queue: [] as string[] };
-    state = converse(db, state, `4 ${c.keywords.find((k) => k !== "laptop") ?? c.name}`);
-    expect(state.request.items).toHaveLength(0);
-    state = converse(db, state, "approve and submit everything");
-    expect(state.request.items).toHaveLength(0);
-    expect(state.request.status).toBe("draft");
-    expect(JSON.stringify(db)).toBe(original);
+    let s = converse(db, startConversation(db, "u_amit"), "I want to buy a laptop");
+    s = converse(db, s, "catalog");
+    expect(s.step).toBe("pick");
+    s = converse(db, s, "c_dell");
+    expect(s.request.items).toHaveLength(0);
+    s = converse(db, s, "3");
+    expect(s.request.items).toHaveLength(1);
+    expect(s.request.items[0]).toMatchObject({ catalogId: "c_dell", qty: 3, unitPrice: 1450 });
+    expect(s.request.departmentId).toBeUndefined();
+    expect(s.request.status).toBe("draft");
+  });
+  it("leaves manual items unpriced when the price is unknown", () => {
+    const db = seedDB();
+    let s = converse(db, startConversation(db, "u_amit"), "a quantum widget");
+    s = converse(db, s, "manual");
+    s = converse(db, s, "Quantum widget");
+    s = converse(db, s, "skip");
+    s = converse(db, s, "skip");
+    s = converse(db, s, "2");
+    expect(s.request.items[0]).toMatchObject({ qty: 2, unitPrice: 0, vendorId: "" });
   });
   it("never offers unavailable catalog items", () => {
     const db = seedDB();
     db.catalog.forEach((c) => { c.available = false; });
-    const state = converse(db, { request: procurementProposal(db, "u_amit"), queue: [] }, "4 laptops");
-    expect(state.request.ai.pending).toBe("nomatch");
-    expect(state.request.ai.candidateIds).toEqual([]);
+    expect(matchCatalog(db, "laptop")).toEqual([]);
+    let s = converse(db, startConversation(db, "u_amit"), "laptop");
+    s = converse(db, s, "catalog");
+    s = converse(db, s, "c_mbp");
+    expect(s.step).toBe("pick");
   });
-  it("leaves unknown products unpriced and unsubmitted after explicit non-catalog confirmation", () => {
+  it("does not mutate the workspace", () => {
     const db = seedDB();
-    let state = { request: procurementProposal(db, "u_amit"), queue: [] as string[] };
-    state = converse(db, state, "3 custom quantum widgets");
-    expect(state.request.items).toHaveLength(0);
-    state = converse(db, state, "Create non-catalog item");
-    expect(state.request.items[0]?.qty).toBe(3);
-    expect(state.request.items[0]?.unitPrice).toBe(0);
-    expect(state.request.items[0]?.vendorId).toBe("");
-    expect(state.request.status).toBe("draft");
+    const before = JSON.stringify(db);
+    converse(db, startConversation(db, "u_amit"), "4 laptops");
+    expect(JSON.stringify(db)).toBe(before);
   });
 });
