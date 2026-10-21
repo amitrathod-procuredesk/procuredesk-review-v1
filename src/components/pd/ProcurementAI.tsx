@@ -61,17 +61,17 @@ export function ProcurementAI() {
   return <>
     <Button size="sm" variant="outline" className="border-primary/25 bg-gradient-to-r from-accent to-surface text-primary" onClick={() => setOpen(true)}><Sparkles /> Procurement AI</Button>
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 sm:max-w-[560px]" onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
+      <SheetContent side="right" className={cn("flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 transition-[max-width] duration-300 ease-out", r?.items.length ? "sm:max-w-[min(940px,calc(100vw-48px))]" : "sm:max-w-[480px]")} onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
         <header className="flex shrink-0 items-center gap-2.5 border-b border-border bg-gradient-to-b from-accent/60 to-surface px-4 py-3 pr-12">
           {mark}
           <div className="min-w-0 flex-1"><SheetTitle className="text-sm font-semibold">Procurement AI</SheetTitle><SheetDescription className="text-[11px]">Nothing is submitted without your review</SheetDescription></div>
           <Button size="icon" variant="ghost" className="size-8" aria-label="Start over" title="Start over" onClick={restart}><RotateCcw /></Button>
         </header>
-        {!!r?.items.length && <div className="flex shrink-0 gap-1 border-b border-border px-4 py-1.5" role="tablist">
+        {!!r?.items.length && <div className="flex shrink-0 gap-1 border-b border-border px-4 py-1.5 md:hidden" role="tablist">
           {[[false, "Conversation"], [true, `Proposal · ${money(totals(r).total)}`]].map(([v, label]) => <button key={String(v)} role="tab" aria-selected={preview === v} onClick={() => setPreview(v as boolean)} className={cn("rounded-md px-2.5 py-1 text-xs font-medium transition-colors", preview === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground")}>{label as string}</button>)}
         </div>}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <section aria-label="Procurement conversation" className={cn("flex min-h-0 min-w-0 flex-1 flex-col", preview && "hidden")}>
+        <div className={cn("flex min-h-0 flex-1 flex-col", !!r?.items.length && "md:grid md:grid-cols-[minmax(0,1fr)_360px]")}>
+          <section aria-label="Procurement conversation" className={cn("flex min-h-0 min-w-0 flex-1 flex-col", preview && "hidden md:flex")}>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
               {!r?.ai.messages.length ? <div className="flex min-h-full flex-col justify-center pb-6">
                 <h2 className="text-lg font-semibold">What do you need to buy?</h2>
@@ -105,8 +105,10 @@ export function ProcurementAI() {
               {undo.length > 0 && <Button type="button" size="sm" variant="ghost" className="mt-1 h-7 text-xs" onClick={() => { const previous = undo.at(-1); if (previous) { setConversation(previous); setUndo((h) => h.slice(0, -1)); } }}><Undo2 /> Undo</Button>}
             </form>
           </section>
-          {r && preview && <section aria-label="Request proposal" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-            <p className="break-words text-sm font-medium">{r.title}</p>
+          {r && !!r.items.length && <aside aria-label="Request proposal" className={cn("min-h-0 flex-1 flex-col border-border bg-subtle/40 md:flex md:border-l animate-in fade-in slide-in-from-right-4 duration-300", preview ? "flex" : "hidden")}>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+            <p className="pd-section-title">Proposal</p>
+            <p className="mt-1 break-words text-sm font-medium">{r.title}</p>
             <ul className="mt-2 divide-y divide-border">{r.items.map((item) => <li key={item.id} className="py-2.5"><p className="break-words text-xs font-medium">{item.qty} × {item.name || item.description}</p><div className="mt-0.5 flex justify-between gap-2 text-[11px] text-muted-foreground"><span>{db.vendors.find((v) => v.id === item.vendorId)?.name ?? "Supplier needed"}</span><span className="num shrink-0">{item.unitPrice > 0 ? money(lineTotal(item)) : "Price needed"}</span></div></li>)}</ul>
             <div className="flex justify-between border-t border-border pt-2.5 text-sm font-semibold"><span>Estimated total</span><span className="num">{money(totals(r).total)}</span></div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
@@ -115,9 +117,10 @@ export function ProcurementAI() {
               {route.length > 0 && <div className="col-span-2"><dt className="text-muted-foreground">Approvals</dt><dd className="mt-0.5">{route.map((s) => s.name).join(" → ")}</dd></div>}
             </dl>
             <div className="mt-4 border-t border-border pt-3">{checks.length ? checks.map((c) => <div key={c.id} className="mt-2 text-xs first:mt-0"><p className={c.level === "error" ? "text-attention" : "text-warning"}>{c.title}</p><p className="mt-0.5 leading-relaxed text-muted-foreground">{c.detail}</p></div>) : <p className="flex items-center gap-1.5 text-xs text-success"><Check className="size-3.5" /> All checks pass</p>}</div>
-          </section>}
+            </div>
+            <footer className="shrink-0 border-t border-border p-3"><Button className="w-full" disabled={!!conversation?.queue.length || saving} onClick={save}>{saving ? "Creating draft…" : "Create draft & review"}<ArrowRight /></Button>{!!conversation?.queue.length && <p className="mt-1.5 text-center text-[11px] text-muted-foreground">{conversation.queue.length} more product(s) awaiting selection</p>}</footer>
+          </aside>}
         </div>
-        {!!r?.items.length && <footer className="shrink-0 border-t border-border p-3"><Button className="w-full" disabled={!!conversation?.queue.length || saving} onClick={save}>{saving ? "Creating draft…" : "Create draft & review"}<ArrowRight /></Button>{!!conversation?.queue.length && <p className="mt-1.5 text-center text-[11px] text-muted-foreground">{conversation.queue.length} more product(s) awaiting selection</p>}</footer>}
       </SheetContent>
     </Sheet>
   </>;
