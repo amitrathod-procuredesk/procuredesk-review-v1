@@ -37,7 +37,8 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
     setOpen(true);
     setBusy(true);
     setTimeout(() => {
-      setConv((prev) => {
+      {
+        const prev = conv;
         const next = converse(getDB(), prev, value, label);
         const added = next.request.items.slice(prev.request.items.length);
         const dep = next.request.departmentId !== prev.request.departmentId ? next.request.departmentId : undefined;
@@ -51,8 +52,8 @@ export function Copilot({ r, initialPrompt }: { r: PRequest; initialPrompt?: str
           });
         }
         setPast((p) => [...p, prev]);
-        return next;
-      });
+        setConv(next);
+      }
       setBusy(false);
       setTimeout(() => inputRef.current?.focus(), 30);
     }, 350);
