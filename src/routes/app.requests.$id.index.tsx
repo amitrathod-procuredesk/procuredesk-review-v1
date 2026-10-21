@@ -22,6 +22,8 @@ export const Route = createFileRoute("/app/requests/$id/")({
       { name: "description", content: "Purchase request detail with budget, policy checks, approval route and audit trail." },
       { property: "og:title", content: `${params.id} · ProcureDesk` },
       { property: "og:description", content: "Purchase request detail." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Detail,

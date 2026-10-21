@@ -8,6 +8,8 @@ export const Route = createFileRoute("/app/approvals")({
       { name: "description", content: "Purchase requests waiting for your approval." },
       { property: "og:title", content: "Approvals · ProcureDesk" },
       { property: "og:description", content: "Review and decide on purchase requests." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

@@ -24,6 +24,8 @@ export const Route = createFileRoute("/app/requests/$id/edit")({
       { name: "description", content: "Build a purchase request with the procurement copilot." },
       { property: "og:title", content: `Edit ${params.id} · ProcureDesk` },
       { property: "og:description", content: "AI-assisted purchase request builder with live budget and policy checks." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: EditRequest,

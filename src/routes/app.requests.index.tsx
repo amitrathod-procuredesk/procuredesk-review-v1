@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, Money, StatusBadge } from "@/components/pd/bits";
 import { RequesterDashboard } from "@/components/pd/RequesterDashboard";
+import { ProcurementAI } from "@/components/pd/ProcurementAI";
 import { budgetStatus, smartDate, STATUS_LABEL, supplierBreakdown, viewStatus, type ViewStatus, totals } from "@/lib/pd/engine";
 import { createDraft, log, mutate, useDB, useMe } from "@/lib/pd/store";
 import type { DB, PRequest, Status } from "@/lib/pd/types";
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/app/requests/")({
       { name: "description", content: "Search, filter and track every purchase request." },
       { property: "og:title", content: "Purchase requests · ProcureDesk" },
       { property: "og:description", content: "All purchase requests with status, supplier and amount." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Requests,
@@ -105,7 +108,7 @@ function Requests() {
       {(["dashboard", "list"] as const).map((v) => <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={"rounded-[5px] px-3 py-1 text-[13px] capitalize transition-colors " + (view === v ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>{v}</button>)}
     </div>
   );
-  const newBtn = me.role !== "approver" && <Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button>;
+  const newBtn = me.role !== "approver" && <div className="flex flex-wrap items-center gap-2"><ProcurementAI /><Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button></div>;
 
   if (view === "dashboard") return (
     <div className="p-4 md:px-8 md:py-6">
