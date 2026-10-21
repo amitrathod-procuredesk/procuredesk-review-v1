@@ -3,6 +3,18 @@ import { seedDB } from "../seed";
 import { converse, procurementProposal } from "../procurementAi";
 
 describe("Procurement AI proposals", () => {
+  it("confirms each product separately in a multi-item request", () => {
+    const db = seedDB();
+    let state = { request: procurementProposal(db, "u_amit"), queue: [] as string[] };
+    state = converse(db, state, "4 custom quantum widgets and 2 custom flux generators");
+    expect(state.queue).toHaveLength(1);
+    state = converse(db, state, "Create non-catalog item");
+    expect(state.request.items).toHaveLength(1);
+    expect(state.request.ai.pending).toBe("nomatch");
+    state = converse(db, state, "Create non-catalog item");
+    expect(state.request.items.map((item) => item.qty)).toEqual([4, 2]);
+    expect(state.request.status).toBe("draft");
+  });
   it("does not add priced items until the user confirms the catalog choice", () => {
     const db = seedDB();
     const c = db.catalog.find((item) => item.available);

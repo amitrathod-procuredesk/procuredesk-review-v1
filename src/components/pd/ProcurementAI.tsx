@@ -40,7 +40,7 @@ export function ProcurementAI() {
     setConversation(null); setUndo([]); setText(""); setPreview(false);
   };
   const save = () => {
-    if (!r?.items.length || saving) return;
+    if (!r?.items.length || conversation?.queue.length || saving) return;
     setSaving(true);
     const id = createDraft(me.id, false);
     const proposal = structuredClone(r);
@@ -117,7 +117,7 @@ export function ProcurementAI() {
                 <div className="mt-5 border-t border-border pt-4"><p className="pd-section-title">Review checks</p>{checks.length ? checks.map((c) => <div key={c.id} className="mt-3 text-xs"><p className={c.level === "error" ? "text-attention" : "text-warning"}>{c.title}</p><p className="mt-1 leading-relaxed text-muted-foreground">{c.detail}</p></div>) : <p className="mt-2 flex items-center gap-1.5 text-xs text-success"><Check className="size-3.5" /> All checks pass</p>}</div>
               </>}
             </div>
-            <footer className="shrink-0 border-t border-border p-4"><Button className="w-full" disabled={!r?.items.length || saving} onClick={save}>{saving ? "Creating draft…" : "Create draft & review"}<ArrowRight /></Button><p className="mt-2 text-center text-[11px] text-muted-foreground">{conversation?.queue.length ? `${conversation.queue.length} more product(s) awaiting selection` : r?.ai.pending ? "Remaining details can be completed in the draft" : "Not submitted for approval"}</p></footer>
+            <footer className="shrink-0 border-t border-border p-4"><Button className="w-full" disabled={!r?.items.length || !!conversation?.queue.length || saving} onClick={save}>{saving ? "Creating draft…" : "Create draft & review"}<ArrowRight /></Button><p className="mt-2 text-center text-[11px] text-muted-foreground">{conversation?.queue.length ? `${conversation.queue.length} more product(s) awaiting selection` : r?.ai.pending ? "Remaining details can be completed in the draft" : "Not submitted for approval"}</p></footer>
           </aside>
         </div>
       </DialogContent>
