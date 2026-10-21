@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ArrowUp, Check, Package, RotateCcw, Search, Sparkles, Undo2 } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, Package, RotateCcw, Search, Undo2, WandSparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -91,10 +91,10 @@ export function ProcurementAI() {
   const examples = ["I want to buy a laptop", "10 monitors for the design team", "A standing desk"];
 
   const interactive = (m: Msg) => m === lastAi && lastIsAi && !typing;
-  const mark = <span className="grid size-7 shrink-0 place-items-center rounded-md bg-gradient-to-br from-primary to-accent-foreground text-primary-foreground"><Sparkles className="size-3.5" /></span>;
+  const mark = <span className="pd-ai-mark size-8"><WandSparkles className="size-4" /></span>;
 
   return <>
-    <Button size="sm" variant="outline" className="border-primary/25 bg-gradient-to-r from-accent to-surface text-primary" onClick={() => setOpen(true)}><Sparkles /> Procurement AI</Button>
+    <Button size="sm" variant="outline" className="border-primary/25 bg-gradient-to-r from-accent to-surface text-primary" onClick={() => setOpen(true)}><span className="pd-ai-mark size-4"><WandSparkles className="!size-2.5" /></span> Procurement AI</Button>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="right" className={cn("flex w-full flex-col gap-0 overflow-hidden bg-surface p-0 transition-[max-width] duration-300 ease-out", hasItems || line ? "sm:max-w-[min(940px,calc(100vw-48px))]" : "sm:max-w-[520px]")} onOpenAutoFocus={(e) => { e.preventDefault(); input.current?.focus(); }}>
         <header className="flex shrink-0 items-center gap-2.5 border-b border-border/60 px-4 py-3 pr-12">
@@ -109,22 +109,22 @@ export function ProcurementAI() {
           <section aria-label="Procurement conversation" className={cn("flex min-h-0 min-w-0 flex-1 flex-col", preview && "hidden md:flex")}>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
               {!messages.length ? <div className="flex min-h-full flex-col items-center justify-center pb-10 text-center">
-                <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent-foreground text-primary-foreground shadow-sm"><Sparkles className="size-5" /></span>
+                <span className="pd-ai-mark size-12"><WandSparkles className="size-6" /></span>
                 <h2 className="mt-4 text-xl font-semibold tracking-tight">What do you need to buy?</h2>
                 <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">Describe it naturally — I’ll check your catalog, budget and policies.</p>
               </div> : <div className="space-y-5" role="log" aria-label="Conversation messages" aria-live="polite">
                 {messages.map((m) => <div key={m.id} className="animate-in fade-in slide-in-from-bottom-1 duration-200">
                   <div className={cn("flex gap-3", m.role === "user" && "justify-end")}>
-                    {m.role === "ai" && <Sparkles className="mt-1 size-4 shrink-0 text-primary" />}
+                    {m.role === "ai" && <span className="pd-ai-mark mt-0.5 size-6"><WandSparkles className="size-3" /></span>}
                     <p className={cn("whitespace-pre-wrap break-words text-sm leading-relaxed", m.role === "user" ? "max-w-[80%] rounded-2xl rounded-br-md bg-subtle px-3.5 py-2 text-foreground" : "max-w-[92%] pt-0.5")}>{m.text}</p>
                   </div>
-                  {m.role === "ai" && m.widget === "catalog" && <div className="mt-3 pl-7"><CatalogPicker db={db} query={m.query ?? ""} active={interactive(m)} onPick={(id, name) => send(id, name)} /></div>}
-                  {m.role === "ai" && m.options && interactive(m) && <div className="mt-3 flex flex-wrap gap-1.5 pl-7">
+                  {m.role === "ai" && m.widget === "catalog" && <div className="mt-3 pl-9"><CatalogPicker db={db} query={m.query ?? ""} active={interactive(m)} onPick={(id, name) => send(id, name)} /></div>}
+                  {m.role === "ai" && m.options && interactive(m) && <div className="mt-3 flex flex-wrap gap-1.5 pl-9">
                     {m.options.map((o) => <button key={o.value + o.label} type="button" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => send(o.value, o.label)}>{o.label}{o.hint && <span className="text-[10px] font-normal text-muted-foreground">{o.hint}</span>}</button>)}
                   </div>}
-                  {m.role === "ai" && m.widget === "date" && interactive(m) && <div className="mt-2 max-w-[200px] pl-7"><label className="sr-only" htmlFor="ai-date">Choose a date</label><TextInput id="ai-date" type="date" min={new Date().toISOString().slice(0, 10)} onChange={(e) => { if (e.target.value) send(e.target.value, smartDate(e.target.value)); }} /></div>}
+                  {m.role === "ai" && m.widget === "date" && interactive(m) && <div className="mt-2 max-w-[200px] pl-9"><label className="sr-only" htmlFor="ai-date">Choose a date</label><TextInput id="ai-date" type="date" min={new Date().toISOString().slice(0, 10)} onChange={(e) => { if (e.target.value) send(e.target.value, smartDate(e.target.value)); }} /></div>}
                 </div>)}
-                {typing && <div className="flex items-center gap-3" aria-label="Procurement AI is typing"><Sparkles className="size-4 animate-pulse text-primary" /><span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="size-1.5 rounded-full bg-primary/60 ai-thinking-dot" style={{ animationDelay: `${i * 150}ms` }} />)}</span></div>}
+                {typing && <div className="flex items-center gap-3" aria-label="Procurement AI is typing"><span className="pd-ai-mark size-6 animate-pulse"><WandSparkles className="size-3" /></span><span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="size-1.5 rounded-full bg-primary/60 ai-thinking-dot" style={{ animationDelay: `${i * 150}ms` }} />)}</span></div>}
               </div>}
               <div ref={end} />
             </div>

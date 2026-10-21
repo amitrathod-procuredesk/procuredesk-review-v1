@@ -95,6 +95,8 @@
   --warning-soft: oklch(0.965 0.04 85);
   --ai: oklch(0.6 0.14 62);
   --ai-soft: oklch(0.97 0.025 75);
+  /* Procurement AI identity: brand indigo into violet. */
+  --ai-gradient: linear-gradient(135deg, var(--primary) 0%, oklch(0.55 0.22 300) 60%, oklch(0.66 0.17 330) 100%);
   --info-soft: oklch(0.955 0.03 277);
   --pending: oklch(0.58 0.14 62);
   --pending-soft: oklch(0.965 0.045 75);
@@ -317,3 +319,13 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
 .pd-scroll-quiet::-webkit-scrollbar-track { background: transparent; }
 .pd-scroll-quiet::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
 .pd-scroll-quiet:hover::-webkit-scrollbar-thumb, .pd-scroll-quiet:focus-within::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 18%, transparent); }
+
+@utility pd-ai-mark {
+  background-image: var(--ai-gradient);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--primary) 45%, transparent);
+}
