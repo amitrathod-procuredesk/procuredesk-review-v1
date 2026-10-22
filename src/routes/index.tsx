@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { login, useDB, useHydrated, useMe } from "@/lib/pd/store";
 import { AiGlyph } from "@/components/pd/bits";
+import logo from "@/assets/procuredesk-logo.svg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,8 +46,7 @@ function Login() {
     <div className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col justify-between p-8 lg:p-12">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className="inline-flex size-6 items-center justify-center rounded-md bg-primary text-[11px] text-primary-foreground">PD</span>
-          ProcureDesk
+          <img src={logo.url} alt="ProcureDesk" width={208} height={32} className="h-8 w-[208px] max-w-full object-contain" />
         </div>
         <form onSubmit={submit} className="mx-auto w-full max-w-sm space-y-5 py-12">
           <div>
