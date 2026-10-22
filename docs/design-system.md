@@ -11,7 +11,7 @@
 
 | Token | Hex | Use |
 |---|---|---|
-| background | #F6F7F8 | App canvas behind panels |
+| background | #F5F7F9 | App canvas behind panels |
 | surface | #FFFFFF | Panels, cards, inputs, drawers |
 | subtle | #F3F4F6 | Table headers, hover rows, right rail, image placeholders |
 | foreground | #14161B | Primary text |
