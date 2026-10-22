@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Switch } from "@/components/ui/switch";
 import { Select, TextArea, TextInput } from "@/components/pd/form";
 import { Empty, Field, Money, Section, StatusBadge } from "@/components/pd/bits";
-import { Copilot } from "@/components/pd/Copilot";
 import { EssentialsBar } from "@/components/pd/EssentialsBar";
 import { LineItems } from "@/components/pd/LineItems";
 import { Attachments, ChecksBlock, Comments, RouteTimeline, SummaryRail } from "@/components/pd/RequestPanels";
@@ -21,9 +20,9 @@ export const Route = createFileRoute("/app/requests/$id/edit")({
   head: ({ params }) => ({
     meta: [
       { title: `Edit ${params.id} · ProcureDesk` },
-      { name: "description", content: "Build a purchase request with the procurement copilot." },
+      { name: "description", content: "Create and edit purchase requests with budget and policy checks." },
       { property: "og:title", content: `Edit ${params.id} · ProcureDesk` },
-      { property: "og:description", content: "AI-assisted purchase request builder with live budget and policy checks." },
+      { property: "og:description", content: "Purchase request builder with live budget and policy checks." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -33,7 +32,6 @@ export const Route = createFileRoute("/app/requests/$id/edit")({
 
 function EditRequest() {
   const { id } = Route.useParams();
-  const { prompt } = Route.useSearch();
   const db = useDB();
   const me = useMe()!;
   const r = db.requests.find((x) => x.id === id);
@@ -86,7 +84,6 @@ function EditRequest() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /></p>
         </div>
         <div className="flex items-center gap-2">
-          <Copilot r={r} initialPrompt={prompt} />
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
           <Button size="sm" onClick={trySubmit}>Submit</Button>
         </div>
