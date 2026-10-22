@@ -2,6 +2,7 @@ import { Building2, CalendarDays, Check, ChevronDown, CreditCard, FileText, Fold
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { useDB } from "@/lib/pd/store";
 import { PAYMENT_METHODS, REQUEST_TYPES, SHIPMENT_TYPES, type PRequest } from "@/lib/pd/types";
 import { cn } from "@/lib/utils";
@@ -15,20 +16,23 @@ function Chip({ icon, label, value, ai, children, wide, required }: { icon: Reac
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           aria-invalid={(required && empty) || undefined}
           className={cn(
-            "group inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-full px-3 text-[13px] transition-all active:scale-[0.98]",
-            empty ? "border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary" : "bg-subtle text-foreground hover:bg-accent",
-            open && "bg-accent ring-2 ring-primary/15",
+            "group h-8 max-w-[260px] justify-start gap-1.5 rounded-md border px-2.5 text-[13px] font-normal transition-colors [&_svg]:size-3.5",
+            empty ? "border-dashed border-border bg-surface text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary" : "border-primary/15 bg-primary/5 text-foreground hover:border-primary/35 hover:bg-primary/10 hover:text-foreground",
+            open && "border-primary/40 bg-primary/10 ring-2 ring-primary/15",
           )}
         >
-          <span className={cn("shrink-0 [&_svg]:size-3.5", empty ? "" : "text-muted-foreground")}>{icon}</span>
+          <span className={cn("shrink-0 [&_svg]:size-3.5", empty ? "" : "text-primary/80")}>{icon}</span>
           <span className="shrink-0 text-muted-foreground">{label}</span>
           {value && <span className="min-w-0 truncate font-medium">{value}</span>}
           {ai && <span className="size-1.5 shrink-0 rounded-full bg-primary" title="AI suggested" />}
-          <ChevronDown className={cn("size-3 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
-        </button>
+          <ChevronDown className={cn("size-3! shrink-0 text-muted-foreground transition-transform group-hover:text-primary", open && "rotate-180 text-primary")} />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={6} className={cn("p-1", wide ? "w-72" : "w-56")}>
         <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
