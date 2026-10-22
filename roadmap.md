@@ -7,3 +7,4 @@
 - [x] Align request and approver line-item controls, Essentials labels, header and Reject styling.
 - [x] Verify both roles, card/table layouts, decision dialogs and narrow-screen behavior.
 - [ ] Default all users to Requests after login, hide Home, and verify navigation.
+- [ ] Use a very subtle primary-family workspace background inspired by Ramp, keeping cards light and clear.
