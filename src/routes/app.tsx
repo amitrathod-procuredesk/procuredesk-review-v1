@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Home, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -61,7 +61,6 @@ function AppShell() {
   const pendingCount = db.requests.filter((r) => isPendingFor(r, me.id)).length;
   const ctx = params.id ? db.requests.find((r) => r.id === params.id) : undefined;
   const mobileItems = [
-    { to: "/app", label: "Home", icon: Home, exact: true },
     { to: "/app/requests", label: "Requests", icon: FileText },
     ...(me.role !== "requestor" ? [{ to: "/app/approvals", label: "Approvals", icon: ClipboardCheck }] : []),
   ] as const;
@@ -70,7 +69,7 @@ function AppShell() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
         <div className="flex items-center gap-2">
-          <Link to={adminMode ? "/app/admin" : "/app"} className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
+          <Link to={adminMode ? "/app/admin" : "/app/requests"} className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
             <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
             <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
           </Link>
@@ -127,7 +126,6 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
   const path = useRouterState({ select: (s) => s.location.pathname });
   const soon = (n: string) => toast(`${n} is coming soon`, { description: "This area isn't part of the demo yet." });
   const groups: NavGroup[] = [
-    { label: "Home", icon: Home, to: "/app", exact: true },
     {
       label: "Purchase", icon: ShoppingBasket, children: [
         { label: "Request", to: "/app/requests" },
@@ -237,7 +235,7 @@ function AdminSideNav({ collapsed, setCollapsed }: { collapsed: boolean; setColl
         })}
       </nav>
       <div className={cn("space-y-0.5 border-t border-sidebar-border py-2", collapsed ? "mx-2" : "mx-3")}>
-        <Link to="/app" title="Back to workspace" className={cn(row, collapsed && "justify-center")}><ArrowLeftRight className="size-4 shrink-0" />{!collapsed && "Back to workspace"}</Link>
+        <Link to="/app/requests" title="Back to workspace" className={cn(row, collapsed && "justify-center")}><ArrowLeftRight className="size-4 shrink-0" />{!collapsed && "Back to workspace"}</Link>
         <button onClick={() => toast.success("Thanks! Feedback noted.")} title="Send feedback" className={cn(row, "text-primary", collapsed && "justify-center")}><MessageSquarePlus className="size-4 shrink-0" />{!collapsed && "Send feedback"}</button>
       </div>
     </aside>
@@ -267,7 +265,7 @@ function UserMenu({ compact, adminMode }: { compact?: boolean; adminMode?: boole
         </div>
         <DropdownMenuSeparator />
         {adminMode ? (
-          <DropdownMenuItem onClick={() => nav({ to: "/app" })}><ArrowLeftRight /> Switch to workspace</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => nav({ to: "/app/requests" })}><ArrowLeftRight /> Switch to workspace</DropdownMenuItem>
         ) : me.role === "admin" ? (
           <DropdownMenuItem onClick={() => nav({ to: "/app/admin" })}><ShieldCheck /> Switch to Admin</DropdownMenuItem>
         ) : (
@@ -276,7 +274,7 @@ function UserMenu({ compact, adminMode }: { compact?: boolean; adminMode?: boole
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">Switch demo user</DropdownMenuLabel>
         {db.users.filter((u) => u.active && u.id !== me.id).slice(0, 8).map((u) => (
-          <DropdownMenuItem key={u.id} onClick={() => { mutate((d) => (d.session.userId = u.id)); if (!(adminMode && u.role === "admin")) nav({ to: "/app" }); }}>
+          <DropdownMenuItem key={u.id} onClick={() => { mutate((d) => (d.session.userId = u.id)); if (!(adminMode && u.role === "admin")) nav({ to: "/app/requests" }); }}>
             <UserAvatar user={u} /> <span className="truncate">{u.name}</span>
             <span className="ml-auto text-[11px] capitalize text-muted-foreground">{u.role}</span>
           </DropdownMenuItem>
