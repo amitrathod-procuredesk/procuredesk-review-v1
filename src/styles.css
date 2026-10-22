@@ -155,6 +155,8 @@
   }
   .pd-panel {
     @apply rounded-xl border border-border/50 bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)];
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .pd-section-title {
     @apply text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground;
@@ -170,12 +172,15 @@
   }
   .pd-table td {
     @apply h-10 border-b border-border px-3 align-middle;
+    overflow-wrap: anywhere;
   }
   .pd-table tbody tr:hover {
     @apply bg-subtle/60;
   }
   .pd-chip {
     @apply inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs text-foreground transition-colors hover:bg-subtle;
+    max-width: 100%;
+    min-width: 0;
   }
   .pd-chip[data-active="true"] {
     @apply border-primary/40 bg-accent text-accent-foreground;
@@ -328,4 +333,14 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
   place-items: center;
   flex-shrink: 0;
   box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+/* Long values never break layouts: big numbers scale to their container, long words wrap. */
+@utility pd-fit {
+  container-type: inline-size;
+  min-width: 0;
+}
+@utility pd-fit-num {
+  font-size: clamp(16px, 11cqw, 28px);
+  overflow-wrap: anywhere;
 }

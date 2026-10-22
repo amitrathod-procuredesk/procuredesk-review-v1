@@ -16,9 +16,9 @@ const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15",
 export function TotalsBlock({ r }: { r: PRequest }) {
   const t = totals(r);
   return (
-    <div>
+    <div className="pd-fit">
       <p className="text-xs text-muted-foreground">Request total</p>
-      <Money v={t.total} className="block text-[28px] font-semibold leading-tight tracking-tight" />
+      <Money v={t.total} className="pd-fit-num block font-semibold leading-tight tracking-tight" />
       <p className="mt-1 text-xs text-muted-foreground">
         {t.shipping || t.tax
           ? <>Subtotal <Money v={t.subtotal} className="num text-foreground/80" />{t.shipping > 0 && <> + shipping <Money v={t.shipping} className="num text-foreground/80" /></>}{t.tax > 0 && <> + tax <Money v={t.tax} className="num text-foreground/80" /></>}</>

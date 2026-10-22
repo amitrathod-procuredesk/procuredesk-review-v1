@@ -255,7 +255,7 @@ function Kpi({ label, value, sub, tone, onClick, active }: { label: string; valu
   return (
     <button onClick={onClick} aria-pressed={active} className={cn("pd-panel p-4 text-left transition-[box-shadow,border-color] hover:border-primary/30", active && "border-primary/40 ring-[3px] ring-primary/10")}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn("num mt-1 text-xl font-semibold tracking-tight", tone === "red" ? "text-destructive" : tone === "amber" ? "text-warning" : "")}>{value}</p>
+      <p className={cn("num mt-1 text-xl break-words [overflow-wrap:anywhere] font-semibold tracking-tight", tone === "red" ? "text-destructive" : tone === "amber" ? "text-warning" : "")}>{value}</p>
       <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{sub}</p>
     </button>
   );
