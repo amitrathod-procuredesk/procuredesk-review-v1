@@ -29,7 +29,7 @@ function Login() {
   const [forgot, setForgot] = useState(false);
 
   useEffect(() => {
-    if (hydrated && me) nav({ to: "/app" });
+    if (hydrated && me) nav({ to: "/app/requests", replace: true });
   }, [hydrated, me, nav]);
 
   const submit = (e: React.FormEvent) => {
@@ -38,7 +38,7 @@ function Login() {
     if (!email || !password) return setError("Enter your email and password.");
     const u = login(email, password);
     if (!u) return setError("That email and password don't match an active account.");
-    nav({ to: "/app" });
+    nav({ to: "/app/requests", replace: true });
   };
 
   return (
