@@ -96,6 +96,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
         <div className={cn("flex items-start gap-3 px-3 py-2.5", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
+          <div className="-ml-1 shrink-0 self-center">{detailToggle(l, isOpen)}</div>
           {editable && <input type="checkbox" className="shrink-0 self-center" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -136,15 +137,13 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </div>
           {editable && <div className="-mr-1 flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">{actions(l)}</div>}
         </div>
-        <div className="flex justify-end px-3 pb-1.5">{detailToggle(l, isOpen)}</div>
         {isOpen && <div id={`line-details-${l.id}`} className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div>}
       </li>
     );
   };
   const detailToggle = (l: LineItem, isOpen: boolean) => (
-    <Button type="button" size="sm" variant="ghost" aria-label={isOpen ? "Hide details" : "Show details"} title={isOpen ? "Hide item details" : "Show item details"} aria-expanded={isOpen} aria-controls={`line-details-${l.id}`} onClick={() => setOpen(isOpen ? null : l.id)} className="h-7 shrink-0 gap-1 px-1.5 text-[11px] font-normal text-muted-foreground hover:bg-transparent hover:text-primary">
-      {isOpen ? "Hide details" : "View details"}
-      <ChevronDown className={cn("size-3 transition-transform motion-reduce:transition-none", isOpen && "rotate-180")} />
+    <Button type="button" size="icon" variant="ghost" aria-label={isOpen ? "Hide details" : "Show details"} title={isOpen ? "Hide item details" : "Show item details"} aria-expanded={isOpen} aria-controls={`line-details-${l.id}`} onClick={() => setOpen(isOpen ? null : l.id)} className="size-6 shrink-0 text-muted-foreground">
+      <ChevronDown className={cn("size-3.5 transition-transform motion-reduce:transition-none", !isOpen && "-rotate-90")} />
     </Button>
   );
   const actions = (l: LineItem) => (
@@ -167,6 +166,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
         <colgroup>
+          <col className="w-8" />
           {editable && <col className="w-9" />}
           <col />
           <col className="w-[92px]" />
@@ -180,6 +180,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
         </colgroup>
         <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:pl-2 [&>th]:pr-3.5 [&>th]:font-semibold">
+            <th aria-label="Item details" />
             {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3.5!">Description</th>
             <th className="pl-3.5!">Item #</th>
@@ -199,6 +200,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
               <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
+                <td className="px-1!">{detailToggle(l, isOpen)}</td>
                 {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
@@ -206,7 +208,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
                     : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
-                  {detailToggle(l, isOpen)}
                     </div>
                   </div>
                 </td>
@@ -224,7 +225,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td className="num whitespace-nowrap pr-3.5! text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>
               </tr>,
-              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={(editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div id={`line-details-${l.id}`} className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
+              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={1 + (editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div id={`line-details-${l.id}`} className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
             ];
           })}
         </tbody>
