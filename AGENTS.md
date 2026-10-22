@@ -20,3 +20,4 @@
 - Maintenance uses each asset's existing plan, due date, optional service progress and completion log through assetRegister actions; service progress stays separate from asset lifecycle status to preserve assignments and repair history.
 - Shared LineItems uses the existing editor for editable details and a read-only item dialog for inspection, so removing inline disclosure never hides review information or enables edits.
 - Restrained destructive actions use the shared Button destructive-soft variant with semantic danger tokens, keeping desktop, mobile and confirmation styling consistent.
+- Login and workspace branding use the same uploaded logo asset pointer so the brand remains consistent across entry points.

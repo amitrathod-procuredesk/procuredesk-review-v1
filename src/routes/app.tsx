@@ -10,6 +10,7 @@ import { isPendingFor } from "@/lib/pd/engine";
 import { logout, mutate, resetDemo, useDB, useHydrated, useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV } from "@/lib/pd/adminNav";
+import logo from "@/assets/procuredesk-logo.svg.asset.json";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
@@ -70,8 +71,7 @@ function AppShell() {
       <header className="sticky top-0 z-30 grid h-[60px] shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
         <div className="flex items-center gap-2">
           <Link to={adminMode ? "/app/admin" : "/app/requests"} className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
-            <span className="inline-flex size-[18px] items-center justify-center rounded-[4px] bg-primary text-[11px] font-black text-primary-foreground">P</span>
-            <span><span className="text-primary">Procure</span><span className="text-foreground">Desk</span></span>
+            <img src={logo.url} alt="ProcureDesk" width={208} height={32} className="h-6 w-[156px] max-w-full object-contain" />
           </Link>
           {adminMode && <span className="animate-in fade-in rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">Admin</span>}
         </div>
