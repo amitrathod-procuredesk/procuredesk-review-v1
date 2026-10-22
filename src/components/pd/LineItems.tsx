@@ -170,8 +170,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           {editable && <col className="w-9" />}
           <col className="min-w-[320px]" />
           <col className="w-[92px]" />
-          <col className="w-[140px]" />
-          {!hideSupplier && <col className="w-[130px]" />}
+          <col className="w-[128px]" />
+          {!hideSupplier && <col className="w-[116px]" />}
           <col className="w-[84px]" />
           <col className="w-[112px]" />
           <col className="w-[72px]" />
