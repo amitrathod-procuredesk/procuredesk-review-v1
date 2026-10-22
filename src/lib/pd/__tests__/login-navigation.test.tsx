@@ -21,7 +21,7 @@ describe("default login destination", () => {
       state.login.mockReturnValue({ id: "user", role });
       const Component = (Route as unknown as { component: () => React.ReactNode }).component;
       const screen = render(<Component />);
-      fireEvent.click(screen.getByRole("button", { name: "Sign in", exact: true }));
+      fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
       expect(state.navigate).toHaveBeenCalledWith({ to: "/app/requests", replace: true });
     });
   }

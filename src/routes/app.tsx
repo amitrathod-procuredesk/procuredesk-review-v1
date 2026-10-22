@@ -108,7 +108,7 @@ function AppShell() {
 
       <nav className={cn("fixed inset-x-0 bottom-0 z-30 flex h-14 border-t border-border bg-surface md:hidden", adminMode && "hidden")}>
         {mobileItems.map((it) => (
-          <Link key={it.to} to={it.to} activeOptions={{ exact: "exact" in it && it.exact }} className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground data-[status=active]:text-primary">
+          <Link key={it.to} to={it.to} className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground data-[status=active]:text-primary">
             <it.icon className="size-4" />
             {it.label}
           </Link>
