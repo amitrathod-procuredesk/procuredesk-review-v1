@@ -120,11 +120,11 @@ function Requests() {
     <div className="space-y-4 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="pd-h1">Purchase requests</h1>
-        <div className="flex items-center gap-2">{tabs}{newBtn}</div>
+        <div className="grid min-w-0 w-full grid-cols-1 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap">{tabs}{newBtn}</div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-64 flex-1">
+        <div className="relative w-full min-w-0 flex-auto sm:min-w-64 sm:flex-1">
           <Search className="absolute top-2 left-2.5 size-4 text-muted-foreground" />
           <input className="pd-input pl-8" placeholder='Search or ask: "engineering requests above $5,000 awaiting approval"' value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </div>
@@ -194,7 +194,7 @@ function Requests() {
               <li key={r.id}><Link to="/app/requests/$id" params={{ id: r.id }} className="pd-panel block p-3"><div className="flex justify-between gap-2"><p className="line-clamp-2 min-w-0 break-words text-sm font-medium">{r.title || "Untitled"}</p><span className="shrink-0 text-right"><Money v={totals(r).total} className="text-sm" /><span className="block text-[11px] font-normal text-muted-foreground">{r.items.filter((i) => !i.declined).length} item{r.items.filter((i) => !i.declined).length === 1 ? "" : "s"}</span></span></div><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span><StatusBadge r={r} /></div></Link></li>
             ))}
           </ul>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="grid gap-2 text-xs text-muted-foreground sm:flex sm:items-center sm:justify-between">
             <span>{rows.length} request{rows.length === 1 ? "" : "s"}</span>
             <div className="flex items-center gap-2">
               <button className="pd-chip" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Previous</button>
