@@ -135,6 +135,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               {other > 0 && <p className="num text-[10.5px] text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>incl. other <Money v={other} /></p>}
             </div>
           </div>
+          {editable && <div className="-mr-1 flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">{actions(l)}</div>}
         </div>
         {isOpen && <div id={`line-details-${l.id}`} className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div>}
       </li>
@@ -199,9 +200,14 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
                 {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
+                  <div className="flex min-w-0 items-center gap-1">
+                    {detailToggle(l, isOpen)}
+                    <div className="min-w-0 flex-1">
                   {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
                     : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
+                    </div>
+                  </div>
                 </td>
                 <td>{ro ? <span className="num block truncate px-1.5">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
                 <td><span className={cn("block truncate", !l.account && "text-warning")} title={l.account}>{l.account || "No account"}</span></td>
@@ -215,9 +221,9 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   <label className={cn(cell, "num flex cursor-text items-center justify-end focus-within:border-primary/60 focus-within:bg-card")}><span className="text-muted-foreground">$</span><input key={l.unitPrice} inputMode="decimal" aria-label="Unit price" className="num min-w-[3ch] bg-transparent text-right outline-none [field-sizing:content]" defaultValue={l.unitPrice.toFixed(2)} onBlur={(e) => { const v = Math.max(0, Number(e.target.value.replace(/[^\d.]/g, "")) || 0); if (v !== l.unitPrice) patch(l.id, { unitPrice: v }); else e.target.value = v.toFixed(2); }} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} /></label>)}</td>
                 <td className="num pr-3.5! text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
                 <td className="num whitespace-nowrap pr-3.5! text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
-                <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l, isOpen)}</div></td>
+                <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>
               </tr>,
-              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={(editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
+              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={(editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div id={`line-details-${l.id}`} className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
             ];
           })}
         </tbody>
