@@ -70,7 +70,7 @@
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.977 0.004 255);
+  --background: oklch(0.962 0.005 255);
   --surface: oklch(1 0 0);
   --subtle: oklch(0.968 0.003 270);
   --foreground: oklch(0.2 0.01 270);
@@ -154,7 +154,7 @@
     @apply h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none hover:border-input focus:border-ring focus:bg-surface;
   }
   .pd-panel {
-    @apply rounded-xl border border-border/50 bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)];
+    @apply rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.05),0_1px_3px_rgba(16,24,40,0.04)];
     min-width: 0;
     overflow-wrap: anywhere;
   }
