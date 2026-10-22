@@ -164,14 +164,14 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
     <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
-      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1000 : 1120 }}>
+      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 1080 : 1200 }}>
         <colgroup>
           <col className="w-8" />
           {editable && <col className="w-9" />}
-          <col />
+          <col className="min-w-[320px]" />
           <col className="w-[92px]" />
-          <col className="w-[140px]" />
-          {!hideSupplier && <col className="w-[130px]" />}
+          <col className="w-[128px]" />
+          {!hideSupplier && <col className="w-[116px]" />}
           <col className="w-[84px]" />
           <col className="w-[112px]" />
           <col className="w-[72px]" />
@@ -205,8 +205,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1">
-                  {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
-                    : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
+                  {ro ? <p className={cn("line-clamp-3 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
+                    : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                     </div>
                   </div>
