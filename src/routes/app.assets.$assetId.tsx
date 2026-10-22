@@ -191,7 +191,7 @@ function AssetPage() {
 
         <aside className="space-y-4">
           <Card title="Value">
-            <p className="num text-xl font-semibold tracking-tight">{money(book)}</p>
+            <p className="num text-xl break-words [overflow-wrap:anywhere] font-semibold tracking-tight">{money(book)}</p>
             <p className="text-[12px] text-muted-foreground">Book value today · cost {money(a.cost)}</p>
             {a.cost > 0 && <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-subtle"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (book / a.cost) * 100)}%` }} /></div>}
             {a.cost > 0 && <p className="mt-1.5 text-[11px] text-muted-foreground">{Math.round(100 - (book / a.cost) * 100)}% depreciated</p>}

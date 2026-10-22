@@ -101,10 +101,10 @@ function ReportPage() {
       </div>}
     </section>
 
-    {kpis ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{kpis.map((k) => <div key={k.label} className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">{k.label}</p><p className={cn("num mt-0.5 text-xl", k.value > 0 && k.tone === "danger" && "text-destructive", k.value > 0 && k.tone === "warning" && "text-warning", k.tone === "success" && "text-success")}>{k.kind === "money" ? money(k.value) : k.value}</p></div>)}</div> : <div className="grid gap-3 md:grid-cols-[220px_1fr]">
+    {kpis ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{kpis.map((k) => <div key={k.label} className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">{k.label}</p><p className={cn("num mt-0.5 text-xl break-words [overflow-wrap:anywhere]", k.value > 0 && k.tone === "danger" && "text-destructive", k.value > 0 && k.tone === "warning" && "text-warning", k.tone === "success" && "text-success")}>{k.kind === "money" ? money(k.value) : k.value}</p></div>)}</div> : <div className="grid gap-3 md:grid-cols-[220px_1fr]">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-        <div className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">Records</p><p className="num text-xl">{rows.length}<span className="text-[12px] text-muted-foreground"> / {all.length}</span></p></div>
-        {moneyCols.slice(-1).map((c) => <div key={c.key} className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">Total {c.label.toLowerCase()}</p><p className="num text-xl">{money(rows.reduce((t, r) => t + (Number(r[c.key]) || 0), 0))}</p></div>)}
+        <div className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">Records</p><p className="num text-xl break-words [overflow-wrap:anywhere]">{rows.length}<span className="text-[12px] text-muted-foreground"> / {all.length}</span></p></div>
+        {moneyCols.slice(-1).map((c) => <div key={c.key} className="pd-panel p-3"><p className="text-[12px] text-muted-foreground">Total {c.label.toLowerCase()}</p><p className="num text-xl break-words [overflow-wrap:anywhere]">{money(rows.reduce((t, r) => t + (Number(r[c.key]) || 0), 0))}</p></div>)}
       </div>
       {top.length > 0 && <div className="pd-panel p-3">
         <p className="mb-2 text-[12px] text-muted-foreground">Top {rep.columns.find((c) => c.key === rep.groupBy)?.label.toLowerCase()} by {sumCol?.label.toLowerCase() ?? "records"}</p>

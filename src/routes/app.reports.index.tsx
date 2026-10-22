@@ -40,7 +40,7 @@ function ReportsHome() {
   return <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
     <header><h1 className="pd-h1">Reports</h1><p className="mt-1 text-[13px] text-muted-foreground">Pick a report to filter, sort and export your organisation's records.</p></header>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      {kpis.map((k) => <Link key={k.label} to="/app/reports/$reportId" params={{ reportId: k.to }} className="pd-panel p-3 transition-colors hover:border-primary/40"><p className="text-[12px] text-muted-foreground">{k.label}</p><p className="num mt-0.5 text-xl">{k.value}</p></Link>)}
+      {kpis.map((k) => <Link key={k.label} to="/app/reports/$reportId" params={{ reportId: k.to }} className="pd-panel p-3 transition-colors hover:border-primary/40"><p className="text-[12px] text-muted-foreground">{k.label}</p><p className="num mt-0.5 text-xl break-words [overflow-wrap:anywhere]">{k.value}</p></Link>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border">
       <div role="tablist" aria-label="Report groups" className="flex gap-1">

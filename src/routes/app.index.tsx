@@ -117,7 +117,7 @@ function AdminDashboard() {
       <div className="flex items-end justify-between"><div><h1 className="pd-h1">Operations</h1><p className="text-sm text-muted-foreground">{db.org.name} · {db.org.fiscalYear}</p></div><Link to="/app/admin" className="pd-chip">Configure organization</Link></div>
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-4">
         {[["Pending approvals", pending.length.toString()], ["Open requests", open.length.toString()], ["Committed spend", money(spend)], ["Policy exceptions", exceptions.length.toString()]].map(([k, v]) => (
-          <div key={k} className="bg-surface p-4"><p className="text-xs text-muted-foreground">{k}</p><p className="num mt-1 text-xl">{v}</p></div>
+          <div key={k} className="bg-surface p-4"><p className="text-xs text-muted-foreground">{k}</p><p className="num mt-1 text-xl break-words [overflow-wrap:anywhere]">{v}</p></div>
         ))}
       </div>
       {blocked.length > 0 && (
