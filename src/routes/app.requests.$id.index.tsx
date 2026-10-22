@@ -9,7 +9,7 @@ import { Empty, Section, StatusBadge } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
 import { AuditTrailButton, POST_APPROVAL, RequestActionsButton } from "@/components/pd/RequestActions";
 import { Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
-import { currentStageIndex, isPendingFor, lineTotal, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
+import { isPendingFor, lineTotal, money, runChecks, smartDate, totals } from "@/lib/pd/engine";
 import { decide, delegate, log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 import { RailHeader, RailStrip, useRailHidden } from "@/components/pd/RailToggle";
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/app/requests/$id/")({
 function Detail() {
   const { id } = Route.useParams();
   const db = useDB();
-  const me = useMe()!;
+  const me = useMe();
   const nav = useNavigate();
   const r = db.requests.find((x) => x.id === id);
   const [action, setAction] = useState<null | "approve" | "partial" | "reject" | "changes" | "delegate">(null);
@@ -43,12 +43,12 @@ function Detail() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [railHidden, toggleRail] = useRailHidden();
 
+  if (!me) return null;
   if (!r) return <div className="p-8"><Empty title="Request not found" action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
   const canView = me.role !== "requestor" || r.requesterId === me.id;
   if (!canView) return <div className="p-8"><Empty title="Permission denied" body="You can only view requests you created." /></div>;
 
   const mine = isPendingFor(r, me.id);
-  const stage = r.route[currentStageIndex(r)];
   const isOwner = r.requesterId === me.id;
   const requester = db.users.find((u) => u.id === r.requesterId);
   const dept = db.departments.find((d) => d.id === r.departmentId);
@@ -105,7 +105,7 @@ function Detail() {
 
   return (
     <div className="pb-24 md:pb-0 lg:flex lg:h-[calc(100dvh-60px)] lg:flex-col lg:overflow-hidden lg:pb-0 print:block print:h-auto">
-      <header className="no-print-actions shrink-0 border-b border-border bg-surface px-4 py-4 md:px-8">
+      <header className="no-print-actions shrink-0 bg-surface px-4 py-4 md:px-8">
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
         <div className="flex flex-wrap items-start justify-between gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-6">
           <div className="min-w-0 flex-1 basis-[28rem]">
@@ -125,7 +125,7 @@ function Detail() {
             <div className="hidden items-center gap-2 md:flex">
               {mine && <>
                 <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Reassign</Button>
-                <Button variant="outline" size="sm" onClick={() => setAction("reject")}>Reject</Button>
+                <Button variant="destructive-soft" size="sm" onClick={() => setAction("reject")}>Reject</Button>
                 {approveMenu()}
               </>}
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
@@ -140,7 +140,6 @@ function Detail() {
             </div>
           </div>
         </div>
-        {mine && stage && <p className="mt-3 text-sm">You're reviewing <span className="font-medium">{stage.name}</span> — required because {stage.reason.toLowerCase()}.{stage.approvals.length > 1 && ` ${stage.mode === "all" ? `All ${stage.approvals.length} reviewers must approve.` : "Any one reviewer can approve."}`}</p>}
         {r.decisionReason && ["changes", "rejected"].includes(r.status) && <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 text-sm">{r.status === "rejected" ? "Rejected" : "Changes requested"}: “{r.decisionReason}”</p>}
       </header>
 
@@ -150,16 +149,16 @@ function Detail() {
             {(() => {
               type Fact = [typeof Building2, string, string | undefined, string?];
               const opts: Fact[] = ([[r.urgent, "Urgent", "text-destructive"], [r.delayed, "Delayed release", ""], [r.blanket, "Blanket order", ""]] as const).filter(([on]) => on).map(([, t, c]) => [Zap, "Option", t, c]);
-              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [Users, "Department", dept?.name], [FolderKanban, "Project", r.project], [FileText, "Request type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Required by", r.requiredBy ? `Needed by ${smartDate(r.requiredBy)}` : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo && `Quote ${r.quoteNo}`], ...opts];
+              const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [Users, "Department", dept?.name], [FolderKanban, "Project", r.project], [FileText, "Type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Needed by", r.requiredBy ? smartDate(r.requiredBy) : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo], ...opts];
               const shown = facts.filter(([, , v]) => v);
               return (
                 <>
                   <ul className="flex flex-wrap items-center gap-1.5">
                     {shown.map(([Icon, k, v, c]) => (
-                      <li key={k + v} title={`${k}: ${v}`} className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border px-2.5 text-[13px] leading-none">
+                      <li key={k + v} title={`${k}: ${v}`} className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[13px] leading-snug">
                         <Icon className={`h-3.5 w-3.5 shrink-0 ${c || "text-muted-foreground"}`} aria-hidden />
-                        <span className="sr-only">{k}: </span>
-                        <span className={`truncate ${c || ""}`}>{v}</span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">{k}</span>
+                        <span className={`min-w-0 break-words [overflow-wrap:anywhere] ${c || ""}`}>{v}</span>
                       </li>
                     ))}
                   </ul>
@@ -187,7 +186,7 @@ function Detail() {
       {mine && (
         <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
           <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("delegate")}>Reassign</Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
+          <Button variant="destructive-soft" size="sm" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
           {approveMenu(true)}
         </div>
       )}
@@ -265,7 +264,7 @@ function Detail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAction(null)}>Cancel</Button>
             <Button
-              variant={action === "reject" ? "destructive" : "default"}
+              variant={action === "reject" ? "destructive-soft" : "default"}
               disabled={(action === "partial" && (keep.length === 0 || keep.length === liveItems.length)) || (action === "changes" && !reason.trim()) || (action === "reject" && (!preset || (preset === "Other" && !reason.trim()))) || (action === "delegate" && !delegateTo)}
               onClick={confirm}
             >

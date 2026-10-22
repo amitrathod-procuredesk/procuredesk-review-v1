@@ -4,3 +4,5 @@
 - [x] Verify scheduling through completion in the browser, including narrow-screen layout.
 - [x] Add Procurement AI conversation and explicit draft review to Requests.
 - [x] Test assistant safety rules and verify creation through the request editor.
+- [x] Align request and approver line-item controls, Essentials labels, header and Reject styling.
+- [x] Verify both roles, card/table layouts, decision dialogs and narrow-screen behavior.

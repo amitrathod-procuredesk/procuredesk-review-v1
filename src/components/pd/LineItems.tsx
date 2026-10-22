@@ -22,7 +22,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const lineBudgets = budgetLevelOf(r, db) === "line";
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
   const me = useMe();
-  const [open, setOpen] = useState<string | null>(null);
+  const [inspect, setInspect] = useState<string | null>(null);
+  const inspected = r.items.find((l) => l.id === inspect);
   const [edit, setEdit] = useState<string | null>(null);
   const editing = r.items.find((i) => i.id === edit);
   const [sel, setSel] = useState<string[]>([]);
@@ -72,7 +73,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   }, {}));
 
   const card = (l: LineItem, i: number, hideSupplier = false) => {
-    const isOpen = open === l.id;
     const other = (l.tax || 0) + (l.shipping || 0);
     const sup = vendorName(l.vendorId);
     const v = db.vendors.find((x) => x.id === l.vendorId);
@@ -95,8 +95,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     ].filter(Boolean);
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
-        <div className={cn("flex items-start gap-1.5 py-2.5 pr-3 pl-1", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setOpen(isOpen ? null : l.id); }}>
-          <div className="-mr-0.5 shrink-0 self-center [&>button]:w-5">{detailToggle(l, isOpen)}</div>
+        <div className={cn("flex items-start gap-1.5 py-2.5 pr-3 pl-1", editable && "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); }}>
           {editable && <input type="checkbox" className="shrink-0 self-center" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -105,7 +104,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-start gap-1">
-                  <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p>
+                  {editable ? <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35] transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p> : <Button variant="link" className="h-auto min-w-0 justify-start whitespace-normal p-0 text-left text-[13px] leading-snug text-foreground" title={l.description} onClick={() => setInspect(l.id)}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>}
                 </div>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
@@ -137,15 +136,9 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </div>
           {editable && <div className="-mr-1 flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">{actions(l)}</div>}
         </div>
-        {isOpen && <div id={`line-details-${l.id}`} className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div>}
       </li>
     );
   };
-  const detailToggle = (l: LineItem, isOpen: boolean) => (
-    <Button type="button" size="icon" variant="ghost" aria-label={isOpen ? "Hide details" : "Show details"} title={isOpen ? "Hide item details" : "Show item details"} aria-expanded={isOpen} aria-controls={`line-details-${l.id}`} onClick={() => setOpen(isOpen ? null : l.id)} className="size-6 shrink-0 text-muted-foreground">
-      <ChevronDown className={cn("size-3.5 transition-transform motion-reduce:transition-none", !isOpen && "-rotate-90")} />
-    </Button>
-  );
   const actions = (l: LineItem) => (
     <>
       {editable && (
@@ -166,7 +159,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
         <colgroup>
-          <col className="w-6" />
           {editable && <col className="w-7" />}
           <col />
           <col className="w-[76px]" />
@@ -176,11 +168,10 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <col className="w-[96px]" />
           <col className="w-[68px]" />
           <col className="w-[96px]" />
-          <col className="w-12" />
+          {editable && <col className="w-12" />}
         </colgroup>
         <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:px-2 [&>th]:font-semibold">
-            <th aria-label="Item details" className="px-0!" />
             {editable && <th className="px-0!"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3!">Description</th>
             <th className="pl-3.5!">Item #</th>
@@ -190,22 +181,20 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
             <th className="text-right">Unit price</th>
             <th className="text-right" title="Tax + shipping">Other</th>
             <th className="text-right">Total</th>
-            <th className="sticky right-0 bg-subtle" aria-label="Actions" />
+            {editable && <th className="sticky right-0 bg-subtle" aria-label="Actions" />}
           </tr>
         </thead>
         <tbody>
           {items.map((l) => {
-            const isOpen = open === l.id;
             const ro = !editable || !!l.declined;
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
               <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
-                <td className="pr-0! pl-0.5!">{detailToggle(l, isOpen)}</td>
                 {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1">
-                  {ro ? <p className={cn("line-clamp-3 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
+                  {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} onClick={() => setInspect(l.id)}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
                     : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                     </div>
@@ -223,9 +212,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   <label className={cn(cell, "num flex cursor-text items-center justify-end focus-within:border-primary/60 focus-within:bg-card")}><span className="text-muted-foreground">$</span><input key={l.unitPrice} inputMode="decimal" aria-label="Unit price" className="num min-w-[3ch] bg-transparent text-right outline-none [field-sizing:content]" defaultValue={l.unitPrice.toFixed(2)} onBlur={(e) => { const v = Math.max(0, Number(e.target.value.replace(/[^\d.]/g, "")) || 0); if (v !== l.unitPrice) patch(l.id, { unitPrice: v }); else e.target.value = v.toFixed(2); }} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} /></label>)}</td>
                 <td className="num text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
                 <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
-                <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>
+                {editable && <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>}
               </tr>,
-              isOpen && <tr key={l.id + "_d"} className="bg-subtle/40"><td colSpan={1 + (editable ? 1 : 0) + (hideSupplier ? 8 : 9)} className="p-0"><div id={`line-details-${l.id}`} className="sticky left-0 px-4 py-3" style={{ width: "100cqw" }}><LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div></td></tr>,
             ];
           })}
         </tbody>
@@ -328,6 +316,12 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <span className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"}</span>
         </div>
       )}
+      <Dialog open={!!inspected} onOpenChange={(o) => !o && setInspect(null)}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Item details</DialogTitle></DialogHeader>
+          {inspected && <><p className="whitespace-pre-wrap break-words text-sm font-medium">{inspected.description || "No description"}</p><LineDetail l={inspected} budget={lineBudgets && !fromStock(inspected) ? budgetName(inspected) ?? "" : undefined} /></>}
+        </DialogContent>
+      </Dialog>
       <Sheet open={!!editing} onOpenChange={(o) => !o && closeEdit()}>
         <SheetContent className="flex w-full flex-col gap-0 border-l border-border bg-card p-0 sm:max-w-[440px]">
           {editing && (
@@ -455,7 +449,7 @@ function LineDetail({ l, budget }: { l: LineItem; budget?: string }) {
       {items.map(([k, val]) => (
         <div key={k} className="min-w-0">
           <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
-          <dd className="mt-1 truncate text-sm text-foreground">{val}</dd>
+          <dd className="mt-1 break-words text-sm text-foreground [overflow-wrap:anywhere]">{val}</dd>
         </div>
       ))}
     </dl>
