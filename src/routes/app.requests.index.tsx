@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Columns3, Plus, Search } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Columns3, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -103,11 +103,6 @@ function Requests() {
     setSel([]);
   };
 
-  const _tabs = (
-    <div className="flex rounded-md bg-subtle p-0.5" role="tablist">
-      {(["dashboard", "list"] as const).map((v) => <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={"rounded-[5px] px-3 py-1 text-[13px] capitalize transition-colors " + (view === v ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>{v}</button>)}
-    </div>
-  );
   const newBtn = me.role !== "approver" && <div className="flex flex-wrap items-center gap-2"><ProcurementAI /><Button size="sm" onClick={() => { const id = createDraft(me.id, false); nav({ to: "/app/requests/$id/edit", params: { id }, search: { prompt: undefined } }); }}><Plus /> New request</Button></div>;
 
   if (view === "dashboard") return (
