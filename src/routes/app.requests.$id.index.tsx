@@ -105,7 +105,7 @@ function Detail() {
 
   return (
     <div className="pb-24 md:pb-0 lg:flex lg:h-[calc(100dvh-60px)] lg:flex-col lg:overflow-hidden lg:pb-0 print:block print:h-auto">
-      <header className="no-print-actions shrink-0 border-b border-border bg-surface px-4 py-4 md:px-8">
+      <header className="no-print-actions shrink-0 bg-surface px-4 py-4 md:px-8">
         <Link to={mine ? "/app/approvals" : "/app/requests"} className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3" /> {mine ? "Approvals" : "Requests"}</Link>
         <div className="flex flex-wrap items-start justify-between gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-6">
           <div className="min-w-0 flex-1 basis-[28rem]">
