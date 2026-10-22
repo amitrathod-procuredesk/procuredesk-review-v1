@@ -177,13 +177,13 @@ export function RequesterDashboard({ onOpenList, tabs, action }: { onOpenList: (
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="grid min-w-0 grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold tracking-tight">{greet()}, {me.name.split(" ")[0]}</h1>
           <p className="truncate text-[13px] text-muted-foreground">{drafts ? <>You have <button className="font-medium text-primary hover:underline" onClick={() => setKpi("draft")}>{drafts} draft{drafts === 1 ? "" : "s"}</button> to submit</> : "All your drafts are submitted"}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Select aria-label="Business unit" title="Applies to the whole dashboard" className={cn("h-8 w-44 text-[13px]", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => { setUnit(e.target.value); setSel([]); }}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
+        <div className="grid min-w-0 grid-cols-1 items-center gap-2 sm:flex sm:flex-wrap">
+          <Select aria-label="Business unit" title="Applies to the whole dashboard" className={cn("w-full text-[13px] sm:w-44", unit !== "all" && "border-primary/50 text-primary")} value={unit} onChange={(e) => { setUnit(e.target.value); setSel([]); }}><option value="all">All business units</option>{db.org.businessUnits.map((b) => <option key={b}>{b}</option>)}</Select>
           {tabs}{action}
         </div>
       </div>

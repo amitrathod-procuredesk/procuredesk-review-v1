@@ -43,8 +43,8 @@ function ReportsHome() {
       {kpis.map((k) => <Link key={k.label} to="/app/reports/$reportId" params={{ reportId: k.to }} className="pd-panel p-3 transition-colors hover:border-primary/40"><p className="text-[12px] text-muted-foreground">{k.label}</p><p className="num mt-0.5 text-xl break-words [overflow-wrap:anywhere]">{k.value}</p></Link>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border">
-      <div role="tablist" aria-label="Report groups" className="flex gap-1">
-        {GROUPS.map((g) => <button key={g} role="tab" aria-selected={group === g} onClick={() => setGroup(g)} className={cn("-mb-px border-b-2 px-3 py-2 text-[13px]", group === g ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>{g === "all" ? "All" : GROUP_LABEL[g]}<span className="num ml-1.5 text-[11px] text-muted-foreground">{g === "all" ? REPORTS.length : REPORTS.filter((r) => r.group === g).length}</span></button>)}
+      <div role="tablist" aria-label="Report groups" className="pd-scroll-quiet flex min-w-0 max-w-full gap-1 overflow-x-auto">
+        {GROUPS.map((g) => <button key={g} role="tab" aria-selected={group === g} onClick={() => setGroup(g)} className={cn("shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-[13px]", group === g ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>{g === "all" ? "All" : GROUP_LABEL[g]}<span className="num ml-1.5 text-[11px] text-muted-foreground">{g === "all" ? REPORTS.length : REPORTS.filter((r) => r.group === g).length}</span></button>)}
       </div>
       <div className="relative mb-1.5 w-full sm:w-64"><Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" /><TextInput aria-label="Search reports" placeholder="Search reports…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8" /></div>
     </div>
