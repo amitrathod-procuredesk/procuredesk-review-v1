@@ -104,7 +104,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-start gap-1">
-                  {detailToggle(l, isOpen)}
                   <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35]", editable && "transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p>
                 </div>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
@@ -137,13 +136,15 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </div>
           {editable && <div className="-mr-1 flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">{actions(l)}</div>}
         </div>
+        <div className="flex justify-end px-3 pb-1.5">{detailToggle(l, isOpen)}</div>
         {isOpen && <div id={`line-details-${l.id}`} className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/40 px-4 py-3 sm:pl-12">{l.description.length > 80 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] leading-relaxed">{l.description}</p>}<LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} /></div>}
       </li>
     );
   };
   const detailToggle = (l: LineItem, isOpen: boolean) => (
-    <Button type="button" size="icon" variant="ghost" aria-label={isOpen ? "Hide details" : "Show details"} title={isOpen ? "Hide item details" : "Show item details"} aria-expanded={isOpen} aria-controls={`line-details-${l.id}`} onClick={() => setOpen(isOpen ? null : l.id)} className="-my-1 size-7 shrink-0 text-muted-foreground">
-      <ChevronDown className={cn("size-3.5 transition-transform motion-reduce:transition-none", isOpen ? "rotate-0" : "-rotate-90")} />
+    <Button type="button" size="sm" variant="ghost" aria-label={isOpen ? "Hide details" : "Show details"} title={isOpen ? "Hide item details" : "Show item details"} aria-expanded={isOpen} aria-controls={`line-details-${l.id}`} onClick={() => setOpen(isOpen ? null : l.id)} className="h-7 shrink-0 gap-1 px-1.5 text-[11px] font-normal text-muted-foreground hover:bg-transparent hover:text-primary">
+      {isOpen ? "Hide details" : "View details"}
+      <ChevronDown className={cn("size-3 transition-transform motion-reduce:transition-none", isOpen && "rotate-180")} />
     </Button>
   );
   const actions = (l: LineItem) => (
@@ -201,11 +202,11 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
-                    {detailToggle(l, isOpen)}
                     <div className="min-w-0 flex-1">
                   {ro ? <p className={cn("line-clamp-2 px-1.5 font-medium leading-snug", l.declined && "line-through")} title={l.description}>{l.description || "No description"}</p>
                     : <textarea rows={2} aria-label="Description" title={l.description} className={cn(cell, "block h-[42px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
+                  {detailToggle(l, isOpen)}
                     </div>
                   </div>
                 </td>
