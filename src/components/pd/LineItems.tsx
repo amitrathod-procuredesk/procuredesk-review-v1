@@ -164,15 +164,15 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
     <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
-      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 860 : 960 }}>
+      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
         <colgroup>
-          <col className="w-8" />
-          {editable && <col className="w-9" />}
+          <col className="w-6" />
+          {editable && <col className="w-7" />}
           <col />
           <col className="w-[76px]" />
-          <col className="w-[120px]" />
-          {!hideSupplier && <col className="w-[108px]" />}
-          <col className="w-[52px]" />
+          <col className="w-[112px]" />
+          {!hideSupplier && <col className="w-[104px]" />}
+          <col className="w-[44px]" />
           <col className="w-[96px]" />
           <col className="w-[68px]" />
           <col className="w-[96px]" />
@@ -180,9 +180,9 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
         </colgroup>
         <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:px-2 [&>th]:font-semibold">
-            <th aria-label="Item details" />
-            {editable && <th className="pl-3"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
-            <th className="pl-3.5!">Description</th>
+            <th aria-label="Item details" className="px-0!" />
+            {editable && <th className="px-0!"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
+            <th className="pl-3!">Description</th>
             <th className="pl-3.5!">Item #</th>
             <th>Account</th>
             {!hideSupplier && <th>Supplier</th>}
@@ -200,8 +200,8 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
               <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
-                <td className="px-1!">{detailToggle(l, isOpen)}</td>
-                {editable && <td className="pl-3"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
+                <td className="pr-0! pl-0.5!">{detailToggle(l, isOpen)}</td>
+                {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 {!hideSupplier && <td><span className={cn("block truncate", !l.vendorId && "text-warning")} title={vendorName(l.vendorId)}>{vendorName(l.vendorId) || "No supplier"}</span></td>}
                 <td>
                   <div className="flex items-center justify-end gap-1">
-                    {ro ? <span className="num pr-1.5">{l.qty}</span> : <input inputMode="numeric" aria-label="Quantity" className={cn(cell, "num w-11 text-right")} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 1)) })} />}
+                    {ro ? <span className="num pr-1.5">{l.qty}</span> : <input inputMode="numeric" aria-label="Quantity" className={cn(cell, "num w-9 px-1 text-right")} value={l.qty} onChange={(e) => patch(l.id, { qty: Math.max(1, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 1)) })} />}
                   </div>
                 </td>
                 <td className="text-right">{ro ? <Money v={l.unitPrice} className="pr-1.5" /> : (
