@@ -11,7 +11,7 @@
 
 | Token | Hex | Use |
 |---|---|---|
-| background | #F5F7F9 | App canvas behind panels |
+| background | #F1F3F6 | App canvas behind panels |
 | surface | #FFFFFF | Panels, cards, inputs, drawers |
 | subtle | #F3F4F6 | Table headers, hover rows, right rail, image placeholders |
 | foreground | #14161B | Primary text |
@@ -57,7 +57,7 @@
 | Inputs | 36 px tall, 6 px radius, 1 px input border, 3 px primary focus ring at 12% |
 | Chips | 28 px tall, 6 px radius |
 | Badges | 20 px tall, 4 px radius, colored dot |
-| Panels | 12 px radius, half-strength border, 1 px soft shadow |
+| Panels | 12 px radius, full border, soft two-layer shadow |
 | Table rows | header 32 px, rows 40 px |
 | Spacing rhythm | 4 px grid; 12 px inside cards, 16 to 24 px page padding, 16 px between sections |
 | Elevation | Flat by default; shadow only on hover, popovers, dialogs and drawers |
