@@ -96,7 +96,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
     return (
       <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]", pick && !l.declined && pick.selected.includes(l.id) && "border-primary/50 bg-primary/[0.03]")}>
         <div className={cn("flex items-start gap-1.5 py-2.5 pr-3 pl-1", "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setInspect((x) => (x === l.id ? null : l.id)); }}>
-          {pick && !l.declined && <input type="checkbox" className="ml-1.5 shrink-0 self-center" aria-label={`Approve line ${i + 1}`} checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
+          {pick && !l.declined && !l.approved && <input type="checkbox" className="ml-1.5 shrink-0 self-center" aria-label={`Approve line ${i + 1}`} checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
           {editable && <input type="checkbox" className="shrink-0 self-center" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -110,6 +110,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                 </div>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
+                  {l.approved && !l.declined && r.status === "pending" && <span className="shrink-0 rounded bg-success-soft px-1.5 py-px text-[10px] font-medium text-success" title={`Approved by ${db.users.find((u) => u.id === l.approved!.by)?.name ?? "approver"}`}>Approved</span>}
                   {l.declined && <span className="shrink-0 rounded bg-danger-soft px-1.5 py-px text-[10px] font-medium text-destructive" title={`Declined by ${db.users.find((u) => u.id === l.declined!.by)?.name ?? "approver"}${l.declined.reason ? ` — ${l.declined.reason}` : ""}`}>Declined · {db.users.find((u) => u.id === l.declined!.by)?.name.split(" ")[0]}</span>}
                   {fromStock(l) && (() => { const st = INVENTORY[l.catalogId ?? ""]; const short = st && l.qty > st.onHand; return (
                     <span className={cn("inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-medium", short ? "bg-attention-soft text-attention" : "bg-success-soft text-success")} title={st ? `${st.onHand} on hand at ${st.location} · no purchase` : "Issued from internal stock"}>
@@ -202,12 +203,13 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                 {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
-                    {pick && !l.declined && <input type="checkbox" className="shrink-0" aria-label="Approve line" checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
+                    {pick && !l.declined && !l.approved && <input type="checkbox" className="shrink-0" aria-label="Approve line" checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
                     {ro && <button type="button" aria-label={inspect === l.id ? "Hide item details" : "Show item details"} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))} className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className={cn("size-3.5 transition-transform", inspect !== l.id && "-rotate-90")} /></button>}
                     <div className="min-w-0 flex-1">
                   {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
                     : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
+                  {l.approved && !l.declined && r.status === "pending" && <p className="px-1.5 text-[10.5px] font-medium text-success">Approved</p>}
                     </div>
                   </div>
                 </td>

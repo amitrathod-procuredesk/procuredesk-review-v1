@@ -272,4 +272,6 @@ export const STATUS_LABEL: Record<string, string> = {
 /** Status as shown to users: an approved request with approver-declined lines reads "Partially approved". */
 export type ViewStatus = Status | "part_approved";
 export const viewStatus = (r: Pick<PRequest, "status" | "items">): ViewStatus =>
-  r.status === "approved" && r.items.some((i) => i.declined) ? "part_approved" : r.status;
+  (r.status === "approved" && r.items.some((i) => i.declined)) ||
+  (r.status === "pending" && r.items.some((i) => i.approved && !i.declined) && r.items.some((i) => !i.approved && !i.declined))
+    ? "part_approved" : r.status;

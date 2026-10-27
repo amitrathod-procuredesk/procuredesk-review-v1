@@ -1,3 +1,4 @@
+import { approveLines } from "@/lib/pd/store";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote, Users, FolderKanban, Pencil } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -73,11 +74,12 @@ function Detail() {
   };
   const liveItems = r.items.filter((l) => !l.declined);
   const approvePicked = () => {
-    decide(r.id, me.id, "approve", "", liveItems.filter((l) => !keep.includes(l.id)).map((l) => l.id));
-    toast.success(`Approved ${keep.length} of ${liveItems.length} items`, { description: "Declined items are excluded from the total." });
+    approveLines(r.id, me.id, keep);
+    toast.success(keep.length === openItems.length ? "Approved" : `Approved ${keep.length} of ${openItems.length} items`, { description: keep.length === openItems.length ? undefined : "The remaining items stay pending for your decision." });
     setKeep([]); setReason("");
   };
-  const picking = mine && liveItems.length >= 2;
+  const openItems = liveItems.filter((l) => !l.approved);
+  const picking = mine && openItems.length >= 2;
   const keptTotal = liveItems.filter((l) => keep.includes(l.id)).reduce((s, l) => s + lineTotal(l), 0);
   const approveMenu = (full?: boolean) => <Button size="sm" className={cn(full && "flex-1")} onClick={quickApprove}>Approve</Button>;
   const quickApprove = () => (needsConfirm ? setAction("approve") : (decide(r.id, me.id, "approve", ""), toast.success("Approved")));
@@ -169,12 +171,12 @@ function Detail() {
             {picking && keep.length > 0 && (
               <div className="-mx-4 -mt-3 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-[inherit] border-b border-border bg-primary/[0.04] px-4 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium"><span className="num">{keep.length} of {liveItems.length}</span> selected · <span className="num">{money(keptTotal)}</span></p>
-                  <p className="text-xs text-muted-foreground">{keep.length < liveItems.length ? `Approving these declines the other ${liveItems.length - keep.length}` : "All items selected"}</p>
+                  <p className="text-sm font-medium"><span className="num">{keep.length} of {openItems.length}</span> selected · <span className="num">{money(keptTotal)}</span></p>
+                  <p className="text-xs text-muted-foreground">{keep.length < openItems.length ? `The other ${openItems.length - keep.length} stay pending · request becomes Partially approved` : "All pending items selected"}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => { setKeep([]); setReason(""); }}>Clear</Button>
-                  <Button size="sm" onClick={keep.length === liveItems.length ? quickApprove : approvePicked}>{keep.length === liveItems.length ? "Approve all items" : `Approve ${keep.length} selected`}</Button>
+                  <Button size="sm" onClick={keep.length === openItems.length ? quickApprove : approvePicked}>{keep.length === openItems.length ? "Approve all items" : `Approve ${keep.length} selected`}</Button>
                 </div>
               </div>
             )}
