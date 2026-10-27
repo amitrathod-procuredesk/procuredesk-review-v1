@@ -141,8 +141,8 @@ function Detail() {
         {r.decisionReason && ["changes", "rejected"].includes(r.status) && <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 text-sm">{r.status === "rejected" ? "Rejected" : "Changes requested"}: “{r.decisionReason}”</p>}
       </header>
 
-      <div className={cn("grid gap-4 p-4 md:p-8 lg:min-h-0 lg:flex-1 lg:gap-0 lg:p-0", "lg:grid-cols-[1fr_340px]")}>
-        <div className="pd-scroll min-w-0 space-y-4 lg:overflow-y-auto lg:overscroll-contain lg:py-6 lg:pl-8 lg:pr-4">
+      <div className={cn("grid gap-4 p-4 md:p-8 lg:min-h-0 lg:flex-1 lg:gap-0 lg:p-0", "lg:grid-cols-[1fr_320px]")}>
+        <div className="pd-scroll min-w-0 space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:py-4 lg:pl-6 lg:pr-2">
           <section className="pd-panel px-4 py-3" aria-label="Request details">
             {(() => {
               type Fact = [typeof Building2, string, string | undefined, string?];
@@ -170,9 +170,9 @@ function Detail() {
               );
             })()}
           </section>
-          <section className="pd-panel px-5 pb-5 pt-4"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
+          <section className="pd-panel px-4 pb-4 pt-3"><LineItems r={r} editable={false} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
         </div>
-        <aside className="pd-scroll space-y-4 lg:overflow-y-auto lg:overscroll-contain lg:py-6 lg:pl-4 lg:pr-8">
+        <aside className="pd-scroll space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:py-4 lg:pl-2 lg:pr-6">
           <div>
             <SummaryRail r={r} hideChecks extra={<Section title="Attachments"><Attachments r={r} editable={isOwner && ["draft", "changes"].includes(r.status)} /></Section>} after={<Section title="Comments"><Comments r={r} /></Section>} />
           </div>
