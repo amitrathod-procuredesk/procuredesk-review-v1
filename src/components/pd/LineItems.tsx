@@ -178,7 +178,7 @@ export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; edi
           <col className="w-[96px]" />
           {editable && <col className="w-12" />}
         </colgroup>
-        <thead className="bg-subtle text-left text-[10.5px] uppercase tracking-[0.05em] text-muted-foreground">
+        <thead className="bg-subtle text-left text-[10.5px] tracking-[0.05em] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:px-2 [&>th]:font-semibold">
             {editable && <th className="px-0!"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3!">Description</th>
@@ -201,6 +201,7 @@ export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; edi
                 {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
+                    {ro && <button type="button" aria-label={inspect === l.id ? "Hide item details" : "Show item details"} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))} className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className={cn("size-3.5 transition-transform", inspect !== l.id && "-rotate-90")} /></button>}
                     <div className="min-w-0 flex-1">
                   {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
                     : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
@@ -516,7 +517,7 @@ function NameSearch({ l, vendorName, onText, onPick }: { l: LineItem; vendorName
         }} />
       {show && (
         <div role="listbox" className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-popover shadow-lg animate-in fade-in slide-in-from-top-1">
-          <p className="px-3 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Matching item names</p>
+          <p className="px-3 pb-1 pt-2 text-[10.5px] font-medium text-muted-foreground">Matching item names</p>
           {hits.map((c, i) => (
             <button key={c.id} type="button" role="option" aria-selected={i === hi} onMouseEnter={() => setHi(i)} onMouseDown={(e) => { e.preventDefault(); pick(c); }}
               className={cn("flex w-full items-center px-3 py-1.5 text-left text-muted-foreground", i === hi && "bg-accent")}>
