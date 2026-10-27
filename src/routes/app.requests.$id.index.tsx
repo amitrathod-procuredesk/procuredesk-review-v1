@@ -73,7 +73,7 @@ function Detail() {
   };
   const liveItems = r.items.filter((l) => !l.declined);
   const approvePicked = () => {
-    decide(r.id, me.id, "approve", reason, liveItems.filter((l) => !keep.includes(l.id)).map((l) => l.id));
+    decide(r.id, me.id, "approve", "", liveItems.filter((l) => !keep.includes(l.id)).map((l) => l.id));
     toast.success(`Approved ${keep.length} of ${liveItems.length} items`, { description: "Declined items are excluded from the total." });
     setKeep([]); setReason("");
   };
@@ -129,7 +129,7 @@ function Detail() {
               {mine && <>
                 <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Reassign</Button>
                 <Button variant="destructive-soft" size="sm" onClick={() => setAction("reject")}>Reject</Button>
-                {approveMenu()}
+                {keep.length === 0 && approveMenu()}
               </>}
               {isOwner && ["draft", "changes"].includes(r.status) && <Button size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}>{r.status === "changes" ? "Edit & resubmit" : "Continue editing"}</Button>}
               {isOwner && r.status === "pending" && <Button size="sm" variant="outline" className="border-destructive/25 text-destructive hover:border-destructive/40 hover:bg-danger-soft hover:text-destructive" onClick={() => setWithdrawOpen(true)}>Withdraw</Button>}
@@ -182,7 +182,6 @@ function Detail() {
                   <p className="text-sm font-medium"><span className="num">{keep.length} of {liveItems.length}</span> selected · <span className="num">{money(keptTotal)}</span></p>
                   <p className="text-xs text-muted-foreground">{keep.length < liveItems.length ? `Approving these declines the other ${liveItems.length - keep.length}` : "All items selected"}</p>
                 </div>
-                {keep.length < liveItems.length && keep.length > 0 && <input className="pd-input w-full sm:w-56" placeholder="Reason for declined items (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => { setKeep([]); setReason(""); }}>Clear</Button>
                   <Button size="sm" onClick={keep.length === liveItems.length ? quickApprove : approvePicked}>{keep.length === liveItems.length ? "Approve all items" : `Approve ${keep.length} selected`}</Button>
@@ -202,7 +201,7 @@ function Detail() {
         <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
           <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("delegate")}>Reassign</Button>
           <Button variant="destructive-soft" size="sm" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
-          {approveMenu(true)}
+          {keep.length === 0 && approveMenu(true)}
         </div>
       )}
 
