@@ -128,43 +128,35 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
 /** The same budget breakdown in header and line-level views, using the configured fiscal period. */
 function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses>[number] }) {
   const used = Math.max(0, x.budget.total - x.available);
-  const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : null;
+  const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : 0;
   const pct = (value: number) => `${x.budget.total > 0 ? Math.max(0, Math.min(100, (value / x.budget.total) * 100)) : 0}%`;
-  const rows = [
-    { label: "Available amount", amount: x.available, help: "Budget remaining before this request, after existing commitments. The percentage is relative to the total budget.", percentage: availablePercent },
-    { label: "Requested", amount: x.request, help: "The purchase amount charged to this budget by this request, including tax and shipping. Declined and internal-stock items are excluded." },
-    { label: "Applied amount", amount: x.request, help: "The amount allocated to this budget for this request. Draft and pending requests do not commit this amount until approved." },
+  const cells = [
+    { label: "Used", value: used, cls: "" },
+    { label: "This request", value: x.request, cls: x.over ? "text-destructive" : "text-primary" },
+    { label: x.over ? "Over by" : "Left after", value: x.over ? -x.remaining : x.remaining, cls: x.over ? "text-destructive" : "" },
   ];
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="min-w-0 space-y-3">
-        <dl className="space-y-2 text-xs">
-          {rows.map((row) => (
-            <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start gap-2">
-              <dt className="flex items-center gap-1 text-muted-foreground">
-                <span>{row.label}</span>
-                <Tooltip>
-                  <TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-5 shrink-0 text-muted-foreground" aria-label={`About ${row.label.toLowerCase()}`}><CircleHelp className="size-3" /></Button></TooltipTrigger>
-                  <TooltipContent className="max-w-64 text-xs leading-relaxed">{row.help}</TooltipContent>
-                </Tooltip>
-              </dt>
-              <dd className={cn("min-w-0 text-right font-medium [overflow-wrap:anywhere]", row.amount < 0 && "text-destructive")}>
-                <Money v={row.amount} />{row.percentage != null && <span className="ml-1 font-normal">({row.percentage.toFixed(1)}%)</span>}
-              </dd>
+      <div className="min-w-0 space-y-2 text-xs">
+        <div className="flex h-1.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Used ${money(used)}; this request ${money(x.request)}; total ${money(x.budget.total)}`}>
+          <div className="h-full bg-muted-foreground/40" style={{ width: pct(used) }} />
+          <div className={cn("h-full", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
+        </div>
+        <dl className="grid grid-cols-3 gap-2">
+          {cells.map((c, i) => (
+            <div key={c.label} className={cn("min-w-0", i === 1 && "text-center", i === 2 && "text-right")}>
+              <dt className="text-[11px] text-muted-foreground">{c.label}</dt>
+              <dd className={cn("font-medium [overflow-wrap:anywhere]", c.cls)}><Money v={c.value} /></dd>
             </div>
           ))}
         </dl>
-        <div className="border-t border-border pt-2">
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="min-w-0"><p className="text-muted-foreground">Budget usage <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={used} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
-            <div className="min-w-0 text-right"><p className="text-muted-foreground">Total budget <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={x.budget.total} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
-          </div>
-          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-success/20" role="img" aria-label={`Budget usage ${money(used)}; requested ${money(x.request)}; total budget ${money(x.budget.total)}`}>
-            <div className="h-full bg-muted-foreground/35" style={{ width: pct(used) }} />
-            <div className={cn("h-full", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
-          </div>
-          <p className={cn("mt-1.5 break-words text-[11px]", x.over ? "text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
-        </div>
+        <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className="min-w-0 [overflow-wrap:anywhere]">{money(x.available)} available ({availablePercent.toFixed(1)}%) of {money(x.budget.total)} · {x.budget.fiscalYear}</span>
+          <Tooltip>
+            <TooltipTrigger asChild><button type="button" className="shrink-0 rounded text-muted-foreground hover:text-foreground" aria-label="About these budget figures"><CircleHelp className="size-3" /></button></TooltipTrigger>
+            <TooltipContent className="max-w-64 text-xs leading-relaxed">Used: committed spend this fiscal year. This request: amount applied to this budget, incl. tax and shipping (stock and declined items excluded); committed only once approved. Available: budget left before this request.</TooltipContent>
+          </Tooltip>
+        </p>
       </div>
     </TooltipProvider>
   );
