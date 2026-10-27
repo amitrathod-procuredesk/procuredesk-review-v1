@@ -130,21 +130,21 @@ function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses
   const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : 0;
   const pct = (value: number) => `${x.budget.total > 0 ? Math.max(0, Math.min(100, (value / x.budget.total) * 100)) : 0}%`;
   const cells = [
-    { label: "Used", value: used, cls: "" },
-    { label: "This request", value: x.request, cls: x.over ? "text-destructive" : "text-primary" },
-    { label: x.over ? "Over by" : "Left after", value: x.over ? -x.remaining : x.remaining, cls: x.over ? "text-destructive" : "" },
+    { label: "Used", value: used, cls: "", dot: "bg-primary" },
+    { label: "This request", value: x.request, cls: x.over ? "text-destructive" : "", dot: x.over ? "bg-destructive" : "bg-warning" },
+    { label: x.over ? "Over by" : "Left after", value: x.over ? -x.remaining : x.remaining, cls: x.over ? "text-destructive" : "", dot: x.over ? "" : "bg-muted ring-1 ring-inset ring-border" },
   ];
   return (
     <TooltipProvider delayDuration={150}>
       <div className="min-w-0 space-y-2 text-xs">
         <div className="flex h-1.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Used ${money(used)}; this request ${money(x.request)}; total ${money(x.budget.total)}`}>
-          <div className="h-full bg-muted-foreground/40" style={{ width: pct(used) }} />
-          <div className={cn("h-full", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
+          <div className="h-full bg-primary" style={{ width: pct(used) }} />
+          <div className={cn("h-full border-l border-card", x.over ? "bg-destructive" : "bg-warning")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
         </div>
         <dl className="grid grid-cols-3 gap-2">
           {cells.map((c, i) => (
             <div key={c.label} className={cn("min-w-0", i === 1 && "text-center", i === 2 && "text-right")}>
-              <dt className="text-[11px] text-muted-foreground">{c.label}</dt>
+              <dt className={cn("flex items-center gap-1 text-[11px] text-muted-foreground", i === 1 && "justify-center", i === 2 && "justify-end")}>{c.dot && <span className={cn("size-1.5 shrink-0 rounded-full", c.dot)} />}{c.label}</dt>
               <dd className={cn("font-medium [overflow-wrap:anywhere]", c.cls)}><Money v={c.value} /></dd>
             </div>
           ))}
