@@ -9,4 +9,3 @@
 - [x] Default all users to Requests after login, hide Home, and verify navigation.
 - [x] Use a very subtle primary-family workspace background inspired by Ramp, keeping cards light and clear.
 - [x] Check key screens at phone, tablet, laptop and desktop widths and fix overflowing controls.
-- [x] Compact request budget details without changing surrounding UI; verify header/line budgets, tooltips and narrow screens.

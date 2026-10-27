@@ -125,21 +125,22 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
   );
 }
 
-/** Compact budget summary; equivalent requested/applied amounts share one row. */
+/** The same budget breakdown in header and line-level views, using the configured fiscal period. */
 function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses>[number] }) {
   const used = Math.max(0, x.budget.total - x.available);
   const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : null;
   const pct = (value: number) => `${x.budget.total > 0 ? Math.max(0, Math.min(100, (value / x.budget.total) * 100)) : 0}%`;
   const rows = [
-    { label: "Available", amount: x.available, help: "Budget remaining before this request, after existing commitments. The percentage is relative to the total budget.", percentage: availablePercent },
-    { label: "Requested / applied", amount: x.request, help: "Requested and applied amounts are equal: this is the purchase amount allocated to this budget, including tax and shipping. Declined and internal-stock items are excluded. Draft and pending requests do not commit this amount until approved." },
+    { label: "Available amount", amount: x.available, help: "Budget remaining before this request, after existing commitments. The percentage is relative to the total budget.", percentage: availablePercent },
+    { label: "Requested", amount: x.request, help: "The purchase amount charged to this budget by this request, including tax and shipping. Declined and internal-stock items are excluded." },
+    { label: "Applied amount", amount: x.request, help: "The amount allocated to this budget for this request. Draft and pending requests do not commit this amount until approved." },
   ];
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="min-w-0 space-y-2">
-        <dl className="space-y-1.5 text-xs">
+      <div className="min-w-0 space-y-3">
+        <dl className="space-y-2 text-xs">
           {rows.map((row) => (
-            <div key={row.label} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+            <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start gap-2">
               <dt className="flex items-center gap-1 text-muted-foreground">
                 <span>{row.label}</span>
                 <Tooltip>
@@ -147,24 +148,22 @@ function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses
                   <TooltipContent className="max-w-64 text-xs leading-relaxed">{row.help}</TooltipContent>
                 </Tooltip>
               </dt>
-              <dd className={cn("ml-auto min-w-0 max-w-full text-right font-medium [overflow-wrap:anywhere]", row.amount < 0 && "text-destructive")}>
-                <Money v={row.amount} />{row.percentage != null && <span className="ml-1 whitespace-nowrap text-[11px] font-normal text-muted-foreground">({row.percentage.toFixed(1)}%)</span>}
+              <dd className={cn("min-w-0 text-right font-medium [overflow-wrap:anywhere]", row.amount < 0 && "text-destructive")}>
+                <Money v={row.amount} />{row.percentage != null && <span className="ml-1 font-normal">({row.percentage.toFixed(1)}%)</span>}
               </dd>
             </div>
           ))}
         </dl>
-        <div>
-          <dl className="text-xs">
-            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-              <dt className="text-muted-foreground">Used / total <span className="text-[11px]">· {x.budget.fiscalYear}</span></dt>
-              <dd className="ml-auto min-w-0 max-w-full text-right [overflow-wrap:anywhere]"><Money v={used} className="font-medium" /><span className="text-muted-foreground"> / <Money v={x.budget.total} /></span></dd>
-            </div>
-          </dl>
-          <div className="mt-1.5 flex h-1 overflow-hidden rounded-full bg-subtle" role="img" aria-label={`Budget usage ${money(used)}; requested ${money(x.request)}; total budget ${money(x.budget.total)}`}>
+        <div className="border-t border-border pt-2">
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="min-w-0"><p className="text-muted-foreground">Budget usage <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={used} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
+            <div className="min-w-0 text-right"><p className="text-muted-foreground">Total budget <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={x.budget.total} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
+          </div>
+          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-success/20" role="img" aria-label={`Budget usage ${money(used)}; requested ${money(x.request)}; total budget ${money(x.budget.total)}`}>
             <div className="h-full bg-muted-foreground/35" style={{ width: pct(used) }} />
             <div className={cn("h-full", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
           </div>
-          <p className={cn("mt-1 break-words text-[11px]", x.over ? "text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
+          <p className={cn("mt-1.5 break-words text-[11px]", x.over ? "text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
         </div>
       </div>
     </TooltipProvider>
@@ -174,11 +173,11 @@ function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses
 /** Line-level budget control: a breakdown for each budget the purchased lines charge to. */
 function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<typeof budgetStatuses>; unassigned: number }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {all.length === 0 && !unassigned && <p className="text-xs text-muted-foreground">Each line item picks its budget. Add items to see budget use.</p>}
       {all.map((x, index) => (
-        <div key={x.budget.id} className={cn("min-w-0", index > 0 && "border-t border-border pt-2")}>
-          <p className="mb-1.5 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
+        <div key={x.budget.id} className={cn("min-w-0", index > 0 && "border-t border-border pt-3")}>
+          <p className="mb-2 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
           <BudgetFigures budget={x} />
         </div>
       ))}
