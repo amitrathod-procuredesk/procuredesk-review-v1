@@ -72,7 +72,6 @@ function Detail() {
     setPreset("");
   };
   const liveItems = r.items.filter((l) => !l.declined);
-  const openPartial = () => { setKeep(liveItems.map((l) => l.id)); setReason(""); setPicking(true); requestAnimationFrame(() => document.getElementById("line-items-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })); };
   const approvePicked = () => {
     decide(r.id, me.id, "approve", reason, liveItems.filter((l) => !keep.includes(l.id)).map((l) => l.id));
     toast.success(`Approved ${keep.length} of ${liveItems.length} items`, { description: "Declined items are excluded from the total." });
