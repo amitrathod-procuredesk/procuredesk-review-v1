@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, BellRing, Check, ChevronDown, Clock, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
+import { Bell, BellRing, Check, ChevronDown, Clock, CircleHelp, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15", "bg-muted-foreground/30"];
 
@@ -86,33 +87,11 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
           {db.budgets.map((bb) => <option key={bb.id} value={bb.id}>{bb.name}</option>)}
         </select>
       ) : (
-        <p className="flex items-baseline justify-between gap-3 text-sm text-foreground/80"><span className="min-w-0 truncate">{b?.budget.name ?? "No budget selected"}</span>{b && <Money v={b.budget.total} className="num shrink-0 text-xs text-muted-foreground" />}</p>
+        <p className="break-words text-sm text-foreground/80">{b?.budget.name ?? "No budget selected"}</p>
       )}
       {b && (
         <>
-          {!lineMode && (() => {
-            const used = Math.max(0, b.budget.total - b.available);
-            const pct = (v: number) => `${Math.max(0, Math.min(100, (v / b.budget.total) * 100))}%`;
-            const segs = [
-              { k: "Already used", v: used, c: "bg-muted-foreground/35" },
-              { k: "This request", v: b.over ? Math.max(0, b.available) : b.request, c: b.over ? "bg-destructive" : "bg-primary" },
-              { k: b.over ? "Over by" : "Left after", v: b.over ? -b.remaining : b.remaining, c: b.over ? "bg-destructive/30" : "bg-success" },
-            ];
-            const usedPct = Math.round(((used + b.request) / b.budget.total) * 100);
-            return (
-              <div>
-                <div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-success/20" role="img" aria-label={`${usedPct}% of budget used after this request`} title={segs.map((g) => `${g.k}: ${money(g.v)}`).join("\n")}>
-                  <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
-                  <div className={cn("h-full transition-all duration-500", b.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(b.over ? Math.max(0, b.available) : b.request) }} />
-                </div>
-                <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-muted-foreground/35" />Used <Money v={used} className="num text-foreground/80" /></li>
-                  <li className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", b.over ? "bg-destructive" : "bg-primary")} />This request <Money v={b.request} className="num text-foreground/80" /></li>
-                  <li className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", b.over ? "bg-destructive/30" : "bg-success/40")} />{b.over ? "Over by" : "Left"} <Money v={Math.abs(b.remaining)} className={cn("num font-medium", b.over ? "text-destructive" : "text-success")} /></li>
-                </ul>
-              </div>
-            );
-          })()}
+          {!lineMode && <BudgetFigures budget={b} />}
           {b.over ? (
             <div className="rounded-md bg-danger-soft p-3 text-xs">
               {!lineMode && <p className="font-medium text-destructive">Over budget by {money(-b.remaining)}</p>}
@@ -146,32 +125,66 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
   );
 }
 
-/** Line-level budget control: one compact row per budget the lines charge to. */
+/** The same budget breakdown in header and line-level views, using the configured fiscal period. */
+function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses>[number] }) {
+  const used = Math.max(0, x.budget.total - x.available);
+  const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : null;
+  const pct = (value: number) => `${x.budget.total > 0 ? Math.max(0, Math.min(100, (value / x.budget.total) * 100)) : 0}%`;
+  const rows = [
+    { label: "Available amount", amount: x.available, help: "Budget remaining before this request, after existing commitments. The percentage is relative to the total budget.", percentage: availablePercent },
+    { label: "Requested", amount: x.request, help: "The purchase amount charged to this budget by this request, including tax and shipping. Declined and internal-stock items are excluded." },
+    { label: "Applied amount", amount: x.request, help: "The amount allocated to this budget for this request. Draft and pending requests do not commit this amount until approved." },
+  ];
+  return (
+    <TooltipProvider delayDuration={150}>
+      <div className="min-w-0 space-y-3">
+        <dl className="space-y-2 text-xs">
+          {rows.map((row) => (
+            <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start gap-2">
+              <dt className="flex items-center gap-1 text-muted-foreground">
+                <span>{row.label}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-5 shrink-0 text-muted-foreground" aria-label={`About ${row.label.toLowerCase()}`}><CircleHelp className="size-3" /></Button></TooltipTrigger>
+                  <TooltipContent className="max-w-64 text-xs leading-relaxed">{row.help}</TooltipContent>
+                </Tooltip>
+              </dt>
+              <dd className={cn("min-w-0 text-right font-medium [overflow-wrap:anywhere]", row.amount < 0 && "text-destructive")}>
+                <Money v={row.amount} />{row.percentage != null && <span className="ml-1 font-normal">({row.percentage.toFixed(1)}%)</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <div className="border-t border-border pt-2">
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="min-w-0"><p className="text-muted-foreground">Budget usage <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={used} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
+            <div className="min-w-0 text-right"><p className="text-muted-foreground">Total budget <span className="text-[11px]">({x.budget.fiscalYear})</span></p><Money v={x.budget.total} className="mt-1 block font-medium [overflow-wrap:anywhere]" /></div>
+          </div>
+          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-success/20" role="img" aria-label={`Budget usage ${money(used)}; requested ${money(x.request)}; total budget ${money(x.budget.total)}`}>
+            <div className="h-full bg-muted-foreground/35" style={{ width: pct(used) }} />
+            <div className={cn("h-full", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(Math.min(Math.max(0, x.available), x.request)) }} />
+          </div>
+          <p className={cn("mt-1.5 break-words text-[11px]", x.over ? "text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+/** Line-level budget control: a breakdown for each budget the purchased lines charge to. */
 function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<typeof budgetStatuses>; unassigned: number }) {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {all.length === 0 && !unassigned && <p className="text-xs text-muted-foreground">Each line item picks its budget. Add items to see budget use.</p>}
-      {all.map((x) => {
-        const used = Math.max(0, x.budget.total - x.available);
-        const pct = (v: number) => `${Math.max(0, Math.min(100, (v / x.budget.total) * 100))}%`;
-        return (
-          <div key={x.budget.id} className="animate-in fade-in">
-            <div className="flex items-baseline justify-between gap-3 text-[13px]">
-              <span className="min-w-0 truncate">{x.budget.name} <span className="text-[11px] text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></span>
-              <Money v={x.request} className="shrink-0 font-medium" />
-            </div>
-            <div className="mt-1 flex h-1 gap-px overflow-hidden rounded-full bg-success/20" title={`Used ${money(used)} · This request ${money(x.request)} · ${x.over ? "Over by" : "Left"} ${money(Math.abs(x.remaining))}`}>
-              <div className="h-full bg-muted-foreground/35 transition-all duration-500" style={{ width: pct(used) }} />
-              <div className={cn("h-full transition-all duration-500", x.over ? "bg-destructive" : "bg-primary")} style={{ width: pct(x.over ? Math.max(0, x.available) : x.request) }} />
-            </div>
-            <p className={cn("mt-1 text-[11px]", x.over ? "font-medium text-destructive" : "text-muted-foreground")}>{x.over ? `Over by ${money(-x.remaining)}` : `${money(x.remaining)} left after this request`}</p>
-          </div>
-        );
-      })}
+      {all.map((x, index) => (
+        <div key={x.budget.id} className={cn("min-w-0", index > 0 && "border-t border-border pt-3")}>
+          <p className="mb-2 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
+          <BudgetFigures budget={x} />
+        </div>
+      ))}
       {unassigned > 0 && (
-        <button onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })} aria-invalid={r.status === "draft" || undefined} className="flex w-full items-center gap-1.5 rounded-md bg-warning-soft px-2.5 py-1.5 text-left text-xs text-warning transition-colors hover:opacity-90">
-          <span className="size-1.5 rounded-full bg-warning" />{unassigned} line{unassigned === 1 ? " needs" : "s need"} a budget
-        </button>
+        <Button variant="ghost" onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })} aria-invalid={r.status === "draft" || undefined} className="h-auto w-full justify-start whitespace-normal bg-warning-soft px-2.5 py-1.5 text-left text-xs text-warning">
+          <span className="size-1.5 shrink-0 rounded-full bg-warning" />{unassigned} line{unassigned === 1 ? " needs" : "s need"} a budget
+        </Button>
       )}
     </div>
   );
