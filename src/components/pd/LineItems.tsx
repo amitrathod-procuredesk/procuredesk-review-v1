@@ -220,7 +220,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 {editable && <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>}
               </tr>,
-              ro && inspect === l.id && <tr key={`${l.id}-d`} className="bg-subtle/30"><td colSpan={8} className="px-3 py-3">{detail(l, "")}</td></tr>,
+              ro && inspect === l.id && <tr key={`${l.id}-d`} className="bg-subtle/30"><td colSpan={hideSupplier ? 7 : 8} className="px-3 py-3">{detail(l, "")}</td></tr>,
             ];
           })}
         </tbody>
