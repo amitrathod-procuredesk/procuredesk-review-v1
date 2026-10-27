@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote, Users, FolderKanban } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListChecks, MessageSquareReply, CheckCheck, Building2, FileText, User, MapPin, CreditCard, Truck, CalendarDays, Hash, Zap, StickyNote, Users, FolderKanban, Pencil } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -79,19 +79,7 @@ function Detail() {
   };
   const picking = mine && liveItems.length >= 2;
   const keptTotal = liveItems.filter((l) => keep.includes(l.id)).reduce((s, l) => s + lineTotal(l), 0);
-  const approveMenu = (full?: boolean) => (
-    <div className={cn("inline-flex", full && "flex-1")}>
-      <Button size="sm" className={cn("rounded-r-none", full && "flex-1")} onClick={quickApprove}>Approve</Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild><Button size="sm" aria-label="More approval options" className="rounded-l-none border-l border-primary-foreground/20 px-2"><ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-60">
-          <DropdownMenuItem onClick={quickApprove}><CheckCheck className="size-4" /><div><p className="text-sm">Approve all items</p><p className="text-xs text-muted-foreground">{liveItems.length} item{liveItems.length === 1 ? "" : "s"} · {money(totals(r).total)}</p></div></DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setAction("changes")}><MessageSquareReply className="size-4" /><div><p className="text-sm">Request changes</p><p className="text-xs text-muted-foreground">Send back to the requester</p></div></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
+  const approveMenu = (full?: boolean) => <Button size="sm" className={cn(full && "flex-1")} onClick={quickApprove}>Approve</Button>;
   const quickApprove = () => (needsConfirm ? setAction("approve") : (decide(r.id, me.id, "approve", ""), toast.success("Approved")));
   const advance = (to: PRequest["status"], label: string) => updateRequest(r.id, (x) => { x.status = to; log(x, label, "system", me.id); });
 
@@ -127,7 +115,9 @@ function Detail() {
             {/* Text actions first; icon-only utilities (audit trail, more) grouped at the end */}
             <div className="hidden items-center gap-2 md:flex">
               {mine && <>
+                <Button variant="ghost" size="sm" onClick={() => nav({ to: "/app/requests/$id/edit", params: { id: r.id }, search: { prompt: undefined } })}><Pencil className="size-3.5" />Edit</Button>
                 <Button variant="outline" size="sm" onClick={() => setAction("delegate")}>Reassign</Button>
+                <Button variant="outline" size="sm" onClick={() => setAction("changes")}>Request changes</Button>
                 <Button variant="destructive-soft" size="sm" onClick={() => setAction("reject")}>Reject</Button>
                 {keep.length === 0 && approveMenu()}
               </>}
@@ -199,7 +189,7 @@ function Detail() {
 
       {mine && (
         <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-surface p-3 md:hidden">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("delegate")}>Reassign</Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setAction("changes")}>Changes</Button>
           <Button variant="destructive-soft" size="sm" className="flex-1" onClick={() => setAction("reject")}>Reject</Button>
           {keep.length === 0 && approveMenu(true)}
         </div>
