@@ -83,7 +83,7 @@ export function seedDB(): DB {
     ],
     budgets: [
       { id: "bud_it", name: "IT Equipment · R&D FY26", departmentId: "dep_eng", category: "IT Equipment", total: 12000, committed: 11600, fiscalYear: "FY26" },
-      { id: "bud_eng_hire", name: "Engineering Hiring · FY26", departmentId: "dep_eng", category: "IT Equipment", total: 40000, committed: 14200, fiscalYear: "FY26" },
+      { id: "bud_eng_hire", name: "Engineering Hiring · FY26", departmentId: "dep_eng", category: "IT Equipment", total: 12500000, committed: 8734560.75, fiscalYear: "FY26" },
       { id: "bud_office", name: "Office Supplies · FY26", departmentId: "dep_ops", category: "Office Supplies", total: 8000, committed: 3150, fiscalYear: "FY26" },
       { id: "bud_fac", name: "Facilities · FY26", departmentId: "dep_ops", category: "Furniture & Facilities", total: 30000, committed: 22800, fiscalYear: "FY26" },
     ],
