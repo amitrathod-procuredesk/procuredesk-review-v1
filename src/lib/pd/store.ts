@@ -264,6 +264,27 @@ export function submitRequest(id: string, userId: string) {
   });
 }
 
+/** Approve only some lines: they are marked approved, the rest stay pending with the approver. Approving the last pending line completes the approver's decision. */
+export function approveLines(id: string, userId: string, lineIds: string[]) {
+  const r0 = getDB().requests.find((x) => x.id === id);
+  if (!r0) return;
+  const open = r0.items.filter((l) => !l.declined && !l.approved);
+  const picked = open.filter((l) => lineIds.includes(l.id));
+  if (!picked.length) return;
+  if (picked.length === open.length) {
+    updateRequest(id, (r) => { r.items.forEach((l) => { if (lineIds.includes(l.id) && !l.declined) l.approved = { by: userId, at: nowISO() }; }); });
+    decide(id, userId, "approve", "");
+    return;
+  }
+  updateRequest(id, (r, d) => {
+    const name = d.users.find((u) => u.id === userId)?.name ?? "Approver";
+    r.items.forEach((l) => { if (lineIds.includes(l.id) && !l.declined && !l.approved) l.approved = { by: userId, at: nowISO() }; });
+    const done = r.items.filter((l) => l.approved && !l.declined).length;
+    const live = r.items.filter((l) => !l.declined).length;
+    log(r, `${name} partially approved — ${done} of ${live} items approved: ${picked.map((l) => l.description || "Untitled").join(", ")}; the rest stay pending`, "approve", userId);
+  });
+}
+
 export function decide(id: string, userId: string, decision: "approve" | "reject" | "changes", comment: string, declineIds: string[] = []) {
   updateRequest(id, (r, d) => {
     const i = currentStageIndex(r);

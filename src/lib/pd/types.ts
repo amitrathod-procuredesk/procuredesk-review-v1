@@ -76,6 +76,8 @@ export interface LineItem {
   id: string;
   /** Set when an approver excluded this line during partial approval; excluded from totals. */
   declined?: { by: string; at: string; reason?: string };
+  /** Set when an approver approved just this line; the rest of the request stays pending ("Partially approved"). */
+  approved?: { by: string; at: string };
   /** Short item name shown as the card title; description gives the detail. */
   name?: string;
   description: string;
