@@ -523,12 +523,12 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
 export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChecks }: { r: PRequest; editable?: boolean; onCheckAction?: (c: CheckT) => void; extra?: ReactNode; after?: ReactNode; hideChecks?: boolean }) {
   const db = useDB();
   return (
-    <div className="space-y-4">
-      <div className="pd-panel rounded-xl p-4">
+    <div className="space-y-3">
+      <div className="pd-panel rounded-xl px-4 py-3">
         <TotalsBlock r={r} />
         <RouteSummary r={r} editable={editable} />
       </div>
-      <section className="pd-panel rounded-xl p-4"><BudgetBlock r={r} editable={editable} /></section>
+      <section className="pd-panel rounded-xl px-4 py-3"><BudgetBlock r={r} editable={editable} /></section>
       {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
       {after}
