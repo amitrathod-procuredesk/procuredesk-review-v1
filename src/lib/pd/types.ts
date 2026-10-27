@@ -81,6 +81,8 @@ export interface LineItem {
   description: string;
   partNumber: string;
   account: string;
+  /** Optional cost split across GL accounts (percent shares totalling 100); `account` mirrors the first row. */
+  accountSplits?: { account: string; percent: number }[];
   vendorId: string;
   uom: string;
   qty: number;
