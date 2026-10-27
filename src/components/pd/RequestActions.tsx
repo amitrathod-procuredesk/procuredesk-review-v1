@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, Trash2, X } from "lucide-react";
+import { CircleCheck, CircleX, Copy, History, MoreHorizontal, Printer, Send, Tag, Trash2, X, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ export function AuditTrailButton({ r, compact }: { r: PRequest; compact?: boolea
 
 type Confirm = null | "cancel" | "close" | "rfq" | "tags" | "delete";
 
-export function RequestActionsButton({ r }: { r: PRequest }) {
+export function RequestActionsButton({ r, onEdit }: { r: PRequest; onEdit?: () => void }) {
   const db = useDB();
   const me = useMe()!;
   const nav = useNavigate();
@@ -72,6 +72,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   const tags = r.tags ?? [];
 
   const items = [
+    { key: "edit", group: 1, label: "Edit request", hint: "Adjust items before deciding — changes are logged", icon: Pencil, show: !!onEdit },
     { key: "copy", group: 1, label: "Copy request", hint: "Start a new draft with the same items", icon: Copy, show: true },
     { key: "print", group: 1, label: "Print", hint: "Print or save as PDF", icon: Printer, show: !pending },
     { key: "rfq", group: 2, label: "Create RFQ", hint: "Request quotes from suppliers", meta: r.rfqs?.length ? `${r.rfqs.length} sent` : undefined, icon: Send, show: canRfq },
@@ -85,6 +86,7 @@ export function RequestActionsButton({ r }: { r: PRequest }) {
   const shown = items;
 
   const run = (key: string) => {
+    if (key === "edit") { setOpen(false); onEdit?.(); return; }
     setOpen(false);
     setQ("");
     if (key === "copy") {
