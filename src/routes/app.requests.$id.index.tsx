@@ -36,6 +36,7 @@ function Detail() {
   const r = db.requests.find((x) => x.id === id);
   const [action, setAction] = useState<null | "approve" | "partial" | "reject" | "changes" | "delegate">(null);
   const [keep, setKeep] = useState<string[]>([]);
+  const [picking, setPicking] = useState(false);
   const [reason, setReason] = useState("");
   const [preset, setPreset] = useState("");
   const [delegateTo, setDelegateTo] = useState("");
@@ -71,7 +72,12 @@ function Detail() {
     setPreset("");
   };
   const liveItems = r.items.filter((l) => !l.declined);
-  const openPartial = () => { setKeep(liveItems.map((l) => l.id)); setReason(""); setAction("partial"); };
+  const openPartial = () => { setKeep(liveItems.map((l) => l.id)); setReason(""); setPicking(true); requestAnimationFrame(() => document.getElementById("line-items-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })); };
+  const approvePicked = () => {
+    decide(r.id, me.id, "approve", reason, liveItems.filter((l) => !keep.includes(l.id)).map((l) => l.id));
+    toast.success(`Approved ${keep.length} of ${liveItems.length} items`, { description: "Declined items are excluded from the total." });
+    setPicking(false); setReason("");
+  };
   const keptTotal = liveItems.filter((l) => keep.includes(l.id)).reduce((s, l) => s + lineTotal(l), 0);
   const approveMenu = (full?: boolean) => (
     <div className={cn("inline-flex", full && "flex-1")}>
@@ -80,7 +86,7 @@ function Detail() {
         <DropdownMenuTrigger asChild><Button size="sm" aria-label="More approval options" className="rounded-l-none border-l border-primary-foreground/20 px-2"><ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuItem onClick={quickApprove}><CheckCheck className="size-4" /><div><p className="text-sm">Approve all items</p><p className="text-xs text-muted-foreground">{liveItems.length} item{liveItems.length === 1 ? "" : "s"} · {money(totals(r).total)}</p></div></DropdownMenuItem>
-          <DropdownMenuItem disabled={liveItems.length < 2} onClick={openPartial}><ListChecks className="size-4" /><div><p className="text-sm">Approve selected items…</p><p className="text-xs text-muted-foreground">{liveItems.length < 2 ? "Needs 2 or more lines" : "Decline the rest of the lines"}</p></div></DropdownMenuItem>
+          <DropdownMenuItem disabled={liveItems.length < 2} onClick={openPartial}><ListChecks className="size-4" /><div><p className="text-sm">Approve selected items</p><p className="text-xs text-muted-foreground">{liveItems.length < 2 ? "Needs 2 or more lines" : "Decline the rest of the lines"}</p></div></DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setAction("changes")}><MessageSquareReply className="size-4" /><div><p className="text-sm">Request changes</p><p className="text-xs text-muted-foreground">Send back to the requester</p></div></DropdownMenuItem>
         </DropdownMenuContent>
@@ -170,7 +176,21 @@ function Detail() {
               );
             })()}
           </section>
-          <section className="pd-panel px-4 pb-4 pt-3"><LineItems r={r} editable={false} canSplit={mine} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
+          <section id="line-items-panel" className={cn("pd-panel scroll-mt-4 px-4 pb-4 pt-3", picking && "ring-1 ring-primary/40")}>
+            {picking && (
+              <div className="-mx-4 -mt-3 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-[inherit] border-b border-border bg-primary/[0.04] px-4 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">Select the items to approve</p>
+                  <p className="text-xs text-muted-foreground">Unselected items will be declined · <span className="num">Approving {keep.length} of {liveItems.length} · {money(keptTotal)}</span></p>
+                </div>
+                {keep.length < liveItems.length && keep.length > 0 && <input className="pd-input w-full sm:w-56" placeholder="Reason for declined items (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setPicking(false); setReason(""); }}>Cancel</Button>
+                  <Button size="sm" disabled={keep.length === 0 || keep.length === liveItems.length} onClick={approvePicked}>{keep.length === 0 ? "Select at least one" : keep.length === liveItems.length ? "Deselect items to decline" : `Approve ${keep.length} item${keep.length > 1 ? "s" : ""}`}</Button>
+                </div>
+              </div>
+            )}
+            <LineItems r={r} editable={false} canSplit={mine && !picking} pick={picking ? { selected: keep, toggle: (id) => setKeep((k) => (k.includes(id) ? k.filter((x) => x !== id) : [...k, id])) } : undefined} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
         </div>
         <aside className="pd-scroll space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:py-4 lg:pl-2 lg:pr-6">
           <div>
