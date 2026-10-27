@@ -9,6 +9,7 @@ import { budgetLevelOf, budgetStatuses, lineBudgetId, lineTotal, money, smartDat
 import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
+import { SplitAccountButton, accountLabel } from "./AccountSplit";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
 import type { CatalogItem } from "@/lib/pd/types";
@@ -17,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
-export function LineItems({ r, editable, heading }: { r: PRequest; editable: boolean; heading?: ReactNode }) {
+export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; editable: boolean; heading?: ReactNode; canSplit?: boolean }) {
   const db = useDB();
   const lineBudgets = budgetLevelOf(r, db) === "line";
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
@@ -78,7 +79,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
     // Card subtext order: Item # · Account · Supplier (clickable); UOM shows once, beside the unit price. Prices live in the right column.
     const meta: ReactNode[] = [
       <span key="p" className={cn("inline-flex items-center gap-1", !l.partNumber && "text-muted-foreground/60")} title="Supplier item #"><Hash className={MI} aria-label="Item #" /><span className="num">{l.partNumber || "No item #"}</span></span>,
-      <span key="a" className="inline-flex items-center gap-1" title="GL account"><BookText className={MI} aria-label="Account" /><span className={cn(!l.account && "text-warning")}>{l.account || "No account"}</span></span>,
+      <span key="a" className="inline-flex items-center gap-1" title={l.accountSplits ? l.accountSplits.map((x) => `${x.account} ${x.percent}%`).join("\n") : "GL account"}><BookText className={MI} aria-label="Account" /><span className={cn(!l.account && "text-warning")}>{accountLabel(l) || "No account"}</span>{canSplit && !l.declined && !fromStock(l) && <SplitAccountButton requestId={r.id} line={l} />}</span>,
       !hideSupplier && (v ? (
         <Popover key="s">
           <PopoverTrigger asChild><button type="button" title="Supplier" className="inline-flex items-center gap-1 font-medium text-primary hover:underline"><Store className="size-3 shrink-0" aria-label="Supplier" />{sup}</button></PopoverTrigger>
@@ -207,7 +208,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                   </div>
                 </td>
                 <td>{ro ? <span className="num block truncate px-1.5">{l.partNumber || "—"}</span> : <input aria-label="Item number" inputMode="numeric" placeholder="—" className={cn(cell, "num")} value={l.partNumber} onChange={(e) => patch(l.id, { partNumber: e.target.value.replace(/\D/g, "") })} />}</td>
-                <td><span className={cn("block truncate", !l.account && "text-warning")} title={l.account}>{l.account || "No account"}</span></td>
+                <td><span className="flex min-w-0 items-center gap-0.5"><span className={cn("block truncate", !l.account && "text-warning")} title={l.accountSplits ? l.accountSplits.map((x) => `${x.account} ${x.percent}%`).join("\n") : l.account}>{accountLabel(l) || "No account"}</span>{canSplit && !l.declined && !fromStock(l) && <SplitAccountButton requestId={r.id} line={l} />}</span></td>
                 {!hideSupplier && <td><span className={cn("block truncate", !l.vendorId && "text-warning")} title={vendorName(l.vendorId)}>{vendorName(l.vendorId) || "No supplier"}</span></td>}
                 <td>
                   <div className="flex items-center justify-end gap-1">
@@ -433,7 +434,7 @@ function LineDetail({ l, budget }: { l: LineItem; budget?: string }) {
     ["Source from", cat ? "Catalog" : "Non-catalog"],
     ["Fulfilment", fromStock(l) ? `From stock${INVENTORY[l.catalogId ?? ""] ? ` · ${INVENTORY[l.catalogId ?? ""].location}` : ""}` : "Purchase from supplier"],
     ["Category", dash(l.category)],
-    ["Account", dash(l.account)],
+    ["Account", l.accountSplits ? <span className="block space-y-0.5">{l.accountSplits.map((x) => <span key={x.account} className="block">{x.account} <span className="num text-muted-foreground">{x.percent}% · {money((lineTotal(l) * x.percent) / 100)}</span></span>)}</span> : dash(l.account)],
     ...(budget !== undefined ? [["Budget", dash(budget)] as [string, ReactNode]] : []),
     ["UOM", dash(l.uom)],
     ["Class", dash(l.itemClass)],
