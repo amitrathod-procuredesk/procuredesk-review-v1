@@ -1,3 +1,4 @@
+import { isPendingFor } from "@/lib/pd/engine";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronDown, CircleCheck, Lock, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,10 +47,11 @@ function EditRequest() {
   }, [wide]);
 
   if (!r) return <div className="p-8"><Empty title="Request not found" body={`${id} doesn't exist or was removed.`} action={<Link to="/app/requests" className="pd-chip">Back to requests</Link>} /></div>;
-  if (r.requesterId !== me.id && me.role !== "admin")
+  const asApprover = r.status === "pending" && isPendingFor(r, me.id);
+  if (r.requesterId !== me.id && me.role !== "admin" && !asApprover)
     return <div className="p-8"><Empty title="You don't have access to edit this request" body="Only the requester or an admin can edit a draft." action={<Link to="/app/requests/$id" params={{ id }} className="pd-chip">View request</Link>} /></div>;
   if (submitted) return <SubmittedState r={r} />;
-  if (!["draft", "changes"].includes(r.status))
+  if (!asApprover && !["draft", "changes"].includes(r.status))
     return <div className="p-8"><Empty title="This request is read-only" body={`It's ${r.status === "pending" ? "in approval" : r.status}. Editing is available only for drafts or when changes are requested.`} action={<Link to="/app/requests/$id" params={{ id }} className="pd-chip"><Lock className="size-3" /> View request</Link>} /></div>;
 
   const set = (patch: Partial<PRequest>, key?: string, label?: string) =>
@@ -84,14 +86,24 @@ function EditRequest() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><span className="num">{r.id}</span> <StatusBadge status={r.status} /></p>
         </div>
         <div className="flex items-center gap-2">
+          {asApprover ? (
+            <Button size="sm" asChild><Link to="/app/requests/$id" params={{ id: r.id }}>Done editing</Link></Button>
+          ) : <>
           <Button size="sm" variant="outline" onClick={() => toast.success("Draft saved", { description: "You can leave and come back anytime." })}>Save draft</Button>
           <Button size="sm" onClick={trySubmit}>Submit</Button>
+          </>}
         </div>
       </header>
 
       <div className={"grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_320px]"}>
 
         <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
+          {asApprover && (
+            <div className="rounded-md border border-border bg-subtle/60 p-3 text-sm">
+              <p className="font-medium">Editing as approver</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Changes save automatically and are recorded in the audit trail. The request stays in approval — return to approve, reject or request changes.</p>
+            </div>
+          )}
           {r.status === "changes" && r.decisionReason && (
             <div className="rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
               <p className="font-medium">Changes requested</p>
