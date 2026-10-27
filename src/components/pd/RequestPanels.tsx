@@ -125,6 +125,10 @@ export function BudgetBlock({ r, editable }: { r: PRequest; editable?: boolean }
 }
 
 /** The same budget breakdown in header and line-level views, using the configured fiscal period. */
+const compactFmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 2 });
+/** Full amount below $100K; compact ($12.5M, $875.4K) above so large budgets fit the narrow rail. Full value stays in the tooltip. */
+export const fit = (v: number) => (Math.abs(v) >= 100_000 ? compactFmt.format(v) : money(v));
+
 function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses>[number] }) {
   const used = Math.max(0, x.budget.total - x.available);
   const availablePercent = x.budget.total > 0 ? (x.available / x.budget.total) * 100 : 0;
@@ -145,12 +149,12 @@ function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses
           {cells.map((c, i) => (
             <div key={c.label} className={cn("min-w-0", i === 1 && "text-center", i === 2 && "text-right")}>
               <dt className={cn("flex items-center gap-1 text-[11px] text-muted-foreground", i === 1 && "justify-center", i === 2 && "justify-end")}>{c.dot && <span className={cn("size-1.5 shrink-0 rounded-full", c.dot)} />}{c.label}</dt>
-              <dd className={cn("font-medium [overflow-wrap:anywhere]", c.cls)}><Money v={c.value} /></dd>
+              <dd className={cn("num truncate font-medium", c.cls)} title={money(c.value)}>{fit(c.value)}</dd>
             </div>
           ))}
         </dl>
         <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <span className="min-w-0 [overflow-wrap:anywhere]">{money(x.available)} available ({availablePercent.toFixed(1)}%) of {money(x.budget.total)} · {x.budget.fiscalYear}</span>
+          <span className="min-w-0 [overflow-wrap:anywhere]" title={`${money(x.available)} available of ${money(x.budget.total)}`}>{fit(x.available)} available ({availablePercent.toFixed(1)}%) of {fit(x.budget.total)} · {x.budget.fiscalYear}</span>
           <Tooltip>
             <TooltipTrigger asChild><button type="button" className="shrink-0 rounded text-muted-foreground hover:text-foreground" aria-label="About these budget figures"><CircleHelp className="size-3" /></button></TooltipTrigger>
             <TooltipContent className="max-w-64 text-xs leading-relaxed">Used: committed spend this fiscal year. This request: amount applied to this budget, incl. tax and shipping (stock and declined items excluded); committed only once approved. Available: budget left before this request.</TooltipContent>
