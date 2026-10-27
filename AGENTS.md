@@ -18,7 +18,7 @@
 - Budget control (header vs line) is resolved only through engine helpers (`budgetLevelOf`, `lineBudgetId`, `budgetAllocation`, `budgetStatuses`); drafts follow the org setting, submitted requests keep a snapshot so history never shifts.
 - Asset records live in the workspace document as `assetItems`; every lifecycle change (status, check-out/in, repair stages, disposal) goes through the action helpers in `src/lib/pd/assetRegister.ts` so history and status stay consistent with the lifecycle configured in asset settings.
 - Maintenance uses each asset's existing plan, due date, optional service progress and completion log through assetRegister actions; service progress stays separate from asset lifecycle status to preserve assignments and repair history.
-- Shared LineItems uses the existing editor for editable details and a read-only item dialog for inspection, so removing inline disclosure never hides review information or enables edits.
+- Shared LineItems uses the existing editor for editable details and inline card/row expansion for read-only inspection, so removing inline disclosure never hides review information or enables edits.
 - Restrained destructive actions use the shared Button destructive-soft variant with semantic danger tokens, keeping desktop, mobile and confirmation styling consistent.
 - Login and workspace branding use the same uploaded logo asset pointer so the brand remains consistent across entry points.
 - Dashboard controls stack below content-driven breakpoints and tab strips scroll locally, keeping page-level horizontal overflow out of narrow layouts.
