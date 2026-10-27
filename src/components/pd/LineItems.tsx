@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
-export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; editable: boolean; heading?: ReactNode; canSplit?: boolean }) {
+export function LineItems({ r, editable, heading, canSplit, pick }: { r: PRequest; editable: boolean; heading?: ReactNode; canSplit?: boolean; pick?: { selected: string[]; toggle: (id: string) => void } }) {
   const db = useDB();
   const lineBudgets = budgetLevelOf(r, db) === "line";
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
@@ -94,8 +94,9 @@ export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; edi
       lineBudgets && !fromStock(l) && !l.declined && <span key="b" className="inline-flex items-center gap-1" title="Budget"><Wallet className={MI} aria-label="Budget" /><span className={cn(!budgetName(l) && "text-warning")}>{budgetName(l) ?? "No budget"}</span></span>,
     ].filter(Boolean);
     return (
-      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]")}>
-        <div className={cn("flex items-start gap-1.5 py-2.5 pr-3 pl-1", "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else setInspect((x) => (x === l.id ? null : l.id)); }}>
+      <li key={l.id} className={cn("group relative rounded-lg border border-border bg-surface transition-all", l.declined && "bg-subtle/40 [&_img]:opacity-50 [&_p.line-clamp-2]:text-muted-foreground", "hover:border-primary/30 hover:shadow-sm", sel.includes(l.id) && "border-primary/50 bg-primary/[0.03]", edit === l.id && "border-primary/60 bg-primary/[0.04]", pick && !l.declined && (pick.selected.includes(l.id) ? "border-primary/50 bg-primary/[0.03]" : "opacity-60"))}>
+        <div className={cn("flex items-start gap-1.5 py-2.5 pr-3 pl-1", "cursor-pointer")} onClick={(e) => { if ((e.target as HTMLElement).closest("input,select,button,a,textarea,[role=menu]")) return; if (editable) setEdit(l.id); else if (pick && !l.declined) pick.toggle(l.id); else setInspect((x) => (x === l.id ? null : l.id)); }}>
+          {pick && !l.declined && <input type="checkbox" className="ml-1.5 shrink-0 self-center" aria-label={`Approve line ${i + 1}`} checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
           {editable && <input type="checkbox" className="shrink-0 self-center" aria-label={`Select line ${i + 1}`} checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} />}
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -197,10 +198,11 @@ export function LineItems({ r, editable, heading, canSplit }: { r: PRequest; edi
             const ro = !editable || !!l.declined;
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
-              <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground")}>
+              <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground", pick && !l.declined && (pick.selected.includes(l.id) ? "bg-primary/[0.03]" : "opacity-60"))}>
                 {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
+                    {pick && !l.declined && <input type="checkbox" className="shrink-0" aria-label="Approve line" checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
                     {ro && <button type="button" aria-label={inspect === l.id ? "Hide item details" : "Show item details"} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))} className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className={cn("size-3.5 transition-transform", inspect !== l.id && "-rotate-90")} /></button>}
                     <div className="min-w-0 flex-1">
                   {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
