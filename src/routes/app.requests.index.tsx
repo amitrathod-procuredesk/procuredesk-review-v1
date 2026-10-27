@@ -90,7 +90,7 @@ function Requests() {
   const show = (c: Col) => cols.includes(c);
   const Th = ({ c, right }: { c: Col; right?: boolean }) => !show(c) ? null : (
     <th className={right ? "text-right" : ""}>
-      <button className="inline-flex items-center gap-1 uppercase" onClick={() => setSort((s) => ({ col: c, dir: s.col === c ? ((-s.dir) as 1 | -1) : 1 }))}>
+      <button className="inline-flex items-center gap-1" onClick={() => setSort((s) => ({ col: c, dir: s.col === c ? ((-s.dir) as 1 | -1) : 1 }))}>
         {c}{sort.col === c && (sort.dir === 1 ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
       </button>
     </th>

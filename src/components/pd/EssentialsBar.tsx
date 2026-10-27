@@ -35,7 +35,7 @@ function Chip({ icon, label, value, ai, children, wide, required }: { icon: Reac
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={6} className={cn("p-1", wide ? "w-72" : "w-56")}>
-        <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium text-muted-foreground">{label}</p>
         {children(() => setOpen(false))}
       </PopoverContent>
     </Popover>

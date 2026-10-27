@@ -159,7 +159,7 @@
     overflow-wrap: anywhere;
   }
   .pd-section-title {
-    @apply text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground;
+    @apply text-[11px] font-semibold text-muted-foreground;
   }
   .pd-h1 {
     @apply text-lg font-semibold tracking-tight text-foreground;
@@ -168,7 +168,7 @@
     @apply w-full border-collapse text-sm;
   }
   .pd-table th {
-    @apply h-8 border-b border-border bg-subtle px-3 text-left text-[11px] font-medium uppercase tracking-[0.04em] whitespace-nowrap text-muted-foreground;
+    @apply h-8 border-b border-border bg-subtle px-3 text-left text-[11px] font-medium whitespace-nowrap text-muted-foreground;
   }
   .pd-table td {
     @apply h-10 border-b border-border px-3 align-middle;
@@ -269,7 +269,7 @@
 .pd-scroll::-webkit-scrollbar-thumb { background: var(--input); border-radius: 999px; }
 .pd-scroll::-webkit-scrollbar-track { background: transparent; }
 
-.pd-drawer-sec{margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.pd-drawer-sec{margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted-foreground)}
 .pd-drawer-sec:first-child{margin-top:0;padding-top:0;border-top:0}
 
 /* Native selects: custom chevron with consistent right inset (unlayered so utilities can't remove the padding) */
