@@ -23,7 +23,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
   const me = useMe();
   const [inspect, setInspect] = useState<string | null>(null);
-  const inspected = r.items.find((l) => l.id === inspect);
   const [edit, setEdit] = useState<string | null>(null);
   const editing = r.items.find((i) => i.id === edit);
   const [sel, setSel] = useState<string[]>([]);
@@ -104,7 +103,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-start gap-1">
-                  {editable ? <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35] transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p> : <Button variant="link" className="h-auto min-w-0 justify-start whitespace-normal p-0 text-left text-[13px] leading-snug text-foreground" title={l.description} onClick={() => setInspect(l.id)}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>}
+                  {editable ? <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35] transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p> : <Button variant="link" className="h-auto min-w-0 justify-start whitespace-normal p-0 text-left text-[13px] leading-snug text-foreground" title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>}
                 </div>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
@@ -136,9 +135,16 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           </div>
           {editable && <div className="-mr-1 flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">{actions(l)}</div>}
         </div>
+        {!editable && inspect === l.id && detail(l, "border-t border-border px-3 pb-3 pt-3")}
       </li>
     );
   };
+  const detail = (l: LineItem, cls: string) => (
+    <div id={`line-details-${l.id}`} className={cn("animate-in fade-in", cls)}>
+      {l.description && l.description.length > 90 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] text-foreground/80">{l.description}</p>}
+      <LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} />
+    </div>
+  );
   const actions = (l: LineItem) => (
     <>
       {editable && (
@@ -194,7 +200,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1">
-                  {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} onClick={() => setInspect(l.id)}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
+                  {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
                     : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                     </div>
@@ -214,6 +220,7 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
                 <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
                 {editable && <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>}
               </tr>,
+              ro && inspect === l.id && <tr key={`${l.id}-d`} className="bg-subtle/30"><td colSpan={hideSupplier ? 7 : 8} className="px-3 py-3">{detail(l, "")}</td></tr>,
             ];
           })}
         </tbody>
@@ -316,12 +323,6 @@ export function LineItems({ r, editable, heading }: { r: PRequest; editable: boo
           <span className="text-xs text-muted-foreground">{r.items.length} line{r.items.length === 1 ? "" : "s"}</span>
         </div>
       )}
-      <Dialog open={!!inspected} onOpenChange={(o) => !o && setInspect(null)}>
-        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>Item details</DialogTitle></DialogHeader>
-          {inspected && <><p className="whitespace-pre-wrap break-words text-sm font-medium">{inspected.description || "No description"}</p><LineDetail l={inspected} budget={lineBudgets && !fromStock(inspected) ? budgetName(inspected) ?? "" : undefined} /></>}
-        </DialogContent>
-      </Dialog>
       <Sheet open={!!editing} onOpenChange={(o) => !o && closeEdit()}>
         <SheetContent className="flex w-full flex-col gap-0 border-l border-border bg-card p-0 sm:max-w-[440px]">
           {editing && (
@@ -445,11 +446,11 @@ function LineDetail({ l, budget }: { l: LineItem; budget?: string }) {
     ["Notes", dash(l.notes)],
   ];
   return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
       {items.map(([k, val]) => (
         <div key={k} className="min-w-0">
-          <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
-          <dd className="mt-1 break-words text-sm text-foreground [overflow-wrap:anywhere]">{val}</dd>
+          <dt className="text-xs text-muted-foreground">{k}</dt>
+          <dd className="mt-0.5 break-words text-sm text-foreground [overflow-wrap:anywhere]">{val}</dd>
         </div>
       ))}
     </dl>
