@@ -95,7 +95,7 @@ function EditRequest() {
         </div>
       </header>
 
-      <div className={"grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_320px]"}>
+      <div className={"grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_360px]"}>
 
         <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
           {asApprover && (
