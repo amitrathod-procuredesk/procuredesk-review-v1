@@ -18,12 +18,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
+/** Two-line description; reports whether it is visibly cut off so details repeat it only when needed. */
+function ClampText({ id, text, onClip }: { id: string; text: string; onClip: (id: string, clipped: boolean) => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => onClip(id, el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [id, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <span ref={ref} className="line-clamp-2 break-words">{text}</span>;
+}
+
 export function LineItems({ r, editable, heading, canSplit, pick }: { r: PRequest; editable: boolean; heading?: ReactNode; canSplit?: boolean; pick?: { selected: string[]; toggle: (id: string) => void } }) {
   const db = useDB();
   const lineBudgets = budgetLevelOf(r, db) === "line";
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
   const me = useMe();
   const [inspect, setInspect] = useState<string | null>(null);
+  const [clipped, setClipped] = useState<string[]>([]);
+  const markClip = (id: string, on: boolean) => setClipped((c) => (on === c.includes(id) ? c : on ? [...c, id] : c.filter((x) => x !== id)));
   const [edit, setEdit] = useState<string | null>(null);
   const editing = r.items.find((i) => i.id === edit);
   const [sel, setSel] = useState<string[]>([]);
@@ -106,7 +123,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-start gap-1">
-                  {editable ? <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35] transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p> : <Button variant="link" className="h-auto min-w-0 justify-start whitespace-normal p-0 text-left text-[13px] leading-snug text-foreground" title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>}
+                  {editable ? <p className={cn("line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-medium leading-[1.35] transition-colors group-hover:text-primary", !l.description && "text-muted-foreground")} title={l.description}>{l.description || "No description"}</p> : <Button variant="link" className="h-auto min-w-0 justify-start whitespace-normal p-0 text-left text-[13px] leading-snug text-foreground" title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><ClampText id={l.id} text={l.description || "No description"} onClip={markClip} /></Button>}
                 </div>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span className="min-w-0 truncate">{meta.map((m, k) => <span key={k}>{k > 0 && <span className="mx-1.5 text-border">•</span>}{m}</span>)}</span>
@@ -145,7 +162,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
   };
   const detail = (l: LineItem, cls: string) => (
     <div id={`line-details-${l.id}`} className={cn("animate-in fade-in", cls)}>
-      {l.description && l.description.length > 90 && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] text-foreground/80">{l.description}</p>}
+      {l.description && clipped.includes(l.id) && <p className="mb-3 whitespace-pre-wrap break-words text-[13px] text-foreground/80">{l.description}</p>}
       <LineDetail l={l} budget={lineBudgets && !fromStock(l) ? budgetName(l) ?? "" : undefined} />
     </div>
   );
@@ -206,7 +223,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                     {pick && !l.declined && !l.approved && <input type="checkbox" className="shrink-0" aria-label="Approve line" checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
                     {ro && <button type="button" aria-label={inspect === l.id ? "Hide item details" : "Show item details"} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))} className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className={cn("size-3.5 transition-transform", inspect !== l.id && "-rotate-90")} /></button>}
                     <div className="min-w-0 flex-1">
-                  {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><span className="line-clamp-3 break-words">{l.description || "No description"}</span></Button>
+                  {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><ClampText id={l.id} text={l.description || "No description"} onClip={markClip} /></Button>
                     : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                   {l.approved && !l.declined && r.status === "pending" && <p className="px-1.5 text-[10.5px] font-medium text-success">Approved</p>}
