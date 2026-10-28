@@ -148,10 +148,10 @@ function Detail() {
                 <>
                   <ul className="flex flex-wrap items-center gap-1.5">
                     {shown.map(([Icon, k, v, c]) => (
-                      <li key={k + v} title={`${k}: ${v}`} className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[13px] leading-snug">
+                      <li key={k + v} title={`${k}: ${v}`} className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-md border border-border px-2.5 text-[13px] leading-none">
                         <Icon className={`h-3.5 w-3.5 shrink-0 ${c || "text-muted-foreground"}`} aria-hidden />
                         <span className="shrink-0 text-[11px] text-muted-foreground">{k}</span>
-                        <span className={`min-w-0 break-words [overflow-wrap:anywhere] ${c || ""}`}>{v}</span>
+                        <span className={`min-w-0 max-w-[200px] truncate sm:max-w-[260px] ${c || ""}`}>{v}</span>
                       </li>
                     ))}
                   </ul>

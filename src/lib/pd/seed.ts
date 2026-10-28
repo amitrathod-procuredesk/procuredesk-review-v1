@@ -137,6 +137,7 @@ export function seedDB(): DB {
         status: "pending",
         budgetId: "bud_eng_hire",
         project: "Platform migration",
+        shipTo: "US HQ · 4200 Innovation Parkway, Suite 300, Agate, CO 80101, United States",
         createdAt: iso(-4),
         submittedAt: iso(-4, 11),
         updatedAt: iso(-4, 11),
