@@ -174,7 +174,7 @@ function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<type
       {all.length === 0 && !unassigned && <p className="text-xs text-muted-foreground">Each line item picks its budget. Add items to see budget use.</p>}
       {all.length === 1 ? all.map((x) => (
         <div key={x.budget.id} className="min-w-0">
-          <p className="mb-2 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
+          <p className="mb-2 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· Applied to {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
           <BudgetFigures budget={x} />
         </div>
       )) : all.length > 1 && (
@@ -188,7 +188,7 @@ function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<type
                   {open ? <ChevronDown className="size-3.5 text-muted-foreground" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
                   <span className="min-w-0 flex-1 space-y-0.5">
                     <span className="block whitespace-normal break-words text-[13px] font-medium">{x.budget.name}</span>
-                    <span className="block whitespace-normal text-[11px] text-muted-foreground">{x.lines} line{x.lines === 1 ? "" : "s"}</span>
+                    <span className="block whitespace-normal text-[11px] text-muted-foreground">Applied to {x.lines} line{x.lines === 1 ? "" : "s"}</span>
                   </span>
                   <span className="shrink-0 space-y-0.5 text-right">
                     <span className="num block text-xs font-medium" title={`${money(x.request)} applied to this budget`}>{fit(x.request)}</span>
@@ -555,11 +555,11 @@ export function SummaryRail({ r, editable, onCheckAction, extra, after, hideChec
   const db = useDB();
   return (
     <div className="space-y-3">
-      <div className="pd-panel rounded-xl px-4 py-3">
+      <div className="pd-panel rounded-xl px-3.5 py-3">
         <TotalsBlock r={r} />
         <RouteSummary r={r} editable={editable} />
       </div>
-      <section className="pd-panel rounded-xl px-4 py-3"><BudgetBlock r={r} editable={editable} /></section>
+      <section className="pd-panel rounded-xl px-3.5 py-3"><BudgetBlock r={r} editable={editable} /></section>
       {!hideChecks && <Section title="Procurement checks"><ChecksBlock r={r} onAction={onCheckAction} /></Section>}
       {extra}
       {after}
