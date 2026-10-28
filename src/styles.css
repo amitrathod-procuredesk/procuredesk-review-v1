@@ -159,7 +159,7 @@
     overflow-wrap: anywhere;
   }
   .pd-section-title {
-    @apply text-[11px] font-semibold text-muted-foreground;
+    @apply text-sm font-semibold text-foreground;
   }
   .pd-h1 {
     @apply text-lg font-semibold tracking-tight text-foreground;
