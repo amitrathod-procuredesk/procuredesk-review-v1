@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, BellRing, Check, ChevronDown, Clock, CircleHelp, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { Bell, BellRing, Check, ChevronDown, ChevronRight, Clock, CircleHelp, GitFork, FileUp, Paperclip, Users, X } from "lucide-react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -165,17 +165,44 @@ function BudgetFigures({ budget: x }: { budget: ReturnType<typeof budgetStatuses
   );
 }
 
-/** Line-level budget control: a breakdown for each budget the purchased lines charge to. */
+/** Multiple line budgets use compact disclosures; only one full breakdown is open at a time. */
 function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<typeof budgetStatuses>; unassigned: number }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const panelId = useId();
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {all.length === 0 && !unassigned && <p className="text-xs text-muted-foreground">Each line item picks its budget. Add items to see budget use.</p>}
-      {all.map((x, index) => (
-        <div key={x.budget.id} className={cn("min-w-0", index > 0 && "border-t border-border pt-3")}>
+      {all.length === 1 ? all.map((x) => (
+        <div key={x.budget.id} className="min-w-0">
           <p className="mb-2 break-words text-[13px] font-medium">{x.budget.name} <span className="text-[11px] font-normal text-muted-foreground">· {x.lines} line{x.lines === 1 ? "" : "s"}</span></p>
           <BudgetFigures budget={x} />
         </div>
-      ))}
+      )) : all.length > 1 && (
+        <div className={cn("divide-y divide-border", all.length > 4 && "pd-scroll-quiet max-h-80 overflow-y-auto overscroll-contain")} role="group" aria-label="Line budgets">
+          {all.map((x) => {
+            const open = expanded === x.budget.id;
+            const detailId = `${panelId}-${x.budget.id}`;
+            return (
+              <div key={x.budget.id} className="min-w-0">
+                <Button type="button" variant="ghost" aria-expanded={open} aria-controls={detailId} aria-label={`${open ? "Collapse" : "Expand"} ${x.budget.name} budget details`} onClick={() => setExpanded(open ? null : x.budget.id)} className="h-auto w-full min-w-0 justify-start gap-2 rounded-none px-0 py-2 text-left font-normal hover:bg-subtle">
+                  {open ? <ChevronDown className="size-3.5 text-muted-foreground" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
+                  <span className="min-w-0 flex-1 space-y-0.5">
+                    <span className="block whitespace-normal break-words text-[13px] font-medium">{x.budget.name}</span>
+                    <span className="block whitespace-normal text-[11px] text-muted-foreground">{x.lines} line{x.lines === 1 ? "" : "s"}</span>
+                  </span>
+                  <span className="shrink-0 space-y-0.5 text-right">
+                    <span className="num block text-xs font-medium" title={`${money(x.request)} applied to this budget`}>{fit(x.request)}</span>
+                    <span className={cn("block text-[11px]", x.over ? "font-medium text-destructive" : "text-muted-foreground")} title={`${money(Math.abs(x.remaining))} ${x.over ? "over budget" : "left after this request"}`}>{fit(Math.abs(x.remaining))} {x.over ? "over" : "left"}</span>
+                  </span>
+                </Button>
+                <div id={detailId} hidden={!open} className="pb-2">
+                  <BudgetFigures budget={x} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {unassigned > 0 && (
         <Button variant="ghost" onClick={() => document.getElementById("line-items")?.scrollIntoView({ behavior: "smooth" })} aria-invalid={r.status === "draft" || undefined} className="h-auto w-full justify-start whitespace-normal bg-warning-soft px-2.5 py-1.5 text-left text-xs text-warning">
           <span className="size-1.5 shrink-0 rounded-full bg-warning" />{unassigned} line{unassigned === 1 ? " needs" : "s need"} a budget
