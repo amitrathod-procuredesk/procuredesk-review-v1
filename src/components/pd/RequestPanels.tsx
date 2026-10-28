@@ -188,14 +188,14 @@ function LineBudgets({ r, all, unassigned }: { r: PRequest; all: ReturnType<type
                   {open ? <ChevronDown className="size-3.5 text-muted-foreground" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
                   <span className="min-w-0 flex-1 space-y-0.5">
                     <span className="block whitespace-normal break-words text-[13px] font-medium">{x.budget.name}</span>
-                    <span className="block whitespace-normal text-[11px] text-muted-foreground">{x.lines} line{x.lines === 1 ? "" : "s"} · {x.budget.fiscalYear}</span>
+                    <span className="block whitespace-normal text-[11px] text-muted-foreground">{x.lines} line{x.lines === 1 ? "" : "s"}</span>
                   </span>
                   <span className="shrink-0 space-y-0.5 text-right">
                     <span className="num block text-xs font-medium" title={`${money(x.request)} applied to this budget`}>{fit(x.request)}</span>
                     <span className={cn("block text-[11px]", x.over ? "font-medium text-destructive" : "text-muted-foreground")} title={`${money(Math.abs(x.remaining))} ${x.over ? "over budget" : "left after this request"}`}>{fit(Math.abs(x.remaining))} {x.over ? "over" : "left"}</span>
                   </span>
                 </Button>
-                <div id={detailId} hidden={!open} className="pb-2 pl-5.5">
+                <div id={detailId} hidden={!open} className="pb-2">
                   <BudgetFigures budget={x} />
                 </div>
               </div>
