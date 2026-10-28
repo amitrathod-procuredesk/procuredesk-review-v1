@@ -18,12 +18,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const blank = (): LineItem => ({ id: uid("li"), description: "", partNumber: "", account: "", vendorId: "", uom: "EACH", qty: 1, unitPrice: 0, tax: 0, shipping: 0, category: "", source: "manual" });
 
+/** Two-line description; reports whether it is visibly cut off so details repeat it only when needed. */
+function ClampText({ id, text, onClip }: { id: string; text: string; onClip: (id: string, clipped: boolean) => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => onClip(id, el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [id, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <span ref={ref} className="line-clamp-2 break-words">{text}</span>;
+}
+
 export function LineItems({ r, editable, heading, canSplit, pick }: { r: PRequest; editable: boolean; heading?: ReactNode; canSplit?: boolean; pick?: { selected: string[]; toggle: (id: string) => void } }) {
   const db = useDB();
   const lineBudgets = budgetLevelOf(r, db) === "line";
   const budgetName = (l: LineItem) => db.budgets.find((b) => b.id === lineBudgetId(l, r, db))?.name;
   const me = useMe();
   const [inspect, setInspect] = useState<string | null>(null);
+  const [clipped, setClipped] = useState<string[]>([]);
+  const markClip = (id: string, on: boolean) => setClipped((c) => (on === c.includes(id) ? c : on ? [...c, id] : c.filter((x) => x !== id)));
   const [edit, setEdit] = useState<string | null>(null);
   const editing = r.items.find((i) => i.id === edit);
   const [sel, setSel] = useState<string[]>([]);
