@@ -178,7 +178,7 @@ function Detail() {
                 </div>
               </div>
             )}
-            <LineItems r={r} editable={false} canSplit={mine && !picking} pick={picking ? { selected: keep, toggle: (id) => setKeep((k) => (k.includes(id) ? k.filter((x) => x !== id) : [...k, id])) } : undefined} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
+            <LineItems r={r} editable={false} canSplit={mine} pick={picking ? { selected: keep, toggle: (id) => setKeep((k) => (k.includes(id) ? k.filter((x) => x !== id) : [...k, id])) } : undefined} heading={<span className="flex items-center gap-2">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-subtle px-1.5 text-[11px] font-medium normal-case tracking-normal text-foreground/70">{r.items.length}</span></span>} /></section>
         </div>
         <aside className="pd-scroll space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:py-4 lg:pl-2 lg:pr-4">
           <div>
