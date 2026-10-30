@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
-import { ChevronRight, Download, Flag, FilePlus2, X } from "lucide-react";
+import { ChevronRight, Download, Flag, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Select } from "@/components/pd/form";
@@ -24,10 +24,9 @@ export const Route = createFileRoute("/app/insights/invoices-without-po")({
   component: InvoicesWithoutPO,
 });
 
-type Status = "open" | "po_requested" | "flagged";
+type Status = "open" | "flagged";
 const STATUS: Record<Status, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-subtle text-muted-foreground" },
-  po_requested: { label: "PO requested", cls: "bg-primary/10 text-primary" },
   flagged: { label: "Supplier flagged", cls: "bg-warning/10 text-warning" },
 };
 const date = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -47,7 +46,7 @@ function InvoicesWithoutPO() {
   const apply = (s: Status, items: Invoice[]) => {
     setStatus((o) => ({ ...o, ...Object.fromEntries(items.map((i) => [i.id, s])) }));
     setSel([]);
-    toast.success(s === "po_requested" ? `Retroactive PO requested from ${[...new Set(items.map((i) => i.requester))].join(", ")}` : `${[...new Set(items.map((i) => i.supplier))].join(", ")} flagged — future invoices need a PO first`);
+    toast.success(`${[...new Set(items.map((i) => i.supplier))].join(", ")} flagged — future invoices need a PO first`);
   };
   const exportCsv = () => {
     const rows = [["Invoice", "Supplier", "Date", "Amount", "Department", "GL account", "Requester", "Status"], ...list.map((i) => [i.number, i.supplier, i.date, i.amount.toFixed(2), i.department, i.gl, i.requester, STATUS[st(i)].label])];
@@ -61,7 +60,7 @@ function InvoicesWithoutPO() {
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[12px] text-muted-foreground"><Link to="/app/insights/adoption" className="hover:text-foreground">Adoption</Link><ChevronRight className="size-3" /><span className="text-foreground">Invoices without a PO</span></nav>
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div><h1 className="pd-h1">Invoices without a PO</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground"><span className="num text-foreground">{list.length}</span> invoices · <span className="num text-foreground">{money(total)}</span> without a matching purchase order · Oct 2026</p></div>
+        <p className="mt-1 text-[13px] text-muted-foreground">Oct 2026</p></div>
       <Button variant="outline" size="sm" onClick={exportCsv}><Download /> Export</Button>
     </header>
 
@@ -71,12 +70,22 @@ function InvoicesWithoutPO() {
       {(dept || gl) && <Button size="sm" variant="ghost" onClick={() => nav({ search: {} })}><X className="size-3" />Clear filters</Button>}
     </div>
 
+    <section aria-label="Invoices without a PO summary" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="pd-panel min-w-0 px-3.5 py-3">
+        <h2 className="text-[13px] font-medium text-muted-foreground">Total invoices without a PO</h2>
+        <p className="num mt-1 text-2xl font-semibold text-foreground">{list.length}</p>
+      </div>
+      <div className="pd-panel min-w-0 px-3.5 py-3">
+        <h2 className="text-[13px] font-medium text-muted-foreground">Total amount without a PO</h2>
+        <p className="num mt-1 break-words text-2xl font-semibold text-foreground">{money(total)}</p>
+      </div>
+    </section>
+
     {picked.length > 0 && <div className="pd-panel animate-in fade-in flex flex-wrap items-center gap-2 px-3.5 py-2">
       <span className="text-[13px]"><span className="num font-medium">{picked.length}</span> selected · <span className="num">{money(picked.reduce((t, i) => t + i.amount, 0))}</span></span>
       <div className="ml-auto flex flex-wrap gap-2">
         <Button size="sm" variant="ghost" onClick={() => setSel([])}>Clear</Button>
         <Button size="sm" variant="outline" onClick={() => apply("flagged", picked)}><Flag /> Flag supplier</Button>
-        <Button size="sm" onClick={() => apply("po_requested", picked)}><FilePlus2 /> Request retroactive PO</Button>
       </div>
     </div>}
 
@@ -86,13 +95,13 @@ function InvoicesWithoutPO() {
       {list.length ? <table className="w-full min-w-[760px] text-[13px]">
         <thead><tr className="text-left text-[12px] text-muted-foreground">
           <th className="w-9 py-2 pl-3.5"><Checkbox aria-label="Select all" checked={all} onChange={() => setSel(all ? [] : list.map((i) => i.id))} /></th>
-          <th className="px-2 py-2 font-medium">Invoice</th><th className="px-2 py-2 font-medium">Date</th><th className="px-2 py-2 font-medium">{groupBy === "supplier" ? "Requestor" : "Supplier"}</th><th className="px-2 py-2 font-medium">Department</th><th className="px-2 py-2 font-medium">Status</th><th className="px-2 py-2 text-right font-medium">Amount</th><th className="w-10 pr-3.5" />
+          <th className="px-2 py-2 font-medium">Invoice</th><th className="px-2 py-2 font-medium">Date</th><th className="px-2 py-2 font-medium">{groupBy === "supplier" ? "Requestor" : "Supplier"}</th><th className="px-2 py-2 font-medium">Department</th><th className="px-2 py-2 font-medium">Status</th><th className="py-2 pl-2 pr-3.5 text-right font-medium">Amount</th>
         </tr></thead>
         <tbody>{groups.map((group) => {
           const key = `${groupBy}:${group.name}`;
           const expanded = !closed[key];
           return <Fragment key={key}>
-            <tr className="border-t border-border bg-subtle/50"><td colSpan={8} className="px-2 py-1"><Button variant="ghost" size="sm" aria-expanded={expanded} aria-controls={`group-${group.rows[0]?.id}`} onClick={() => setClosed((c) => ({ ...c, [key]: expanded }))} className="h-auto w-full justify-start gap-2 py-1.5 text-left"><ChevronRight className={cn("size-3.5 shrink-0 transition-transform", expanded && "rotate-90")} /><span>{group.name}</span><span className="text-xs font-normal text-muted-foreground">{group.rows.length} {group.rows.length === 1 ? "invoice" : "invoices"}</span><span className="num ml-auto">{money(group.total)}</span></Button></td></tr>
+            <tr className="border-t border-border bg-subtle/50"><td colSpan={7} className="px-2 py-1"><Button variant="ghost" size="sm" aria-expanded={expanded} aria-controls={`group-${group.rows[0]?.id}`} onClick={() => setClosed((c) => ({ ...c, [key]: expanded }))} className="h-auto w-full justify-start gap-2 py-1.5 text-left"><ChevronRight className={cn("size-3.5 shrink-0 transition-transform", expanded && "rotate-90")} /><span>{group.name}</span><span className="text-xs font-normal text-muted-foreground">{group.rows.length} {group.rows.length === 1 ? "invoice" : "invoices"}</span><span className="num ml-auto">{money(group.total)}</span></Button></td></tr>
             {expanded && group.rows.map((i, index) => <tr id={index === 0 ? `group-${i.id}` : undefined} key={i.id} className={cn("border-t border-border", sel.includes(i.id) && "bg-primary/5")}>
           <td className="py-2 pl-3.5"><Checkbox aria-label={`Select ${i.number}`} checked={sel.includes(i.id)} onChange={() => setSel((o) => (o.includes(i.id) ? o.filter((x) => x !== i.id) : [...o, i.id]))} /></td>
           <td className="num px-2 py-2 font-medium">{i.number}</td>
@@ -100,12 +109,11 @@ function InvoicesWithoutPO() {
           <td className="px-2 py-2">{groupBy === "supplier" ? i.requester : i.supplier}</td>
           <td className="px-2 py-2">{i.department}<span className="block text-[11px] text-muted-foreground">{i.gl}</span></td>
           <td className="px-2 py-2"><span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", STATUS[st(i)].cls)}>{STATUS[st(i)].label}</span></td>
-          <td className="num px-2 py-2 text-right">{money(i.amount)}</td>
-          <td className="pr-3.5 text-right">{st(i) === "open" && <Button size="sm" variant="ghost" title="Request retroactive PO" aria-label={`Request retroactive PO for ${i.number}`} onClick={() => apply("po_requested", [i])}><FilePlus2 /></Button>}</td>
+          <td className="num py-2 pl-2 pr-3.5 text-right">{money(i.amount)}</td>
         </tr>)}
           </Fragment>;
         })}</tbody>
-        <tfoot><tr className="border-t border-border text-[12px]"><td colSpan={6} className="px-3.5 py-2 text-muted-foreground">Total</td><td className="num px-2 py-2 text-right font-medium">{money(total)}</td><td /></tr></tfoot>
+        <tfoot><tr className="border-t border-border text-[12px]"><td colSpan={6} className="px-3.5 py-2 text-muted-foreground">Total</td><td className="num py-2 pl-2 pr-3.5 text-right font-medium">{money(total)}</td></tr></tfoot>
       </table> : <p className="py-14 text-center text-sm text-muted-foreground">No invoices without a PO for this filter.</p>}
       </div>
       <p className="border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground">Sample data · Highest amount first</p>
