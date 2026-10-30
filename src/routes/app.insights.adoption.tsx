@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Info, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { money, totals } from "@/lib/pd/engine";
 import { useDB } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
@@ -62,8 +62,8 @@ function Adoption() {
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="pd-h1 flex items-center gap-1.5">Adoption
-          <Tooltip><TooltipTrigger aria-label="How this is measured" className="text-muted-foreground hover:text-foreground"><Info className="size-4" /></TooltipTrigger>
-            <TooltipContent className="max-w-xs">Measured from requests raised in ProcureDesk. A person is active when they raised at least one request in the period. Target is {TARGET}%.</TooltipContent></Tooltip>
+          <TooltipProvider delayDuration={150}><Tooltip><TooltipTrigger aria-label="How this is measured" className="text-muted-foreground hover:text-foreground"><Info className="size-4" /></TooltipTrigger>
+            <TooltipContent className="max-w-xs">Measured from requests raised in ProcureDesk. A person is active when they raised at least one request in the period. Target is {TARGET}%.</TooltipContent></Tooltip></TooltipProvider>
         </h1>
         <p className="mt-1 text-[13px] text-muted-foreground">Is everyone who buys, buying inside ProcureDesk?</p>
       </div>
