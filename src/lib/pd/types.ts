@@ -221,6 +221,7 @@ export interface PRequest {
 }
 
 export interface Org {
+  adoptionBenchmarks?: Partial<Record<import("./adoption").MetricId, number>>;
   name: string;
   currency: string;
   fiscalYear: string;

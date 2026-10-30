@@ -1,4 +1,7 @@
 # Maintenance screen
+- [x] Add explicit adoption metric tabs and simple artifact-aligned wording.
+- [x] Add shared settings for all four adoption benchmarks and test persistence.
+- [x] Add invoice grouping by requestor and supplier; verify dashboard and invoice flows.
 - [x] Add shared scheduling, service progress and completion actions with regression tests.
 - [x] Build maintenance overview, filters, card/table views and service dialogs; connect navigation.
 - [x] Verify scheduling through completion in the browser, including narrow-screen layout.
