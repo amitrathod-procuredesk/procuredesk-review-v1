@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
-import { ChevronRight, Download, Flag, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, Flag, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Select } from "@/components/pd/form";
+import { Checkbox } from "@/components/pd/form";
 import { money } from "@/lib/pd/engine";
 import { BREAKDOWN, groupInvoices, INVOICES_WITHOUT_PO, type Invoice } from "@/lib/pd/adoption";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/app/insights/invoices-without-po")({
   validateSearch: (s: Record<string, unknown>): { dept?: string; gl?: string } => ({
@@ -56,28 +57,22 @@ function InvoicesWithoutPO() {
   };
   const all = list.length > 0 && picked.length === list.length;
 
-  return <div className="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
+  return <div className="mx-auto max-w-6xl space-y-3 p-4 md:p-6">
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[12px] text-muted-foreground"><Link to="/app/insights/adoption" className="hover:text-foreground">Adoption</Link><ChevronRight className="size-3" /><span className="text-foreground">Invoices without a PO</span></nav>
-    <header className="flex flex-wrap items-end justify-between gap-3">
-      <div><h1 className="pd-h1">Invoices without a PO</h1>
+    <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="min-w-0"><h1 className="pd-h1">Invoices without a PO</h1>
         <p className="mt-1 text-[13px] text-muted-foreground">Oct 2026</p></div>
       <Button variant="outline" size="sm" onClick={exportCsv}><Download /> Export</Button>
     </header>
 
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="w-full sm:w-52"><Select aria-label="Department" value={dept ?? ""} onChange={(e) => nav({ search: (s) => ({ ...s, dept: e.target.value || undefined }) })}><option value="">All departments</option>{BREAKDOWN.department.map((d) => <option key={d.name}>{d.name}</option>)}</Select></div>
-      <div className="w-full sm:w-60"><Select aria-label="GL account" value={gl ?? ""} onChange={(e) => nav({ search: (s) => ({ ...s, gl: e.target.value || undefined }) })}><option value="">All GL accounts</option>{BREAKDOWN.gl.map((d) => <option key={d.name}>{d.name}</option>)}</Select></div>
-      {(dept || gl) && <Button size="sm" variant="ghost" onClick={() => nav({ search: {} })}><X className="size-3" />Clear filters</Button>}
-    </div>
-
-    <section aria-label="Invoices without a PO summary" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div className="pd-panel min-w-0 px-3.5 py-3">
-        <h2 className="text-[13px] font-medium text-muted-foreground">Total invoices without a PO</h2>
-        <p className="num mt-1 text-2xl font-semibold text-foreground">{list.length}</p>
+    <section aria-label="Invoices without a PO summary" className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 py-2 sm:gap-8">
+      <div className="min-w-0">
+        <h2 className="text-xs font-medium text-muted-foreground">Total invoices</h2>
+        <p className="num mt-1 text-2xl font-semibold text-foreground" data-testid="invoice-count">{list.length}</p>
       </div>
-      <div className="pd-panel min-w-0 px-3.5 py-3">
-        <h2 className="text-[13px] font-medium text-muted-foreground">Total amount without a PO</h2>
-        <p className="num mt-1 break-words text-2xl font-semibold text-foreground">{money(total)}</p>
+      <div className="min-w-0 border-l border-border pl-5 sm:pl-8">
+        <h2 className="text-xs font-medium text-muted-foreground">Total amount</h2>
+        <p className="num mt-1 break-words text-2xl font-semibold text-foreground" data-testid="invoice-amount">{money(total)}</p>
       </div>
     </section>
 
@@ -90,7 +85,37 @@ function InvoicesWithoutPO() {
     </div>}
 
     <section className="pd-panel min-w-0">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3.5 py-2.5"><h2 className="pd-section-title">By {groupBy === "supplier" ? "supplier" : "requestor"}</h2><Tabs value={groupBy} onValueChange={(v) => setGroupBy(v as "supplier" | "requester")}><TabsList aria-label="Group invoices by" className="h-8 border border-border bg-surface p-0.5"><TabsTrigger value="supplier" className="text-xs">Supplier</TabsTrigger><TabsTrigger value="requester" className="text-xs">Requestor</TabsTrigger></TabsList></Tabs></div>
+      <div className="grid min-w-0 gap-2 border-b border-border px-3.5 py-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+        <Tabs value={groupBy} onValueChange={(v) => setGroupBy(v as "supplier" | "requester")} className="min-w-0">
+          <TabsList aria-label="Group invoices by" className="h-8 bg-subtle p-0.5">
+            <TabsTrigger value="supplier" className="text-xs">By supplier</TabsTrigger>
+            <TabsTrigger value="requester" className="text-xs">By requestor</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" size="sm" aria-label="Filter by department" className={cn("min-w-0 max-w-full", dept && "border-primary/30 bg-primary/5 text-primary")}><span className="max-w-40 truncate">{dept ?? "Department"}</span><ChevronDown className="size-3.5 shrink-0" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-w-[calc(100vw-2rem)]">
+              <DropdownMenuLabel>Department</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={dept ?? ""} onValueChange={(value) => nav({ search: (s) => ({ ...s, dept: value || undefined }) })}>
+                <DropdownMenuRadioItem value="">All departments</DropdownMenuRadioItem>
+                {BREAKDOWN.department.map((d) => <DropdownMenuRadioItem key={d.name} value={d.name}>{d.name}</DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" size="sm" aria-label="Filter by GL account" className={cn("min-w-0 max-w-full", gl && "border-primary/30 bg-primary/5 text-primary")}><span className="max-w-40 truncate">{gl ?? "GL account"}</span><ChevronDown className="size-3.5 shrink-0" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-w-[calc(100vw-2rem)]">
+              <DropdownMenuLabel>GL account</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={gl ?? ""} onValueChange={(value) => nav({ search: (s) => ({ ...s, gl: value || undefined }) })}>
+                <DropdownMenuRadioItem value="">All GL accounts</DropdownMenuRadioItem>
+                {BREAKDOWN.gl.map((d) => <DropdownMenuRadioItem key={d.name} value={d.name}>{d.name}</DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {(dept || gl) && <Button size="sm" variant="ghost" onClick={() => nav({ search: {} })}><X className="size-3.5" />Clear</Button>}
+        </div>
+      </div>
       <div className="overflow-x-auto">
       {list.length ? <table className="w-full min-w-[760px] text-[13px]">
         <thead><tr className="text-left text-[12px] text-muted-foreground">
