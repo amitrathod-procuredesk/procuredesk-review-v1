@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ChevronRight, Download, Flag, FilePlus2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Select } from "@/components/pd/form";
 import { money } from "@/lib/pd/engine";
-import { BREAKDOWN, INVOICES_WITHOUT_PO, type Invoice } from "@/lib/pd/adoption";
+import { BREAKDOWN, groupInvoices, INVOICES_WITHOUT_PO, type Invoice } from "@/lib/pd/adoption";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/app/insights/invoices-without-po")({
   validateSearch: (s: Record<string, unknown>): { dept?: string; gl?: string } => ({
@@ -15,9 +16,9 @@ export const Route = createFileRoute("/app/insights/invoices-without-po")({
   }),
   head: () => ({ meta: [
     { title: "Invoices without a PO · ProcureDesk" },
-    { name: "description", content: "Supplier invoices received without a purchase order, with actions to request a retroactive PO, flag suppliers or export for AP." },
+    { name: "description", content: "Review invoices without a purchase order by supplier or requestor." },
     { property: "og:title", content: "Invoices without a PO · ProcureDesk" },
-    { property: "og:description", content: "Review and resolve maverick spend: invoices that arrived without a ProcureDesk PO." },
+    { property: "og:description", content: "Invoices without a purchase order, grouped by supplier or requestor." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
   component: InvoicesWithoutPO,
@@ -36,7 +37,10 @@ function InvoicesWithoutPO() {
   const nav = useNavigate({ from: Route.fullPath });
   const [status, setStatus] = useState<Record<string, Status>>({});
   const [sel, setSel] = useState<string[]>([]);
+  const [groupBy, setGroupBy] = useState<"supplier" | "requester">("supplier");
+  const [closed, setClosed] = useState<Record<string, boolean>>({});
   const list = INVOICES_WITHOUT_PO.filter((i) => (!dept || i.department === dept) && (!gl || i.gl === gl));
+  const groups = groupInvoices(list, groupBy);
   const total = list.reduce((t, i) => t + i.amount, 0);
   const picked = list.filter((i) => sel.includes(i.id));
   const st = (i: Invoice) => status[i.id] ?? "open";
@@ -57,14 +61,14 @@ function InvoicesWithoutPO() {
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[12px] text-muted-foreground"><Link to="/app/insights/adoption" className="hover:text-foreground">Adoption</Link><ChevronRight className="size-3" /><span className="text-foreground">Invoices without a PO</span></nav>
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div><h1 className="pd-h1">Invoices without a PO</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground"><span className="num text-foreground">{list.length}</span> invoices · <span className="num text-foreground">{money(total)}</span> received in Oct 2026 with no matching ProcureDesk PO</p></div>
-      <Button variant="outline" size="sm" onClick={exportCsv}><Download /> Export for AP review</Button>
+        <p className="mt-1 text-[13px] text-muted-foreground"><span className="num text-foreground">{list.length}</span> invoices · <span className="num text-foreground">{money(total)}</span> without a matching purchase order · Oct 2026</p></div>
+      <Button variant="outline" size="sm" onClick={exportCsv}><Download /> Export</Button>
     </header>
 
     <div className="flex flex-wrap items-center gap-2">
       <div className="w-full sm:w-52"><Select aria-label="Department" value={dept ?? ""} onChange={(e) => nav({ search: (s) => ({ ...s, dept: e.target.value || undefined }) })}><option value="">All departments</option>{BREAKDOWN.department.map((d) => <option key={d.name}>{d.name}</option>)}</Select></div>
       <div className="w-full sm:w-60"><Select aria-label="GL account" value={gl ?? ""} onChange={(e) => nav({ search: (s) => ({ ...s, gl: e.target.value || undefined }) })}><option value="">All GL accounts</option>{BREAKDOWN.gl.map((d) => <option key={d.name}>{d.name}</option>)}</Select></div>
-      {(dept || gl) && <button onClick={() => nav({ search: {} })} className="flex items-center gap-1 text-[12px] text-primary hover:underline"><X className="size-3" />Clear filters</button>}
+      {(dept || gl) && <Button size="sm" variant="ghost" onClick={() => nav({ search: {} })}><X className="size-3" />Clear filters</Button>}
     </div>
 
     {picked.length > 0 && <div className="pd-panel animate-in fade-in flex flex-wrap items-center gap-2 px-3.5 py-2">
@@ -76,24 +80,35 @@ function InvoicesWithoutPO() {
       </div>
     </div>}
 
-    <section className="pd-panel min-w-0 overflow-x-auto">
+    <section className="pd-panel min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3.5 py-2.5"><h2 className="pd-section-title">By {groupBy === "supplier" ? "supplier" : "requestor"}</h2><Tabs value={groupBy} onValueChange={(v) => setGroupBy(v as "supplier" | "requester")}><TabsList aria-label="Group invoices by" className="h-8 border border-border bg-surface p-0.5"><TabsTrigger value="supplier" className="text-xs">Supplier</TabsTrigger><TabsTrigger value="requester" className="text-xs">Requestor</TabsTrigger></TabsList></Tabs></div>
+      <div className="overflow-x-auto">
       {list.length ? <table className="w-full min-w-[760px] text-[13px]">
         <thead><tr className="text-left text-[12px] text-muted-foreground">
           <th className="w-9 py-2 pl-3.5"><Checkbox aria-label="Select all" checked={all} onChange={() => setSel(all ? [] : list.map((i) => i.id))} /></th>
-          <th className="px-2 py-2 font-medium">Invoice</th><th className="px-2 py-2 font-medium">Supplier</th><th className="px-2 py-2 font-medium">Department · GL account</th><th className="px-2 py-2 font-medium">Requester</th><th className="px-2 py-2 font-medium">Status</th><th className="px-2 py-2 text-right font-medium">Amount</th><th className="w-10 pr-3.5" />
+          <th className="px-2 py-2 font-medium">Invoice</th><th className="px-2 py-2 font-medium">Date</th><th className="px-2 py-2 font-medium">{groupBy === "supplier" ? "Requestor" : "Supplier"}</th><th className="px-2 py-2 font-medium">Department</th><th className="px-2 py-2 font-medium">Status</th><th className="px-2 py-2 text-right font-medium">Amount</th><th className="w-10 pr-3.5" />
         </tr></thead>
-        <tbody>{list.map((i) => <tr key={i.id} className={cn("border-t border-border", sel.includes(i.id) && "bg-primary/5")}>
+        <tbody>{groups.map((group) => {
+          const key = `${groupBy}:${group.name}`;
+          const expanded = !closed[key];
+          return <Fragment key={key}>
+            <tr className="border-t border-border bg-subtle/50"><td colSpan={8} className="px-2 py-1"><Button variant="ghost" size="sm" aria-expanded={expanded} aria-controls={`group-${group.rows[0]?.id}`} onClick={() => setClosed((c) => ({ ...c, [key]: expanded }))} className="h-auto w-full justify-start gap-2 py-1.5 text-left"><ChevronRight className={cn("size-3.5 shrink-0 transition-transform", expanded && "rotate-90")} /><span>{group.name}</span><span className="text-xs font-normal text-muted-foreground">{group.rows.length} {group.rows.length === 1 ? "invoice" : "invoices"}</span><span className="num ml-auto">{money(group.total)}</span></Button></td></tr>
+            {expanded && group.rows.map((i, index) => <tr id={index === 0 ? `group-${i.id}` : undefined} key={i.id} className={cn("border-t border-border", sel.includes(i.id) && "bg-primary/5")}>
           <td className="py-2 pl-3.5"><Checkbox aria-label={`Select ${i.number}`} checked={sel.includes(i.id)} onChange={() => setSel((o) => (o.includes(i.id) ? o.filter((x) => x !== i.id) : [...o, i.id]))} /></td>
-          <td className="px-2 py-2"><span className="num font-medium">{i.number}</span><span className="block text-[11px] text-muted-foreground">{date(i.date)}</span></td>
-          <td className="px-2 py-2">{i.supplier}</td>
+          <td className="num px-2 py-2 font-medium">{i.number}</td>
+          <td className="whitespace-nowrap px-2 py-2 text-muted-foreground">{date(i.date)}</td>
+          <td className="px-2 py-2">{groupBy === "supplier" ? i.requester : i.supplier}</td>
           <td className="px-2 py-2">{i.department}<span className="block text-[11px] text-muted-foreground">{i.gl}</span></td>
-          <td className="px-2 py-2">{i.requester}</td>
           <td className="px-2 py-2"><span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", STATUS[st(i)].cls)}>{STATUS[st(i)].label}</span></td>
           <td className="num px-2 py-2 text-right">{money(i.amount)}</td>
           <td className="pr-3.5 text-right">{st(i) === "open" && <Button size="sm" variant="ghost" title="Request retroactive PO" aria-label={`Request retroactive PO for ${i.number}`} onClick={() => apply("po_requested", [i])}><FilePlus2 /></Button>}</td>
-        </tr>)}</tbody>
+        </tr>)}
+          </Fragment>;
+        })}</tbody>
         <tfoot><tr className="border-t border-border text-[12px]"><td colSpan={6} className="px-3.5 py-2 text-muted-foreground">Total</td><td className="num px-2 py-2 text-right font-medium">{money(total)}</td><td /></tr></tfoot>
       </table> : <p className="py-14 text-center text-sm text-muted-foreground">No invoices without a PO for this filter.</p>}
+      </div>
+      <p className="border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground">Sample data · Highest amount first</p>
     </section>
   </div>;
 }
