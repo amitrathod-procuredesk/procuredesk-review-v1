@@ -27,7 +27,7 @@ export const METRICS: Metric[] = [
     series: s([80, 81, 83, 84, 82, 85, 83, 84, 82, 83, 81, 79], [52, 48, 61, 55, 58, 60, 57, 63, 59, 62, 58, 57]) },
   { id: "pobi", label: "PO before invoice", unit: "POs", benchmark: 95, help: "Share of POs approved before the supplier's invoice date.",
     series: s([89, 90, 92, 91, 93, 90, 92, 91, 92, 90, 92, 91], [42, 39, 51, 46, 48, 51, 47, 53, 48, 51, 47, 45]) },
-  { id: "spend", label: "Spend through ProcureDesk", unit: "of spend", benchmark: 85, help: "Share of addressable supplier spend that went through a ProcureDesk request.",
+  { id: "spend", label: "Spend through ProcureDesk", unit: "invoices", benchmark: 85, help: "Share of addressable supplier spend that went through a ProcureDesk request.",
     series: s([64, 66, 67, 69, 70, 71, 72, 73, 74, 73, 75, 76], [182, 175, 210, 196, 204, 215, 199, 221, 208, 217, 205, 212]) },
   { id: "logins", label: "Login adoption", unit: "people", benchmark: 75, help: "Share of people with a ProcureDesk seat who signed in during the month.",
     series: s([58, 60, 61, 63, 65, 64, 66, 68, 67, 69, 70, 72], [57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57]) },
