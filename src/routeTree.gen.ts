@@ -18,6 +18,7 @@ import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$asset
 import { Route as AppAssetsCheckoutRouteImport } from './routes/app.assets.checkout'
 import { Route as AppAssetsMaintenanceRouteImport } from './routes/app.assets.maintenance'
 import { Route as AppAssetsSettingsRouteImport } from './routes/app.assets.settings'
+import { Route as AppInsightsAdoptionRouteImport } from './routes/app.insights.adoption'
 import { Route as AppReportsIndexRouteImport } from './routes/app.reports.index'
 import { Route as AppReportsReportIdRouteImport } from './routes/app.reports.$reportId'
 import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.index'
@@ -72,6 +73,11 @@ const AppAssetsSettingsRoute = AppAssetsSettingsRouteImport.update({
   path: '/assets/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInsightsAdoptionRoute = AppInsightsAdoptionRouteImport.update({
+  id: '/insights/adoption',
+  path: '/insights/adoption',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
   id: '/reports/',
   path: '/reports/',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
   '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
   '/app/reports': typeof AppReportsIndexRoute
   '/app/requests': typeof AppRequestsIndexRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
   '/app/assets/settings': typeof AppAssetsSettingsRoute
+  '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
   '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/insights/adoption'
     | '/app/reports/$reportId'
     | '/app/reports/'
     | '/app/requests/'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/insights/adoption'
     | '/app/reports/$reportId'
     | '/app/reports'
     | '/app/requests'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
     | '/app/assets/settings'
+    | '/app/insights/adoption'
     | '/app/reports/$reportId'
     | '/app/reports/'
     | '/app/requests/'
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/insights/adoption': {
+      id: '/app/insights/adoption'
+      path: '/insights/adoption'
+      fullPath: '/app/insights/adoption'
+      preLoaderRoute: typeof AppInsightsAdoptionRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/reports/': {
       id: '/app/reports/'
       path: '/reports'
@@ -367,6 +386,7 @@ interface AppRouteChildren {
   AppAssetsCheckoutRoute: typeof AppAssetsCheckoutRoute
   AppAssetsMaintenanceRoute: typeof AppAssetsMaintenanceRoute
   AppAssetsSettingsRoute: typeof AppAssetsSettingsRoute
+  AppInsightsAdoptionRoute: typeof AppInsightsAdoptionRoute
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
   AppReportsIndexRoute: typeof AppReportsIndexRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
@@ -385,6 +405,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssetsCheckoutRoute: AppAssetsCheckoutRoute,
   AppAssetsMaintenanceRoute: AppAssetsMaintenanceRoute,
   AppAssetsSettingsRoute: AppAssetsSettingsRoute,
+  AppInsightsAdoptionRoute: AppInsightsAdoptionRoute,
   AppReportsReportIdRoute: AppReportsReportIdRoute,
   AppReportsIndexRoute: AppReportsIndexRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
