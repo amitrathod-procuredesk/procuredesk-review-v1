@@ -33,7 +33,6 @@ function Adoption() {
   const [dim, setDim] = useState<Dim>("department");
   const sel = metrics.find((m) => m.id === metric) ?? metrics[0];
   const rows = [...BREAKDOWN[dim]].sort((a, b) => a.values[metric] - b.values[metric]);
-  const missing = INVOICES_WITHOUT_PO.reduce((t, i) => t + i.amount, 0);
 
   return <TooltipProvider delayDuration={150}>
     <div className="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
