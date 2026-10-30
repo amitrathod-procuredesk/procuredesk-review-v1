@@ -8,6 +8,15 @@ export type MetricId = "po" | "pobi" | "spend" | "logins";
 export type Dim = "department" | "gl";
 export type Window = "month" | "quarter" | "year";
 
+export const DEFAULT_BENCHMARKS: Record<MetricId, number> = { po: 90, pobi: 85, spend: 75, logins: 70 };
+export const validBenchmark = (value: number) => Number.isFinite(value) && value >= 0 && value <= 100;
+export function resolveBenchmarks(saved?: Partial<Record<MetricId, number>>): Record<MetricId, number> {
+  return Object.fromEntries(Object.entries(DEFAULT_BENCHMARKS).map(([key, fallback]) => {
+    const value = saved?.[key as MetricId];
+    return [key, typeof value === "number" && validBenchmark(value) ? value : fallback];
+  })) as Record<MetricId, number>;
+}
+
 export const MONTHS = ["Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26", "Jul 26", "Aug 26", "Sep 26", "Oct 26"];
 
 export interface Metric {
@@ -23,13 +32,13 @@ export interface Metric {
 const s = (vals: number[], ns: number[]) => vals.map((v, i) => ({ v, n: ns[i] }));
 
 export const METRICS: Metric[] = [
-  { id: "po", label: "PO compliance", unit: "invoices", benchmark: 90, help: "Share of supplier invoices that match a purchase order raised in ProcureDesk.",
+  { id: "po", label: "PO compliance", unit: "invoices", benchmark: DEFAULT_BENCHMARKS.po, help: "Invoices matched to a purchase order",
     series: s([80, 81, 83, 84, 82, 85, 83, 84, 82, 83, 81, 79], [52, 48, 61, 55, 58, 60, 57, 63, 59, 62, 58, 57]) },
-  { id: "pobi", label: "PO before invoice", unit: "POs", benchmark: 95, help: "Share of POs approved before the supplier's invoice date.",
+  { id: "pobi", label: "PO before invoice", unit: "POs", benchmark: DEFAULT_BENCHMARKS.pobi, help: "POs created before the invoice date",
     series: s([89, 90, 92, 91, 93, 90, 92, 91, 92, 90, 92, 91], [42, 39, 51, 46, 48, 51, 47, 53, 48, 51, 47, 45]) },
-  { id: "spend", label: "Spend through ProcureDesk", unit: "invoices", benchmark: 85, help: "Share of addressable supplier spend that went through a ProcureDesk request.",
+  { id: "spend", label: "Spend through ProcureDesk", unit: "invoices", benchmark: DEFAULT_BENCHMARKS.spend, help: "Share of your annual spend estimate",
     series: s([64, 66, 67, 69, 70, 71, 72, 73, 74, 73, 75, 76], [182, 175, 210, 196, 204, 215, 199, 221, 208, 217, 205, 212]) },
-  { id: "logins", label: "Login adoption", unit: "people", benchmark: 75, help: "Share of people with a ProcureDesk seat who signed in during the month.",
+  { id: "logins", label: "Login adoption", unit: "people", benchmark: DEFAULT_BENCHMARKS.logins, help: "Active users who logged in each month",
     series: s([58, 60, 61, 63, 65, 64, 66, 68, 67, 69, 70, 72], [57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57]) },
 ];
 
@@ -43,7 +52,7 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
 
 /** Value for the selected window and its change vs the previous window of equal length (null when not available). */
 export function windowValue(m: Metric, w: Window) {
-  const k = WINDOWS.find((x) => x.id === w)!.months;
+  const k = WINDOWS.find((x) => x.id === w)?.months ?? 12;
   const vals = m.series.map((p) => p.v);
   const cur = avg(vals.slice(-k));
   const prev = vals.length >= 2 * k ? avg(vals.slice(-2 * k, -k)) : null;
@@ -90,6 +99,15 @@ export const INVOICES_WITHOUT_PO: Invoice[] = [
 
 export const invoicesFor = (dim?: Dim, name?: string) =>
   INVOICES_WITHOUT_PO.filter((i) => !dim || !name || (dim === "department" ? i.department === name : i.gl === name));
+
+export function groupInvoices(invoices: Invoice[], by: "supplier" | "requester") {
+  const groups = new Map<string, Invoice[]>();
+  invoices.forEach((invoice) => {
+    const name = invoice[by] || (by === "requester" ? "No requestor" : "No supplier");
+    groups.set(name, [...(groups.get(name) ?? []), invoice]);
+  });
+  return [...groups].map(([name, rows]) => ({ name, rows, total: rows.reduce((sum, row) => sum + row.amount, 0) })).sort((a, b) => b.total - a.total);
+}
 
 /** Severity tier relative to target: on target, within 10 pts, or further below. */
 export const tier = (value: number, target: number): "ok" | "warn" | "bad" => (value >= target ? "ok" : value >= target - 10 ? "warn" : "bad");

@@ -187,7 +187,7 @@ function OrgTab() {
         <label className="sm:col-span-3"><span className="pd-label">Ship-to locations</span><input className="pd-input" value={o.shipTo.join(", ")} onChange={(e) => setO({ ...o, shipTo: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></label>
         <label className="sm:col-span-3"><span className="pd-label">Projects</span><input className="pd-input" value={o.projects.join(", ")} onChange={(e) => setO({ ...o, projects: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></label>
       </div>
-      <Button className="mt-4" size="sm" onClick={() => { mutate((d) => (d.org = { ...o, budgetLevel: d.org.budgetLevel })); toast.success("Organization saved"); }}>Save</Button>
+      <Button className="mt-4" size="sm" onClick={() => { mutate((d) => (d.org = { ...o, budgetLevel: d.org.budgetLevel, adoptionBenchmarks: d.org.adoptionBenchmarks })); toast.success("Organization saved"); }}>Save</Button>
     </section>
     <BudgetControl />
     </>
