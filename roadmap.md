@@ -1,4 +1,5 @@
 # Maintenance screen
+- [ ] Remove Request PO actions and highlight invoice count and amount; verify both invoice groupings and filters.
 - [x] Add explicit adoption metric tabs and simple artifact-aligned wording.
 - [x] Add shared settings for all four adoption benchmarks and test persistence.
 - [x] Add invoice grouping by requestor and supplier; verify dashboard and invoice flows.
