@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { Bot, AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { Bot, Sparkles, AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -109,8 +109,8 @@ function AppShell() {
 
       <nav className={cn("fixed inset-x-0 bottom-0 z-30 flex h-14 border-t border-border bg-surface md:hidden", adminMode && "hidden")}>
         {mobileItems.map((it) => (
-          <Link key={it.to} to={it.to} className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground data-[status=active]:text-primary">
-            <it.icon className="size-4" />
+          <Link key={it.to} to={it.to} className={cn("flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground data-[status=active]:text-primary", it.to === "/app/agents" && "font-semibold text-foreground")}>
+            {it.to === "/app/agents" ? <span className="pd-agent-icon grid size-6 place-items-center rounded-md"><Bot className="size-4" /></span> : <it.icon className="size-4" />}
             {it.label}
           </Link>
         ))}
@@ -127,7 +127,6 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
   const path = useRouterState({ select: (s) => s.location.pathname });
   const soon = (n: string) => toast(`${n} is coming soon`, { description: "This area isn't part of the demo yet." });
   const groups: NavGroup[] = [
-    { label: "AI agents", icon: Bot, to: "/app/agents" },
     {
       label: "Purchase", icon: ShoppingBasket, children: [
         { label: "Request", to: "/app/requests" },
@@ -156,7 +155,16 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
       <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand menu" : "Collapse menu"} className="absolute -right-3 top-5 z-40 flex size-6 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground shadow-sm outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/30">
         {collapsed ? <ChevronRight className="size-3.5" strokeWidth={2} /> : <ChevronLeft className="size-3.5" strokeWidth={2} />}
       </button>
-      <nav className={cn("flex-1 space-y-0.5 pd-scroll-hide overflow-y-auto pb-3 pt-4", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("shrink-0 border-b border-sidebar-border pb-3 pt-4", collapsed ? "px-2" : "px-3")}>
+        <Link to="/app/agents" title="AI agents" aria-label="AI agents" className={cn("pd-agent-entry group flex items-center gap-2.5 rounded-lg border px-2.5 py-3 text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring", collapsed && "justify-center px-0 py-2")}>
+          <span className="pd-agent-icon relative grid size-8 shrink-0 place-items-center rounded-lg">
+            <Bot className="size-[18px]" />
+            <Sparkles className="absolute -right-1 -top-1 size-3 rounded-sm bg-surface text-primary" />
+          </span>
+          {!collapsed && <><span className="min-w-0 flex-1 text-sm font-semibold">AI agents</span><ChevronRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" /></>}
+        </Link>
+      </div>
+      <nav className={cn("flex-1 space-y-0.5 pd-scroll-hide overflow-y-auto pb-3 pt-3", collapsed ? "px-2" : "px-3")}>
         {groups.map((g) => {
           const act = groupActive(g);
           const isOpen = open.includes(g.label) && !collapsed;
