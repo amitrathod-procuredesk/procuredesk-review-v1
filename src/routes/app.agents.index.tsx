@@ -10,7 +10,6 @@ import { togglePause, useAgents } from '@/lib/pd/agents/store';
 import { AgentIconTile, AgentStatusBadge } from '@/components/pd/agents/agentBits';
 import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
 import { toast } from 'sonner';
-import { AgentSyncStatus } from '@/components/pd/agents/AgentSyncStatus';
 
 const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -48,7 +47,7 @@ export default function AgentsPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="flex items-center gap-3"><h1 className="pd-h1">Your AI team</h1><AgentSyncStatus /></div>
+            <h1 className="pd-h1">Your AI team</h1>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               Agents check and act on your requests, orders, invoices and contracts.
               {summary && <span className="text-foreground/70 font-medium"> {summary}.</span>}
@@ -120,7 +119,7 @@ export default function AgentsPage() {
         )}
 
         {/* Status filter */}
-        <div className="flex items-center gap-1 mt-4 max-w-full overflow-x-auto rounded-md bg-secondary/70 p-1">
+        <div className="pd-scroll-hide flex items-center gap-1 mt-4 max-w-full overflow-x-auto overflow-y-hidden rounded-md bg-secondary/70 p-1">
           {FILTERS.map((f) => {
             const on = filter === f.id;
             return (

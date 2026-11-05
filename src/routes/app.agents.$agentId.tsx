@@ -41,7 +41,6 @@ import {
 } from '@/lib/pd/agents/store';
 import { AgentIconTile, AgentStatusBadge, STATUS_HELP } from '@/components/pd/agents/agentBits';
 import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
-import { AgentSyncStatus } from '@/components/pd/agents/AgentSyncStatus';
 import { toast } from 'sonner';
 
 type Tab = 'instructions' | 'team' | 'runs';
@@ -81,7 +80,7 @@ export default function AgentDetailPage() {
   return (
     <>
       <div className="mx-auto max-w-[1440px] p-3 sm:p-5">
-        <div className="flex items-center justify-between gap-2"><PageBreadcrumb items={[{ label: 'AI agents', to: '/agents' }, { label: agent.name }]} /><AgentSyncStatus /></div>
+        <PageBreadcrumb items={[{ label: 'AI agents', to: '/agents' }, { label: agent.name }]} />
 
         <div className="grid min-[900px]:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-3 mt-4">
           {/* Left rail — identity, mode and controls */}
@@ -191,13 +190,13 @@ export default function AgentDetailPage() {
           {/* Right — working area */}
           <div className="min-w-0">
             {/* Tabs */}
-            <div className="flex items-center gap-4 overflow-x-auto border-b border-border">
+            <div className="pd-scroll-hide flex items-center gap-4 overflow-x-auto overflow-y-hidden border-b border-border">
               {tabs.map((t) => (
                 <Button variant="ghost"
                   key={t.id}
                   onClick={() => { setTab(t.id); setOpenRunId(null); }}
                   className={cn(
-                    'shrink-0 pb-3 -mb-px text-sm border-b-2 transition-colors flex items-center gap-1.5',
+                    'shrink-0 pb-3 text-sm border-b-2 transition-colors flex items-center gap-1.5',
                     tab === t.id
                       ? 'border-primary text-primary font-semibold'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
