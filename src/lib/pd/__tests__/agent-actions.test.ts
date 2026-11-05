@@ -12,8 +12,8 @@ describe('Reference agent mutation flows', () => {
   });
   it('modifies and replaces a document without leaving the old attachment', () => {
     const s = seedAgents(); const doc = { name: 'Updated vendor form', type: 'Form' as const, file: 'replacement.pdf', instruction: 'Complete it', when: 'New vendor' };
-    changePolicyDocument(s, 'policy-agent', 'new-vendor', 'New_vendor_setup.xlsx', doc);
-    expect(s.agents.find(a => a.id === 'policy-agent')?.sections?.find(v => v.key === 'new-vendor')?.docs).toEqual([doc]);
+    changePolicyDocument(s, 'policy-agent', 'newv', 'New_vendor_setup.xlsx', doc);
+    expect(s.agents.find(a => a.id === 'policy-agent')?.sections?.find(v => v.key === 'newv')?.docs).toEqual([doc]);
   });
   it('removes the selected document without removing other documents', () => {
     const s = seedAgents(); const section = s.agents.find(a => a.id === 'policy-agent')?.sections?.find(v => v.docs.length === 2);

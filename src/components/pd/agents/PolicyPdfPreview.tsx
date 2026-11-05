@@ -16,7 +16,7 @@ export function PolicyPdfPreview({ url }: { url: string }) {
         const pdfjs = await import('pdfjs-dist');
         const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
         pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-        const task = pdfjs.getDocument(url);
+        const task = pdfjs.getDocument({ url });
         cleanup = () => { void task.destroy(); };
         const pdf = await task.promise;
         if (stopped) return;
