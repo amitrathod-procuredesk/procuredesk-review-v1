@@ -1,0 +1,463 @@
+import { useMemo, useState } from 'react';
+import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
+import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Lock, Zap } from 'lucide-react';
+import { createFileRoute } from '@tanstack/react-router';
+import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
+import { Button } from '@/components/ui/button';
+import { TextInput as Input } from '@/components/pd/form';
+import { TextArea as Textarea } from '@/components/pd/form';
+import { cn } from '@/lib/utils';
+import {
+  POLICY_SECTIONS,
+  agentCategory,
+  canCreatePolicyAgent,
+  validateNewAgent,
+  type AgentCategory,
+  type AgentArea,
+  type NewAgentDraft,
+  type TriggerKind,
+} from '@/lib/pd/agents/domain';
+import { createAgent, useAgents } from '@/lib/pd/agents/store';
+import { AgentIconTile } from '@/components/pd/agents/agentBits';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+
+const POLICY_PRESET = {
+  name: 'Policy agent',
+  area: 'Requisitions' as AgentArea,
+  trigger: 'Sent for approval',
+  triggerKind: 'event' as TriggerKind,
+  instructions:
+    'Check each requisition against our purchasing policy when it is sent for approval, and tell the requester exactly what to fix before it moves on.',
+  dos: ['Check every section of the purchasing policy', 'Explain each issue in plain words with the fix'],
+  donts: ['Never approve or reject a requisition on its own', 'Never change amounts, suppliers or approvers'],
+};
+
+const AREAS: AgentArea[] = ['Requisitions', 'Requests', 'Orders', 'Invoices', 'Contracts', 'Suppliers', 'Payments'];
+
+const TRIGGERS: { id: TriggerKind; name: string; desc: string; icon: typeof Zap }[] = [
+  { id: 'event', name: 'Document event', desc: 'Sent for approval, status change, new invoice', icon: Zap },
+  { id: 'schedule', name: 'Schedule', desc: 'Hourly, daily, or weekly', icon: Calendar },
+  { id: 'manual', name: 'Manual only', desc: 'A person clicks Run', icon: Hand },
+];
+
+const STEPS = [
+  { id: 'start', label: 'Type and mode' },
+  { id: 'setup', label: 'Set up' },
+] as const;
+
+type StepId = (typeof STEPS)[number]['id'];
+
+export default function NewAgentPage() {
+  const navigate = useNavigate();
+  const { agents } = useAgents();
+  const [step, setStep] = useState<StepId>('start');
+  const [category, setCategory] = useState<AgentCategory | null>(null);
+  const isPolicy = category === 'policy';
+
+  // Setup state
+  const [draft, setDraft] = useState<NewAgentDraft>({ name: '', area: '', triggerKind: '', instructions: '', mode: 'shadow', dos: [''], donts: [''] });
+  const [triggerLabel, setTriggerLabel] = useState('');
+  const [sectionOn, setSectionOn] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const existingNames = useMemo(() => new Set(agents.map((a) => a.name)), [agents]);
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+
+  const policyAgent = agents.find((a) => agentCategory(a) === 'policy');
+  const policyAllowed = canCreatePolicyAgent(agents);
+
+  const pickPolicy = () => {
+    if (!policyAllowed) return;
+    setCategory('policy');
+    setDraft({
+      name: POLICY_PRESET.name,
+      area: POLICY_PRESET.area,
+      triggerKind: POLICY_PRESET.triggerKind,
+      instructions: POLICY_PRESET.instructions,
+      mode: draft.mode,
+      category: 'policy',
+      dos: [...POLICY_PRESET.dos],
+      donts: [...POLICY_PRESET.donts],
+    });
+    setTriggerLabel(POLICY_PRESET.trigger);
+    setSectionOn(Object.fromEntries(POLICY_SECTIONS.map((s) => [s.key, s.on])));
+    setErrors({});
+  };
+
+  const pickCustom = () => {
+    setCategory('custom');
+    setDraft({ name: '', area: '', triggerKind: '', instructions: '', mode: draft.mode, category: 'custom', dos: [''], donts: [''] });
+    setTriggerLabel('');
+    setErrors({});
+  };
+
+  const continueToMode = () => {
+    const errs = validateNewAgent(draft);
+    if (existingNames.has(draft.name.trim())) errs.name = 'An agent with this name already exists.';
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    create();
+  };
+
+  const create = () => {
+    const agent = createAgent({
+      ...draft,
+      triggerLabel: triggerLabel || TRIGGERS.find((t) => t.id === draft.triggerKind)?.name || 'Manual only',
+      icon: isPolicy ? 'shield' : 'bot',
+    });
+    toast.success(
+      draft.mode === 'live'
+        ? `${agent.name} is live.`
+        : `${agent.name} is watching in shadow mode. Review its runs, then switch it to live when you trust it.`
+    );
+    navigate(`/agents/${agent.id}`);
+  };
+
+  return (
+    <>
+      <div className="mx-auto max-w-3xl p-3 sm:p-5">
+        <PageBreadcrumb
+          items={[
+            { label: 'AI agents', to: '/agents' },
+            { label: 'New agent' },
+          ]}
+          backTo={step === 'start' ? '/agents' : undefined}
+        />
+
+        {/* Stepper */}
+        <div className="flex items-center gap-2 mt-6">
+          {STEPS.map((s, i) => {
+            const done = i < stepIndex;
+            const current = i === stepIndex;
+            return (
+              <div key={s.id} className="flex items-center gap-2">
+                {i > 0 && <span className={cn('h-px w-8', done || current ? 'bg-primary/40' : 'bg-border')} />}
+                <span
+                  className={cn(
+                    'h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
+                    done
+                      ? 'bg-primary text-primary-foreground'
+                      : current
+                        ? 'ring-2 ring-primary text-primary'
+                        : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  {done ? <Check className="h-3 w-3" /> : i + 1}
+                </span>
+                <span className={cn('text-sm', current ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+                  {s.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {step === 'start' && (
+          <>
+            <h1 className="text-xl font-semibold  text-foreground mt-6">What kind of agent?</h1>
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
+              Pick the kind of agent and how it should start. You'll describe its job next.
+            </p>
+
+            <div className="mt-6 grid sm:grid-cols-2 gap-3">
+              <Button variant="ghost"
+                onClick={pickPolicy}
+                aria-disabled={!policyAllowed}
+                className={cn(
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
+                  !policyAllowed ? 'opacity-70 cursor-not-allowed bg-secondary/40'
+                    : isPolicy ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-sm'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <AgentIconTile icon="shield" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Policy agent</p>
+                    <p className="text-xs text-muted-foreground">One per workspace</p>
+                  </div>
+                  {policyAllowed && (
+                    <Check className={cn('h-4 w-4 ml-auto shrink-0 text-primary transition-opacity', (isPolicy ? 'opacity-100' : 'opacity-0'))} />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                  Checks requisitions against your purchasing policy, section by section, and tells requesters what to fix.
+                </p>
+                {!policyAllowed && policyAgent && (
+                  <p className="text-xs text-foreground mt-3 flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                    Already set up.{' '}
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/agents/${policyAgent.id}`); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/agents/${policyAgent.id}`); }}
+                      className="font-medium text-primary cursor-pointer pointer-events-auto"
+                    >
+                      Open {policyAgent.name}
+                    </span>
+                  </p>
+                )}
+              </Button>
+
+              <Button variant="ghost"
+                onClick={pickCustom}
+                className={cn(
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
+                  category === 'custom' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-sm'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <AgentIconTile icon="bot" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Custom agent</p>
+                    <p className="text-xs text-muted-foreground">Like Penny and her team</p>
+                  </div>
+                  <Check className={cn('h-4 w-4 ml-auto shrink-0 text-primary transition-opacity', category === 'custom' ? 'opacity-100' : 'opacity-0')} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                  Describe the job in plain words, what it should and should not do, what it works on and when it runs.
+                </p>
+              </Button>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-border">
+              <h2 className="text-sm font-semibold text-foreground">How should it start?</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                You can switch between shadow and live any time from the agent's page.
+              </p>
+            <div className="grid sm:grid-cols-2 gap-3 mt-3">
+              <Button variant="ghost"
+                onClick={() => setDraft({ ...draft, mode: 'shadow' })}
+                className={cn(
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
+                  draft.mode === 'shadow' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Shadow mode</p>
+                  <span className="ml-auto text-[11px] font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5">
+                    Recommended
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Watches and advises in the background. You review its runs and teach it before it acts.
+                </p>
+              </Button>
+              <Button variant="ghost"
+                onClick={() => setDraft({ ...draft, mode: 'live' })}
+                className={cn(
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
+                  draft.mode === 'live' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Live</p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Acts on its own from the first run. Choose this only for agents you already trust.
+                </p>
+              </Button>
+            </div>
+
+            </div>
+
+            <div className="flex items-center gap-2 pt-6">
+              {!category && <p className="text-xs text-muted-foreground">Choose a type of agent to continue.</p>}
+              <Button onClick={() => setStep('setup')} disabled={!category} className="ml-auto">
+                Continue <ArrowRight className="h-4 w-4 ml-1.5" />
+              </Button>
+            </div>
+          </>
+        )}
+
+        {step === 'setup' && (
+          <>
+            <h1 className="text-xl font-semibold  text-foreground mt-6">
+              {isPolicy ? 'Set up the policy agent' : 'Set up your agent'}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              You can change everything later from the agent's page.
+            </p>
+
+            <div className="mt-4 space-y-5">
+              {/* Name */}
+              <div>
+                <label className="text-sm font-medium text-foreground">Name</label>
+                <Input
+                  aria-label="Name"
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  placeholder="e.g. Spend watchdog"
+                  className="mt-1.5"
+                />
+                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+              </div>
+
+              {/* Area */}
+              <div>
+                <label className="text-sm font-medium text-foreground">What it works on</label>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {AREAS.map((area) => (
+                    <Button variant="ghost"
+                      key={area}
+                      onClick={() => setDraft({ ...draft, area })}
+                      className={cn(
+                        'rounded-md px-3.5 py-1.5 text-sm transition-colors',
+                        draft.area === area
+                          ? 'bg-primary text-primary-foreground font-medium'
+                          : 'ring-1 ring-border text-muted-foreground hover:bg-secondary'
+                      )}
+                    >
+                      {area}
+                    </Button>
+                  ))}
+                </div>
+                {errors.area && <p className="text-xs text-destructive mt-1">{errors.area}</p>}
+              </div>
+
+              {/* Trigger */}
+              <div>
+                <label className="text-sm font-medium text-foreground">When it runs</label>
+                <div className="grid sm:grid-cols-3 gap-2 mt-1.5">
+                  {TRIGGERS.map((t) => (
+                    <Button variant="ghost"
+                      key={t.id}
+                      onClick={() => setDraft({ ...draft, triggerKind: t.id })}
+                      className={cn(
+                        'block h-auto whitespace-normal text-left p-3 rounded-lg bg-surface transition-colors',
+                        draft.triggerKind === t.id ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
+                      )}
+                    >
+                      <t.icon className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground mt-1.5">{t.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</p>
+                    </Button>
+                  ))}
+                </div>
+                {errors.trigger && <p className="text-xs text-destructive mt-1">{errors.trigger}</p>}
+                {draft.triggerKind && (
+                  <Input
+                    aria-label="Trigger"
+                    value={triggerLabel}
+                    onChange={(e) => setTriggerLabel(e.target.value)}
+                    placeholder={
+                      draft.triggerKind === 'event' ? 'e.g. Sent for approval'
+                      : draft.triggerKind === 'schedule' ? 'e.g. Daily 9:00'
+                      : 'Manual only'
+                    }
+                    className="mt-2"
+                  />
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div>
+                <label className="text-sm font-medium text-foreground">Its job</label>
+                <Textarea
+                  aria-label="Its job"
+                  value={draft.instructions}
+                  onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
+                  rows={4}
+                  placeholder="In plain words: what should the agent check, and what should it do when something is wrong?"
+                  className="mt-1.5 h-auto py-2 text-sm"
+                />
+                {errors.instructions && <p className="text-xs text-destructive mt-1">{errors.instructions}</p>}
+              </div>
+
+              {/* Guardrails */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <RulesEditor
+                  label="What it should do"
+                  hint="Tasks it is allowed to carry out."
+                  tone="do"
+                  placeholder={"e.g. Flag orders over budget\nTell the requester what to fix"}
+                  rules={draft.dos ?? ['']}
+                  onChange={(dos) => setDraft({ ...draft, dos })}
+                  error={errors.dos}
+                />
+                <RulesEditor
+                  label="What it must not do"
+                  hint="Lines it should never cross."
+                  tone="dont"
+                  placeholder={"e.g. Never cancel an order\nNever change the supplier"}
+                  rules={draft.donts ?? ['']}
+                  onChange={(donts) => setDraft({ ...draft, donts })}
+                  error={errors.donts}
+                />
+              </div>
+
+              {/* Policy sections preview */}
+              {isPolicy && (
+                <div>
+                  <label className="text-sm font-medium text-foreground">Policy sections</label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    On = must be resolved before the requisition moves on. Off = best practice.
+                  </p>
+                  <div className="mt-2 divide-y divide-border border-t border-b border-border">
+                    {POLICY_SECTIONS.map((s) => (
+                      <div key={s.key} className="flex items-center gap-3 py-2.5">
+                        <Switch
+                          checked={sectionOn[s.key] ?? s.on}
+                          onCheckedChange={() => setSectionOn((p) => ({ ...p, [s.key]: !(p[s.key] ?? s.on) }))}
+                        />
+                        <span className="text-sm text-foreground">{s.name}</span>
+                        <span className="ml-auto text-[11px] text-muted-foreground">v{s.version}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <Button variant="ghost" onClick={() => setStep('start')}>
+                  <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
+                </Button>
+                <Button onClick={continueToMode} className="ml-auto">
+                  {draft.mode === 'live' ? 'Create and go live' : 'Create in shadow mode'}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
+      </div>
+    </>
+  );
+}
+
+
+function RulesEditor({
+  label, hint, tone, placeholder, rules, onChange, error,
+}: {
+  label: string; hint: string; tone: 'do' | 'dont'; placeholder: string;
+  rules: string[]; onChange: (rules: string[]) => void; error?: string;
+}) {
+  const Icon = tone === 'do' ? Check : Ban;
+  return (
+    <div>
+      <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+        <Icon className={cn('h-3.5 w-3.5', tone === 'do' ? 'text-success' : 'text-destructive')} />
+        {label}
+      </label>
+      <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+      <Textarea
+        value={rules.join('\n')}
+        onChange={(e) => onChange(e.target.value.split('\n'))}
+        placeholder={placeholder}
+        aria-label={label}
+        rows={4}
+        className="mt-2 h-auto py-2 text-sm"
+      />
+      <p className="text-[11px] text-muted-foreground mt-1">One instruction per line.</p>
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/app/agents/new")({
+  head: () => ({ meta: [{ title: "New AI agent · ProcureDesk" }, { name: "description", content: "Set up agent instructions, triggers and guardrails." }, { property: "og:title", content: "New AI agent · ProcureDesk" }, { property: "og:description", content: "Set up agent instructions, triggers and guardrails." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  component: NewAgentPage,
+});

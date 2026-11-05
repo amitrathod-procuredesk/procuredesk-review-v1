@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
+import { Bot, AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -63,6 +63,7 @@ function AppShell() {
   const ctx = params.id ? db.requests.find((r) => r.id === params.id) : undefined;
   const mobileItems = [
     { to: "/app/requests", label: "Requests", icon: FileText },
+    { to: "/app/agents", label: "AI agents", icon: Bot },
     ...(me.role !== "requestor" ? [{ to: "/app/approvals", label: "Approvals", icon: ClipboardCheck }] : []),
   ] as const;
 
@@ -126,6 +127,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
   const path = useRouterState({ select: (s) => s.location.pathname });
   const soon = (n: string) => toast(`${n} is coming soon`, { description: "This area isn't part of the demo yet." });
   const groups: NavGroup[] = [
+    { label: "AI agents", icon: Bot, to: "/app/agents" },
     {
       label: "Purchase", icon: ShoppingBasket, children: [
         { label: "Request", to: "/app/requests" },

@@ -24,3 +24,4 @@
 - Login and workspace branding use the same uploaded logo asset pointer so the brand remains consistent across entry points.
 - Dashboard controls stack below content-driven breakpoints and tab strips scroll locally, keeping page-level horizontal overflow out of narrow layouts.
 - Adoption benchmarks are optional organization settings resolved through adoption helpers and saved through workspace mutations; organization forms preserve them to avoid stale-form overwrites. Invoice grouping is derived from the filtered sample ledger, never a second dataset.
+- AI agents reuse the reference domain and sample runs, with settings and reviews saved through workspace mutations; mode labels never execute automation or mutate procurement documents.
