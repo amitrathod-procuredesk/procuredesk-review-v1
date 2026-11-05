@@ -41,6 +41,7 @@ import {
 } from '@/lib/pd/agents/store';
 import { AgentIconTile, AgentStatusBadge, STATUS_HELP } from '@/components/pd/agents/agentBits';
 import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
+import { PolicyDocuments } from '@/components/pd/agents/PolicyDocuments';
 import { toast } from 'sonner';
 
 type Tab = 'instructions' | 'team' | 'runs';
@@ -360,11 +361,6 @@ function SectionsTab({ agentId, sections }: { agentId: string; sections: PolicyS
             )}
           >
             <div className="flex items-center gap-3">
-              <Switch
-                checked={section.on}
-                onCheckedChange={() => toggleSection(agentId, section.key)}
-                aria-label={`${section.name} enforcement`}
-              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">{section.name}</span>
@@ -381,16 +377,17 @@ function SectionsTab({ agentId, sections }: { agentId: string; sections: PolicyS
                   <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                 </Button>
               )}
+              <Switch checked={section.on} onCheckedChange={() => toggleSection(agentId, section.key)} aria-label={`${section.name} enforcement`} />
             </div>
 
-            <p className="text-xs text-muted-foreground mt-2 ml-0 sm:ml-11">
+            <p className="text-xs text-muted-foreground mt-2">
               {section.on
                 ? 'On. The requester can’t send the requisition until this is resolved.'
                 : 'Off. Best practice: the agent warns and the requester can proceed with a reason.'}
             </p>
 
             {isEditing ? (
-              <div className="mt-3 ml-0 sm:ml-11 space-y-2">
+              <div className="mt-3 space-y-2">
                 <Textarea aria-label="Policy section text" value={draft} onChange={(e) => setDraft(e.target.value)} rows={6} className="h-auto py-2 text-sm" />
                 <div className="flex items-center gap-2">
                   <Button
@@ -407,7 +404,7 @@ function SectionsTab({ agentId, sections }: { agentId: string; sections: PolicyS
                 </div>
               </div>
             ) : (
-              <div className="mt-2 ml-0 sm:ml-11">
+              <div className="mt-2">
                 <p
                   className={cn(
                     'text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap',
@@ -427,21 +424,7 @@ function SectionsTab({ agentId, sections }: { agentId: string; sections: PolicyS
               </div>
             )}
 
-            {section.docs.length > 0 && (
-              <div className="mt-3 ml-0 sm:ml-11 flex flex-wrap gap-2">
-                {section.docs.map((doc) => (
-                  <span
-                    key={doc.file}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1.5 text-xs text-foreground"
-                    title={`${doc.instruction} ${doc.when}`}
-                  >
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                    {doc.name}
-                    <span className="text-muted-foreground">· {doc.type}</span>
-                  </span>
-                ))}
-              </div>
-            )}
+            <PolicyDocuments agentId={agentId} sectionKey={section.key} docs={section.docs} />
           </div>
         );
       })}
