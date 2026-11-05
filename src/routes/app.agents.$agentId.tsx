@@ -41,6 +41,7 @@ import {
 } from '@/lib/pd/agents/store';
 import { AgentIconTile, AgentStatusBadge, STATUS_HELP } from '@/components/pd/agents/agentBits';
 import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
+import { AgentSyncStatus } from '@/components/pd/agents/AgentSyncStatus';
 import { toast } from 'sonner';
 
 type Tab = 'instructions' | 'team' | 'runs';
@@ -80,9 +81,9 @@ export default function AgentDetailPage() {
   return (
     <>
       <div className="mx-auto max-w-[1440px] p-3 sm:p-5">
-        <PageBreadcrumb items={[{ label: 'AI agents', to: '/agents' }, { label: agent.name }]} />
+        <div className="flex items-center justify-between gap-2"><PageBreadcrumb items={[{ label: 'AI agents', to: '/agents' }, { label: agent.name }]} /><AgentSyncStatus /></div>
 
-        <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-3 mt-4">
+        <div className="grid min-[900px]:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-3 mt-4">
           {/* Left rail — identity, mode and controls */}
           <aside className="pd-panel p-3.5 lg:sticky lg:top-[76px] self-start">
             <div className="flex items-center gap-3.5">

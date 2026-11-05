@@ -10,6 +10,7 @@ import { togglePause, useAgents } from '@/lib/pd/agents/store';
 import { AgentIconTile, AgentStatusBadge } from '@/components/pd/agents/agentBits';
 import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
 import { toast } from 'sonner';
+import { AgentSyncStatus } from '@/components/pd/agents/AgentSyncStatus';
 
 const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -47,7 +48,7 @@ export default function AgentsPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-semibold  text-foreground">Your AI team</h1>
+            <div className="flex items-center gap-3"><h1 className="pd-h1">Your AI team</h1><AgentSyncStatus /></div>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               Agents check and act on your requests, orders, invoices and contracts.
               {summary && <span className="text-foreground/70 font-medium"> {summary}.</span>}
