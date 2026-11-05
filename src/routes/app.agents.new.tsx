@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Zap } from 'luc
 import { createFileRoute } from '@tanstack/react-router';
 import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
-import { TextInput as Input } from '@/components/pd/form';
+import { Select, Radio, TextInput as Input } from '@/components/pd/form';
 import { TextArea as Textarea } from '@/components/pd/form';
 import { cn } from '@/lib/utils';
 import {
@@ -220,91 +220,66 @@ export default function NewAgentPage() {
             <h1 className="pd-h1 mt-5">
               {isPolicy ? 'Set up the policy agent' : 'Set up your agent'}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1.5">
-              Define the job and choose how the agent starts.
-            </p>
-
-            <div className="mt-4 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="text-sm font-medium text-foreground">Name</label>
-                <Input
-                  aria-label="Name"
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  placeholder="e.g. Spend watchdog"
-                  className="mt-1.5"
-                />
-                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
-              </div>
-
-              {/* Area */}
-              <div>
-                <label className="text-sm font-medium text-foreground">What it works on</label>
-                <div className="flex flex-wrap gap-2 mt-1.5">
-                  {AREAS.map((area) => (
-                    <Button variant="ghost"
-                      key={area}
-                      onClick={() => setDraft({ ...draft, area })}
-                      className={cn(
-                        'rounded-md px-3.5 py-1.5 text-sm transition-colors',
-                        draft.area === area
-                          ? 'bg-primary text-primary-foreground font-medium'
-                          : 'ring-1 ring-border text-muted-foreground hover:bg-secondary'
-                      )}
-                    >
-                      {area}
-                    </Button>
-                  ))}
+            <form className="mt-4 space-y-5" onSubmit={e => { e.preventDefault(); continueToMode(); }}>
+              <fieldset className="border-b border-border pb-4">
+                <legend className="mb-2 text-sm font-semibold text-foreground">Starting mode</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(['shadow', 'live'] as const).map(mode => <label key={mode} className={cn('flex cursor-pointer items-start gap-3 rounded-lg border bg-surface p-3 transition-colors', draft.mode === mode ? 'border-primary' : 'border-border hover:border-primary/50')}>
+                    <Radio name="agent-mode" value={mode} checked={draft.mode === mode} onChange={() => setDraft({ ...draft, mode })} aria-label={mode === 'shadow' ? 'Shadow mode' : 'Live mode'} className="mt-0.5 shrink-0" />
+                    <span className="min-w-0"><span className="flex items-center gap-1.5 text-sm font-medium text-foreground">{mode === 'shadow' ? <Eye className="size-3.5 text-primary" /> : <Zap className="size-3.5 text-primary" />}{mode === 'shadow' ? 'Shadow mode' : 'Live mode'}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{mode === 'shadow' ? 'Watch and review results without taking action.' : 'Use the agent’s live configuration from the start.'}</span>
+                    </span>
+                  </label>)}
                 </div>
-                {errors.area && <p className="text-xs text-destructive mt-1">{errors.area}</p>}
-              </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">Runs in this workspace are samples. Mode selection does not start automation.</p>
+              </fieldset>
 
-              {/* Trigger */}
-              <div>
-                <label className="text-sm font-medium text-foreground">When it runs</label>
-                <div className="grid sm:grid-cols-3 gap-2 mt-1.5">
-                  {TRIGGERS.map((t) => (
-                    <Button variant="ghost"
-                      key={t.id}
-                      onClick={() => setDraft({ ...draft, triggerKind: t.id })}
-                      className={cn(
-                        'block h-auto whitespace-normal text-left p-3 rounded-lg bg-surface transition-colors',
-                        draft.triggerKind === t.id ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
-                      )}
-                    >
-                      <t.icon className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm font-medium text-foreground mt-1.5">{t.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</p>
-                    </Button>
-                  ))}
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold text-foreground">Agent details</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="pd-label" htmlFor="agent-name">Name</label>
+                    <Input id="agent-name" value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Spend watchdog" invalid={!!errors.name} />
+                    {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
+                  </div>
+                  <div>
+                    <label className="pd-label" htmlFor="agent-area">What it works on</label>
+                    <Select id="agent-area" value={draft.area} onChange={e => setDraft({ ...draft, area: e.target.value as AgentArea })} invalid={!!errors.area}>
+                      <option value="">Choose document type</option>
+                      {AREAS.map(area => <option key={area} value={area}>{area}</option>)}
+                    </Select>
+                    {errors.area && <p className="mt-1 text-xs text-destructive">{errors.area}</p>}
+                  </div>
                 </div>
-                {errors.trigger && <p className="text-xs text-destructive mt-1">{errors.trigger}</p>}
-                {draft.triggerKind && (
-                  <Input
-                    aria-label="Trigger"
-                    value={triggerLabel}
-                    onChange={(e) => setTriggerLabel(e.target.value)}
-                    placeholder={
-                      draft.triggerKind === 'event' ? 'e.g. Sent for approval'
-                      : draft.triggerKind === 'schedule' ? 'e.g. Daily 9:00'
-                      : 'Manual only'
-                    }
-                    className="mt-2"
-                  />
-                )}
-              </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="pd-label" htmlFor="agent-trigger-kind">When it runs</label>
+                    <Select id="agent-trigger-kind" value={draft.triggerKind} onChange={e => setDraft({ ...draft, triggerKind: e.target.value as TriggerKind })} invalid={!!errors.trigger}>
+                      <option value="">Choose a trigger</option>
+                      {TRIGGERS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </Select>
+                    {errors.trigger && <p className="mt-1 text-xs text-destructive">{errors.trigger}</p>}
+                  </div>
+                  {draft.triggerKind && <div>
+                    <label className="pd-label" htmlFor="agent-trigger">{draft.triggerKind === 'schedule' ? 'Schedule' : draft.triggerKind === 'event' ? 'Document event' : 'Trigger label'}</label>
+                    <Input id="agent-trigger" aria-label="Trigger" value={triggerLabel} onChange={e => setTriggerLabel(e.target.value)} placeholder={draft.triggerKind === 'event' ? 'e.g. Sent for approval' : draft.triggerKind === 'schedule' ? 'e.g. Daily at 9:00' : 'Manual only'} />
+                  </div>}
+                </div>
+              </section>
 
+              <section className="space-y-3 border-t border-border pt-4">
+                <h2 className="text-sm font-semibold text-foreground">Job and guardrails</h2>
               {/* Instructions */}
               <div>
-                <label className="text-sm font-medium text-foreground">Its job</label>
+                <label className="pd-label" htmlFor="agent-job">Its job</label>
                 <Textarea
+                  id="agent-job"
                   aria-label="Its job"
                   value={draft.instructions}
                   onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
                   rows={4}
                   placeholder="In plain words: what should the agent check, and what should it do when something is wrong?"
-                  className="mt-1.5 h-auto py-2 text-sm"
+                  invalid={!!errors.instructions}
                 />
                 {errors.instructions && <p className="text-xs text-destructive mt-1">{errors.instructions}</p>}
               </div>
@@ -331,15 +306,7 @@ export default function NewAgentPage() {
                 />
               </div>
 
-              <div className="border-t border-border pt-4">
-                <h2 className="text-sm font-medium text-foreground">Starting mode</h2>
-                <div className="mt-2 inline-flex gap-1 rounded-md border border-border bg-surface p-1" role="group" aria-label="Starting mode">
-                  {(['shadow', 'live'] as const).map(mode => <Button key={mode} variant={draft.mode === mode ? 'secondary' : 'ghost'} size="sm" aria-pressed={draft.mode === mode} onClick={() => setDraft({ ...draft, mode })} className={cn('min-w-24', draft.mode === mode && 'text-primary')}>
-                    {mode === 'shadow' ? <Eye className="size-3.5" /> : <Zap className="size-3.5" />}{mode === 'shadow' ? 'Shadow' : 'Live'}
-                  </Button>)}
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">{draft.mode === 'shadow' ? 'Review sample runs before switching to Live.' : 'Start in Live mode. You can switch back anytime.'}</p>
-              </div>
+              </section>
 
               {/* Policy sections preview */}
               {isPolicy && (
@@ -360,15 +327,15 @@ export default function NewAgentPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-2">
-                <Button variant="ghost" onClick={() => setStep('start')}>
+              <div className="flex items-center gap-2 border-t border-border pt-4">
+                <Button type="button" variant="outline" onClick={() => setStep('start')}>
                   <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
                 </Button>
-                <Button onClick={continueToMode} className="ml-auto">
+                <Button type="submit" className="ml-auto">
                   Create agent
                 </Button>
               </div>
-            </div>
+            </form>
           </>
         )}
 
@@ -397,8 +364,9 @@ function RulesEditor({
         onChange={(e) => onChange(e.target.value.split('\n'))}
         placeholder={placeholder}
         aria-label={label}
-        rows={4}
-        className="mt-2 h-auto py-2 text-sm"
+        rows={3}
+        invalid={!!error}
+        className="mt-2"
       />
       <p className="text-[11px] text-muted-foreground mt-1">One instruction per line.</p>
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
