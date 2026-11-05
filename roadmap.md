@@ -1,4 +1,5 @@
 # Maintenance screen
+- [ ] Refine AI agents placement within main navigation, remove off-brand highlights, and use a custom icon; verify expanded, collapsed and mobile navigation.
 - [x] Add policy document upload, inspection, editing/replacement and removal with persistence; verified text/PDF preview, download and reload.
 - [x] Move policy enforcement toggles right and verify document flows and narrow layouts; 23 agent tests passed.
 - [x] Remove AI agents Saved labels and fix unnecessary detail/filter tab scrollbars; verified at 320, 390, 1078 and 1280px.
