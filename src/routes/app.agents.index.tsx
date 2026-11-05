@@ -1,215 +1,99 @@
 import { useMemo, useState } from 'react';
-import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
-import { ArrowRight, Pause, Play, Plus, Search } from 'lucide-react';
+import { useAgentNavigation } from '@/components/pd/agents/AgentBreadcrumb';
+import { ArrowRight, Clock3, Pause, Play, Plus, Search, Sparkles, Zap } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { TextInput as Input } from '@/components/pd/form';
 import { cn } from '@/lib/utils';
 import { filterAgents, statusCounts, type AgentDef, type StatusFilter } from '@/lib/pd/agents/domain';
 import { togglePause, useAgents } from '@/lib/pd/agents/store';
-import { AgentIconTile, AgentStatusBadge } from '@/components/pd/agents/agentBits';
-import { AgentAnimalIcon } from '@/components/pd/agents/AgentAnimalIcon';
+import { AgentStatusBadge } from '@/components/pd/agents/agentBits';
+import { AgentHubProfile } from '@/components/pd/agents/AgentHubProfile';
+import { AgentNavIcon } from '@/components/pd/agents/AgentNavIcon';
 import { toast } from 'sonner';
 
 const FILTERS: { id: StatusFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'live', label: 'Live' },
-  { id: 'shadow', label: 'Shadow' },
-  { id: 'paused', label: 'Paused' },
-  { id: 'draft', label: 'Draft' },
+  { id: 'all', label: 'All agents' }, { id: 'live', label: 'Live' },
+  { id: 'shadow', label: 'Shadow' }, { id: 'paused', label: 'Paused' }, { id: 'draft', label: 'Draft' },
 ];
 
 export default function AgentsPage() {
-  const navigate = useNavigate();
+  const navigate = useAgentNavigation();
   const { agents } = useAgents();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
-
   const counts = useMemo(() => statusCounts(agents), [agents]);
   const visible = useMemo(() => filterAgents(agents, filter, query), [agents, filter, query]);
 
-  const penny = agents.find((a) => a.id === 'penny');
-  const rest = visible.filter((a) => a.id !== 'penny');
-  const pennyVisible = penny && visible.some((a) => a.id === 'penny');
-
-  const summary = [
-    counts.live > 0 && `${counts.live} live`,
-    counts.shadow > 0 && `${counts.shadow} in shadow`,
-    counts.paused > 0 && `${counts.paused} paused`,
-    counts.draft > 0 && `${counts.draft} in setup`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <>
-      <div className="mx-auto max-w-[1440px] p-3 sm:p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="pd-h1">Your AI team</h1>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
-              Agents check and act on your requests, orders, invoices and contracts.
-              {summary && <span className="text-foreground/70 font-medium"> {summary}.</span>}
-            </p>
-          </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <div className="relative min-w-0 flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search agents"
-                className="pl-9 sm:w-56"
-                aria-label="Search agents"
-              />
-            </div>
-            <Button onClick={() => navigate('/agents/new')}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              New agent
-            </Button>
-          </div>
-        </div>
-
-        {/* Penny spotlight — the manager of the invoice team */}
-        {pennyVisible && penny && (
-          <Button variant="ghost"
-            onClick={() => navigate('/agents/penny')}
-            className="pd-panel mt-4 block h-auto w-full whitespace-normal text-left p-3.5 hover:border-primary/40 transition-all group"
-          >
-            <div className="flex w-full items-center gap-3">
-              <AgentAnimalIcon name="Penny" className="h-16 w-16 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-base font-semibold  text-foreground">{penny.name}</span>
-                  <AgentStatusBadge status={penny.status} />
-                  <span className="text-xs text-muted-foreground">Invoice manager</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1 max-w-2xl line-clamp-2">{penny.description}</p>
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="flex -space-x-1.5">
-                    {penny.team?.slice(0, 6).map((m) => (
-                      <AgentAnimalIcon
-                        key={m.name}
-                        name={m.name}
-                        className="h-7 w-7 ring-2 ring-background rounded-full"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    Leads a team of {penny.team?.length} specialists
-                  </span>
-                </div>
-              </div>
-              <div className="hidden xl:flex items-center gap-6 shrink-0 pr-2">
-                <div>
-                  <p className="text-[10px] font-medium  text-muted-foreground/70">Runs 30d</p>
-                  <p className="text-sm font-semibold text-foreground mt-0.5 tabular-nums">{penny.runs30d ?? '—'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-medium  text-muted-foreground/70">Last run</p>
-                  <p className="text-sm font-semibold text-foreground mt-0.5">{penny.lastRun ?? '—'}</p>
-                </div>
-                <span className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </div>
-          </Button>
-        )}
-
-        {/* Status filter */}
-        <div className="pd-scroll-hide flex items-center gap-1 mt-4 max-w-full overflow-x-auto overflow-y-hidden rounded-md bg-secondary/70 p-1">
-          {FILTERS.map((f) => {
-            const on = filter === f.id;
-            return (
-              <Button variant="ghost"
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
-                  on
-                    ? 'bg-background text-foreground font-medium shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {f.label}
-                <span className={cn('text-[11px] tabular-nums', on ? 'text-muted-foreground' : 'text-muted-foreground/70')}>
-                  {counts[f.id]}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
-
-        {/* Agent cards */}
-        <div className="mt-4 grid sm:grid-cols-2 gap-3">
-          {rest.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />
-          ))}
-        </div>
-        {visible.length === 0 && (
-          <div className="py-16 text-center">
-            <p className="text-sm font-medium text-foreground">No agents match</p>
-            <p className="text-sm text-muted-foreground mt-1">Try a different search or filter.</p>
-          </div>
-        )}
+  return <div className="pd-hub mx-auto max-w-[1440px] p-3 sm:p-5 lg:p-6">
+    <div className="flex flex-wrap items-center justify-between gap-4 pb-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-accent/60 text-primary"><AgentNavIcon className="size-6" /></span>
+        <div><h1 className="text-xl font-semibold text-foreground">AI Hub</h1><p className="mt-0.5 text-sm text-muted-foreground">Your procurement agents, all in one place.</p></div>
       </div>
-    </>
-  );
+      <Button onClick={() => navigate('/agents/new')}><Plus className="size-4" />New agent</Button>
+    </div>
+
+    <div className="mb-5 flex min-w-0 flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b border-border">
+      <div className="pd-scroll-hide flex min-w-0 max-w-full gap-1 overflow-x-auto overflow-y-hidden" role="group" aria-label="Agent status">
+        {FILTERS.map((f) => <Button key={f.id} variant="ghost" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)} className={cn('h-11 shrink-0 rounded-none border-b-2 px-2.5 text-xs hover:bg-transparent sm:text-sm', filter === f.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+          {f.label}<span className={cn('text-xs tabular-nums', filter === f.id ? 'text-primary/70' : 'text-muted-foreground/70')}>{counts[f.id]}</span>
+        </Button>)}
+      </div>
+      <div className="relative mb-2 w-full sm:w-56">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search agents" className="pl-9" aria-label="Search agents" />
+      </div>
+    </div>
+
+    <div className="pd-hub-grid">
+      {visible.map((agent) => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />)}
+    </div>
+    {visible.length === 0 && <div className="py-16 text-center">
+      <Search className="mx-auto mb-3 size-6 text-muted-foreground" />
+      <p className="text-sm font-medium">No agents match</p>
+      <Button variant="link" onClick={() => { setQuery(''); setFilter('all'); }}>Clear filters</Button>
+    </div>}
+  </div>;
 }
 
 function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
   const isPaused = agent.status === 'paused';
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className="pd-panel group relative text-left p-3.5 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
-    >
-      <div className="flex items-start gap-3">
-        <AgentIconTile icon={agent.icon} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap pr-8">
-            <span className="text-sm font-semibold text-foreground">{agent.name}</span>
-            <AgentStatusBadge status={agent.status} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{agent.area} · Runs when: {agent.trigger}</p>
-        </div>
-        <Button variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            togglePause(agent.id);
-            toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
-          }}
-          title={isPaused ? 'Resume' : 'Pause'}
-          aria-label={`${isPaused ? 'Resume' : 'Pause'} ${agent.name}`}
-          size="icon"
-          className="absolute top-3 right-3 h-7 w-7 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-secondary hover:text-foreground transition-all"
-        >
-          {isPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-        </Button>
+  const isDefault = agent.createdBy === 'ProcureDesk default';
+  return <article className="pd-hub-card group" aria-label={agent.name}>
+    <Button variant="ghost" onClick={onOpen} aria-label={`Open ${agent.name}`} className="pd-hub-card-open block h-auto w-full flex-1 whitespace-normal rounded-none p-4 text-left font-normal hover:bg-transparent hover:text-foreground sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <AgentHubProfile agent={agent} />
+        <AgentStatusBadge status={agent.status} />
       </div>
-      <p className="text-sm text-muted-foreground mt-3 leading-relaxed line-clamp-2">{agent.description}</p>
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/60 text-xs text-muted-foreground">
-        <span>
-          <span className="font-medium text-foreground tabular-nums">{agent.runs30d ?? '—'}</span> runs · 30d
-        </span>
-        <span>Last run {agent.lastRun ?? '—'}</span>
-        <ArrowRight className="h-3.5 w-3.5 ml-auto text-muted-foreground/50 group-hover:text-primary transition-colors" />
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+        <span>{agent.area}</span><span aria-hidden="true">·</span><span>{isDefault ? 'ProcureDesk agent' : 'Custom agent'}</span>
       </div>
+      <div className="mt-1 flex items-center justify-between gap-3">
+        <h2 className="min-w-0 break-words text-base font-semibold text-foreground">{agent.name}</h2>
+        <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+      </div>
+      <p className="mt-2 min-h-[60px] text-sm leading-5 text-muted-foreground line-clamp-3">{agent.description}</p>
+      <div className="mt-4 flex min-h-5 items-center gap-1.5 text-xs text-muted-foreground">
+        {agent.team ? <><Sparkles className="size-3.5 shrink-0 text-primary" /><span>{agent.team.length} specialists</span></> : <><Zap className="size-3.5 shrink-0" /><span className="truncate" title={agent.trigger}>{agent.trigger}</span></>}
+      </div>
+    </Button>
+    <div className="flex items-center justify-between gap-2 border-t border-border bg-subtle/45 px-4 py-2.5 sm:px-5">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <span><strong className="font-semibold text-foreground tabular-nums">{agent.runs30d ?? '—'}</strong> runs · 30d</span>
+        <span className="flex items-center gap-1"><Clock3 className="size-3" />{agent.lastRun ?? 'Not run yet'}</span>
+      </div>
+      <Button variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground" onClick={() => {
+        togglePause(agent.id);
+        toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
+      }} title={isPaused ? 'Resume agent' : 'Pause agent'} aria-label={`${isPaused ? 'Resume' : 'Pause'} ${agent.name}`}>
+        {isPaused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+      </Button>
     </div>
-  );
+  </article>;
 }
 
-export const Route = createFileRoute("/app/agents/")({
-  head: () => ({ meta: [{ title: "AI agents · ProcureDesk" }, { name: "description", content: "Manage your AI team, agent modes and review activity." }, { property: "og:title", content: "AI agents · ProcureDesk" }, { property: "og:description", content: "Manage your AI team, agent modes and review activity." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+export const Route = createFileRoute('/app/agents/')({
+  head: () => ({ meta: [{ title: 'AI Hub · ProcureDesk' }, { name: 'description', content: 'Explore your procurement AI agents, create custom agents and review their activity in the ProcureDesk AI Hub.' }, { property: 'og:title', content: 'AI Hub · ProcureDesk' }, { property: 'og:description', content: 'Your default and custom procurement agents, together in one workspace.' }, { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' }] }),
   component: AgentsPage,
 });
