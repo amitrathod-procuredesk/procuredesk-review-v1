@@ -28,3 +28,4 @@
 - AI agent navigation uses the shared AgentNavIcon component across desktop and mobile so its identity stays consistent without duplicating icon markup.
 - The AI Hub directory uses AgentHubProfile for equal-profile agent cards; its portraits and motion remain presentation-only, leaving domain actions and detail flows unchanged.
 - Policy document content and metadata use the shared workspace mutation path, with small embedded files matching the existing prototype session model; reference filenames without content are disclosed rather than fabricated.
+- Agent setup keeps mode and trigger selection as shared Radio controls and sizes long-form guardrails with textarea rows, preserving existing draft validation and creation actions.
