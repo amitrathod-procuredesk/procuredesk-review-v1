@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
-import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Lock, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Zap } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ const TRIGGERS: { id: TriggerKind; name: string; desc: string; icon: typeof Zap 
 ];
 
 const STEPS = [
-  { id: 'start', label: 'Type and mode' },
+  { id: 'start', label: 'Agent type' },
   { id: 'setup', label: 'Set up' },
 ] as const;
 
@@ -69,6 +69,7 @@ export default function NewAgentPage() {
 
   const pickPolicy = () => {
     if (!policyAllowed) return;
+    setStep('setup');
     setCategory('policy');
     setDraft({
       name: POLICY_PRESET.name,
@@ -86,6 +87,7 @@ export default function NewAgentPage() {
   };
 
   const pickCustom = () => {
+    setStep('setup');
     setCategory('custom');
     setDraft({ name: '', area: '', triggerKind: '', instructions: '', mode: draft.mode, category: 'custom', dos: [''], donts: [''] });
     setTriggerLabel('');
@@ -126,7 +128,7 @@ export default function NewAgentPage() {
         />
 
         {/* Stepper */}
-        <div className="flex items-center gap-2 mt-6">
+        <div className="flex items-center gap-2 mt-4">
           {STEPS.map((s, i) => {
             const done = i < stepIndex;
             const current = i === stepIndex;
@@ -155,49 +157,36 @@ export default function NewAgentPage() {
 
         {step === 'start' && (
           <>
-            <h1 className="text-xl font-semibold  text-foreground mt-6">What kind of agent?</h1>
+            <h1 className="pd-h1 mt-5">New agent</h1>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
-              Pick the kind of agent and how it should start. You'll describe its job next.
+              Choose an agent type.
             </p>
 
-            <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            <div className="mt-4 grid sm:grid-cols-2 gap-3">
               <Button variant="ghost"
-                onClick={pickPolicy}
-                aria-disabled={!policyAllowed}
+                onClick={() => { if (!policyAllowed && policyAgent) navigate(`/agents/${policyAgent.id}`); else pickPolicy(); }}
                 className={cn(
                   'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
-                  !policyAllowed ? 'opacity-70 cursor-not-allowed bg-secondary/40'
-                    : isPolicy ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-sm'
+                  'hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring'
                 )}
               >
                 <div className="flex items-center gap-3">
                   <AgentIconTile icon="shield" />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground">Policy agent</p>
-                    <p className="text-xs text-muted-foreground">One per workspace</p>
+                    <p className="text-xs text-muted-foreground">Purchasing policy</p>
                   </div>
                   {policyAllowed && (
                     <Check className={cn('h-4 w-4 ml-auto shrink-0 text-primary transition-opacity', (isPolicy ? 'opacity-100' : 'opacity-0'))} />
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
-                  Checks requisitions against your purchasing policy, section by section, and tells requesters what to fix.
+                  Check purchasing policy and guide requesters through required changes.
                 </p>
-                {!policyAllowed && policyAgent && (
-                  <p className="text-xs text-foreground mt-3 flex items-center gap-1.5">
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    Already set up.{' '}
-                    <span
-                      role="link"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); navigate(`/agents/${policyAgent.id}`); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/agents/${policyAgent.id}`); }}
-                      className="font-medium text-primary cursor-pointer pointer-events-auto"
-                    >
-                      Open {policyAgent.name}
-                    </span>
-                  </p>
-                )}
+                <span className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary">
+                  {!policyAllowed && policyAgent ? `Open ${policyAgent.name}` : 'Set up policy agent'}
+                  <ArrowRight className="size-3.5" />
+                </span>
               </Button>
 
               <Button variant="ghost"
@@ -211,78 +200,31 @@ export default function NewAgentPage() {
                   <AgentIconTile icon="bot" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">Custom agent</p>
-                    <p className="text-xs text-muted-foreground">Like Penny and her team</p>
+                    <p className="text-xs text-muted-foreground">Your own workflow</p>
                   </div>
-                  <Check className={cn('h-4 w-4 ml-auto shrink-0 text-primary transition-opacity', category === 'custom' ? 'opacity-100' : 'opacity-0')} />
+
                 </div>
                 <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
-                  Describe the job in plain words, what it should and should not do, what it works on and when it runs.
+                  Define its job, the documents it checks and when it runs.
                 </p>
+                <span className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary">Create custom agent<ArrowRight className="size-3.5" /></span>
               </Button>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-border">
-              <h2 className="text-sm font-semibold text-foreground">How should it start?</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                You can switch between shadow and live any time from the agent's page.
-              </p>
-            <div className="grid sm:grid-cols-2 gap-3 mt-3">
-              <Button variant="ghost"
-                onClick={() => setDraft({ ...draft, mode: 'shadow' })}
-                className={cn(
-                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
-                  draft.mode === 'shadow' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">Shadow mode</p>
-                  <span className="ml-auto text-[11px] font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5">
-                    Recommended
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  Watches and advises in the background. You review its runs and teach it before it acts.
-                </p>
-              </Button>
-              <Button variant="ghost"
-                onClick={() => setDraft({ ...draft, mode: 'live' })}
-                className={cn(
-                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
-                  draft.mode === 'live' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">Live</p>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  Acts on its own from the first run. Choose this only for agents you already trust.
-                </p>
-              </Button>
-            </div>
 
-            </div>
-
-            <div className="flex items-center gap-2 pt-6">
-              {!category && <p className="text-xs text-muted-foreground">Choose a type of agent to continue.</p>}
-              <Button onClick={() => setStep('setup')} disabled={!category} className="ml-auto">
-                Continue <ArrowRight className="h-4 w-4 ml-1.5" />
-              </Button>
-            </div>
           </>
         )}
 
         {step === 'setup' && (
           <>
-            <h1 className="text-xl font-semibold  text-foreground mt-6">
+            <h1 className="pd-h1 mt-5">
               {isPolicy ? 'Set up the policy agent' : 'Set up your agent'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              You can change everything later from the agent's page.
+              Define the job and choose how the agent starts.
             </p>
 
-            <div className="mt-4 space-y-5">
+            <div className="mt-4 space-y-4">
               {/* Name */}
               <div>
                 <label className="text-sm font-medium text-foreground">Name</label>
@@ -368,7 +310,7 @@ export default function NewAgentPage() {
               </div>
 
               {/* Guardrails */}
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 gap-3">
                 <RulesEditor
                   label="What it should do"
                   hint="Tasks it is allowed to carry out."
@@ -389,6 +331,16 @@ export default function NewAgentPage() {
                 />
               </div>
 
+              <div className="border-t border-border pt-4">
+                <h2 className="text-sm font-medium text-foreground">Starting mode</h2>
+                <div className="mt-2 inline-flex gap-1 rounded-md border border-border bg-surface p-1" role="group" aria-label="Starting mode">
+                  {(['shadow', 'live'] as const).map(mode => <Button key={mode} variant={draft.mode === mode ? 'secondary' : 'ghost'} size="sm" aria-pressed={draft.mode === mode} onClick={() => setDraft({ ...draft, mode })} className={cn('min-w-24', draft.mode === mode && 'text-primary')}>
+                    {mode === 'shadow' ? <Eye className="size-3.5" /> : <Zap className="size-3.5" />}{mode === 'shadow' ? 'Shadow' : 'Live'}
+                  </Button>)}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{draft.mode === 'shadow' ? 'Review sample runs before switching to Live.' : 'Start in Live mode. You can switch back anytime.'}</p>
+              </div>
+
               {/* Policy sections preview */}
               {isPolicy && (
                 <div>
@@ -399,12 +351,9 @@ export default function NewAgentPage() {
                   <div className="mt-2 divide-y divide-border border-t border-b border-border">
                     {POLICY_SECTIONS.map((s) => (
                       <div key={s.key} className="flex items-center gap-3 py-2.5">
-                        <Switch
-                          checked={sectionOn[s.key] ?? s.on}
-                          onCheckedChange={() => setSectionOn((p) => ({ ...p, [s.key]: !(p[s.key] ?? s.on) }))}
-                        />
-                        <span className="text-sm text-foreground">{s.name}</span>
-                        <span className="ml-auto text-[11px] text-muted-foreground">v{s.version}</span>
+                        <span className="flex-1 text-sm text-foreground">{s.name}</span>
+                        <span className="text-[11px] text-muted-foreground">v{s.version}</span>
+                        <Switch aria-label={`${s.name} enforcement`} checked={sectionOn[s.key] ?? s.on} onCheckedChange={() => setSectionOn((p) => ({ ...p, [s.key]: !(p[s.key] ?? s.on) }))} />
                       </div>
                     ))}
                   </div>
@@ -416,7 +365,7 @@ export default function NewAgentPage() {
                   <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
                 </Button>
                 <Button onClick={continueToMode} className="ml-auto">
-                  {draft.mode === 'live' ? 'Create and go live' : 'Create in shadow mode'}
+                  Create agent
                 </Button>
               </div>
             </div>
