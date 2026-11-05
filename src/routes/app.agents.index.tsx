@@ -53,14 +53,15 @@ export default function AgentsPage() {
               {summary && <span className="text-foreground/70 font-medium"> {summary}.</span>}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative min-w-0 flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search agents"
-                className="pl-9 w-56"
+                className="pl-9 sm:w-56"
+                aria-label="Search agents"
               />
             </div>
             <Button onClick={() => navigate('/agents/new')}>
@@ -74,9 +75,9 @@ export default function AgentsPage() {
         {pennyVisible && penny && (
           <Button variant="ghost"
             onClick={() => navigate('/agents/penny')}
-            className="mt-4 h-auto w-full whitespace-normal text-left rounded-lg border border-border bg-surface p-5 hover:border-primary/40 hover:shadow-sm transition-all group"
+            className="pd-panel mt-4 block h-auto w-full whitespace-normal text-left p-3.5 hover:border-primary/40 transition-all group"
           >
-            <div className="flex items-center gap-5">
+            <div className="flex w-full items-center gap-3">
               <AgentAnimalIcon name="Penny" className="h-16 w-16 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -100,7 +101,7 @@ export default function AgentsPage() {
                   </span>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-8 shrink-0 pr-2">
+              <div className="hidden xl:flex items-center gap-6 shrink-0 pr-2">
                 <div>
                   <p className="text-[10px] font-medium  text-muted-foreground/70">Runs 30d</p>
                   <p className="text-sm font-semibold text-foreground mt-0.5 tabular-nums">{penny.runs30d ?? '—'}</p>
@@ -126,7 +127,7 @@ export default function AgentsPage() {
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors',
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
                   on
                     ? 'bg-background text-foreground font-medium shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -166,7 +167,7 @@ function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onOpen();
         }
@@ -189,7 +190,9 @@ function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
             toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
           }}
           title={isPaused ? 'Resume' : 'Pause'}
-          className="absolute top-4 right-4 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-secondary hover:text-foreground transition-all"
+          aria-label={`${isPaused ? 'Resume' : 'Pause'} ${agent.name}`}
+          size="icon"
+          className="absolute top-3 right-3 h-7 w-7 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-secondary hover:text-foreground transition-all"
         >
           {isPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
         </Button>
