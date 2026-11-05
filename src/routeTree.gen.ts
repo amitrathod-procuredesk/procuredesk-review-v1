@@ -14,6 +14,9 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
+import { Route as AppAgentsIndexRouteImport } from './routes/app.agents.index'
+import { Route as AppAgentsAgentIdRouteImport } from './routes/app.agents.$agentId'
+import { Route as AppAgentsNewRouteImport } from './routes/app.agents.new'
 import { Route as AppAssetsAssetIdRouteImport } from './routes/app.assets.$assetId'
 import { Route as AppAssetsCheckoutRouteImport } from './routes/app.assets.checkout'
 import { Route as AppAssetsMaintenanceRouteImport } from './routes/app.assets.maintenance'
@@ -52,6 +55,21 @@ const AppAdminRoute = AppAdminRouteImport.update({
 const AppApprovalsRoute = AppApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
+  id: '/agents/',
+  path: '/agents/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
+  id: '/agents/$agentId',
+  path: '/agents/$agentId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsNewRoute = AppAgentsNewRouteImport.update({
+  id: '/agents/new',
+  path: '/agents/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssetsAssetIdRoute = AppAssetsAssetIdRouteImport.update({
@@ -133,6 +151,8 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/app/agents/new': typeof AppAgentsNewRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
@@ -140,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/insights/invoices-without-po': typeof AppInsightsInvoicesWithoutPoRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/agents/': typeof AppAgentsIndexRoute
   '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
@@ -153,6 +174,8 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/app/agents/new': typeof AppAgentsNewRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
@@ -160,6 +183,7 @@ export interface FileRoutesByTo {
   '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/insights/invoices-without-po': typeof AppInsightsInvoicesWithoutPoRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/agents': typeof AppAgentsIndexRoute
   '/app/reports': typeof AppReportsIndexRoute
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
@@ -175,6 +199,8 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/app/agents/new': typeof AppAgentsNewRoute
   '/app/assets/$assetId': typeof AppAssetsAssetIdRoute
   '/app/assets/checkout': typeof AppAssetsCheckoutRoute
   '/app/assets/maintenance': typeof AppAssetsMaintenanceRoute
@@ -182,6 +208,7 @@ export interface FileRoutesById {
   '/app/insights/adoption': typeof AppInsightsAdoptionRoute
   '/app/insights/invoices-without-po': typeof AppInsightsInvoicesWithoutPoRoute
   '/app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/app/agents/': typeof AppAgentsIndexRoute
   '/app/reports/': typeof AppReportsIndexRoute
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance_/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
@@ -198,6 +225,8 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/agents/$agentId'
+    | '/app/agents/new'
     | '/app/assets/$assetId'
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
@@ -205,6 +234,7 @@ export interface FileRouteTypes {
     | '/app/insights/adoption'
     | '/app/insights/invoices-without-po'
     | '/app/reports/$reportId'
+    | '/app/agents/'
     | '/app/reports/'
     | '/app/requests/'
     | '/app/assets/maintenance/$assetId'
@@ -218,6 +248,8 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app'
+    | '/app/agents/$agentId'
+    | '/app/agents/new'
     | '/app/assets/$assetId'
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
@@ -225,6 +257,7 @@ export interface FileRouteTypes {
     | '/app/insights/adoption'
     | '/app/insights/invoices-without-po'
     | '/app/reports/$reportId'
+    | '/app/agents'
     | '/app/reports'
     | '/app/requests'
     | '/app/assets/maintenance/$assetId'
@@ -239,6 +272,8 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
+    | '/app/agents/$agentId'
+    | '/app/agents/new'
     | '/app/assets/$assetId'
     | '/app/assets/checkout'
     | '/app/assets/maintenance'
@@ -246,6 +281,7 @@ export interface FileRouteTypes {
     | '/app/insights/adoption'
     | '/app/insights/invoices-without-po'
     | '/app/reports/$reportId'
+    | '/app/agents/'
     | '/app/reports/'
     | '/app/requests/'
     | '/app/assets/maintenance_/$assetId'
@@ -295,6 +331,27 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/app/approvals'
       preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agents/': {
+      id: '/app/agents/'
+      path: '/agents'
+      fullPath: '/app/agents/'
+      preLoaderRoute: typeof AppAgentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agents/$agentId': {
+      id: '/app/agents/$agentId'
+      path: '/agents/$agentId'
+      fullPath: '/app/agents/$agentId'
+      preLoaderRoute: typeof AppAgentsAgentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agents/new': {
+      id: '/app/agents/new'
+      path: '/agents/new'
+      fullPath: '/app/agents/new'
+      preLoaderRoute: typeof AppAgentsNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/assets/$assetId': {
@@ -402,6 +459,8 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
+  AppAgentsNewRoute: typeof AppAgentsNewRoute
   AppAssetsAssetIdRoute: typeof AppAssetsAssetIdRoute
   AppAssetsCheckoutRoute: typeof AppAssetsCheckoutRoute
   AppAssetsMaintenanceRoute: typeof AppAssetsMaintenanceRoute
@@ -409,6 +468,7 @@ interface AppRouteChildren {
   AppInsightsAdoptionRoute: typeof AppInsightsAdoptionRoute
   AppInsightsInvoicesWithoutPoRoute: typeof AppInsightsInvoicesWithoutPoRoute
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
+  AppAgentsIndexRoute: typeof AppAgentsIndexRoute
   AppReportsIndexRoute: typeof AppReportsIndexRoute
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppAssetsMaintenanceAssetIdRoute: typeof AppAssetsMaintenanceAssetIdRoute
@@ -422,6 +482,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppApprovalsRoute: AppApprovalsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
+  AppAgentsNewRoute: AppAgentsNewRoute,
   AppAssetsAssetIdRoute: AppAssetsAssetIdRoute,
   AppAssetsCheckoutRoute: AppAssetsCheckoutRoute,
   AppAssetsMaintenanceRoute: AppAssetsMaintenanceRoute,
@@ -429,6 +491,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsAdoptionRoute: AppInsightsAdoptionRoute,
   AppInsightsInvoicesWithoutPoRoute: AppInsightsInvoicesWithoutPoRoute,
   AppReportsReportIdRoute: AppReportsReportIdRoute,
+  AppAgentsIndexRoute: AppAgentsIndexRoute,
   AppReportsIndexRoute: AppReportsIndexRoute,
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppAssetsMaintenanceAssetIdRoute: AppAssetsMaintenanceAssetIdRoute,
