@@ -1,4 +1,5 @@
 # Maintenance screen
+- [ ] Remove AI agents Saved labels and fix unnecessary tab scrollbars; check similar cases and verify desktop/mobile.
 - [x] Copy reference AI agents directory, setup, details, policy editing, mode controls, team and run reviews into ProcureDesk card-style screens.
 - [x] Verify source-defined AI agents flows, workspace persistence after save/retry and desktop/mobile interactions; live reference comparison was unavailable behind its access screen.
 - [x] Remove Request PO actions and highlight invoice count and amount; verify both invoice groupings and filters.
