@@ -1,6 +1,6 @@
 # Maintenance screen
-- [ ] Add policy document upload, inspection, editing/replacement and removal with persistence.
-- [ ] Move policy enforcement toggles right and verify document flows and narrow layouts.
+- [x] Add policy document upload, inspection, editing/replacement and removal with persistence; verified text/PDF preview, download and reload.
+- [x] Move policy enforcement toggles right and verify document flows and narrow layouts; 23 agent tests passed.
 - [x] Remove AI agents Saved labels and fix unnecessary detail/filter tab scrollbars; verified at 320, 390, 1078 and 1280px.
 - [x] Copy reference AI agents directory, setup, details, policy editing, mode controls, team and run reviews into ProcureDesk card-style screens.
 - [x] Verify source-defined AI agents flows, workspace persistence after save/retry and desktop/mobile interactions; live reference comparison was unavailable behind its access screen.
