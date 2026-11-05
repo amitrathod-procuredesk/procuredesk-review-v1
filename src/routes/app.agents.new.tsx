@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
-import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, ListChecks, ShieldCheck, Zap } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
@@ -220,22 +220,21 @@ export default function NewAgentPage() {
             <h1 className="pd-h1 mt-5">
               {isPolicy ? 'Set up the policy agent' : 'Set up your agent'}
             </h1>
-            <form className="mt-4 space-y-5" onSubmit={e => { e.preventDefault(); continueToMode(); }}>
-              <fieldset className="border-b border-border pb-4">
+            <form className="mt-4 space-y-4" onSubmit={e => { e.preventDefault(); continueToMode(); }}>
+              <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Starting mode</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {(['shadow', 'live'] as const).map(mode => <label key={mode} className={cn('flex cursor-pointer items-start gap-3 rounded-lg border bg-surface p-3 transition-colors', draft.mode === mode ? 'border-primary' : 'border-border hover:border-primary/50')}>
-                    <Radio name="agent-mode" value={mode} checked={draft.mode === mode} onChange={() => setDraft({ ...draft, mode })} aria-label={mode === 'shadow' ? 'Shadow mode' : 'Live mode'} className="mt-0.5 shrink-0" />
-                    <span className="min-w-0"><span className="flex items-center gap-1.5 text-sm font-medium text-foreground">{mode === 'shadow' ? <Eye className="size-3.5 text-primary" /> : <Zap className="size-3.5 text-primary" />}{mode === 'shadow' ? 'Shadow mode' : 'Live mode'}</span>
+                  {(['shadow', 'live'] as const).map(mode => <Radio key={mode} name="agent-mode" value={mode} checked={draft.mode === mode} onChange={() => setDraft({ ...draft, mode })} aria-label={mode === 'shadow' ? 'Shadow mode' : 'Live mode'} className={cn('items-start gap-3 rounded-lg border bg-surface p-3.5 transition-colors', draft.mode === mode ? 'border-primary bg-accent/20' : 'border-border hover:border-primary/50')} label={
+                    <span className="min-w-0"><span className="flex items-center gap-1.5 text-sm font-medium text-foreground">{mode === 'shadow' ? <Eye className="size-4 text-primary" /> : <Zap className="size-4 text-primary" />}{mode === 'shadow' ? 'Shadow mode' : 'Live mode'}</span>
                       <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{mode === 'shadow' ? 'Watch and review results without taking action.' : 'Use the agent’s live configuration from the start.'}</span>
                     </span>
-                  </label>)}
+                  } />)}
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">Runs in this workspace are samples. Mode selection does not start automation.</p>
               </fieldset>
 
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold text-foreground">Agent details</h2>
+              <section className="pd-panel rounded-lg p-4 sm:p-5 space-y-4">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground"><ShieldCheck className="size-4 text-primary" />Agent details</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="pd-label" htmlFor="agent-name">Name</label>
@@ -251,38 +250,39 @@ export default function NewAgentPage() {
                     {errors.area && <p className="mt-1 text-xs text-destructive">{errors.area}</p>}
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="pd-label" htmlFor="agent-trigger-kind">When it runs</label>
-                    <Select id="agent-trigger-kind" value={draft.triggerKind} onChange={e => setDraft({ ...draft, triggerKind: e.target.value as TriggerKind })} invalid={!!errors.trigger}>
-                      <option value="">Choose a trigger</option>
-                      {TRIGGERS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </Select>
-                    {errors.trigger && <p className="mt-1 text-xs text-destructive">{errors.trigger}</p>}
-                  </div>
-                  {draft.triggerKind && <div>
+              </section>
+
+              <fieldset>
+                <legend className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Calendar className="size-4 text-primary" />When it runs</legend>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {TRIGGERS.map(({ id, name, desc, icon: Icon }) => <Radio key={id} name="agent-trigger-kind" value={id} checked={draft.triggerKind === id} onChange={() => setDraft({ ...draft, triggerKind: id })} aria-label={name} aria-invalid={!!errors.trigger || undefined} className={cn('items-start gap-3 rounded-lg border bg-surface p-3.5 transition-colors', draft.triggerKind === id ? 'border-primary bg-accent/20' : 'border-border hover:border-primary/50')} label={
+                    <span className="min-w-0"><Icon className="mb-2 size-5 text-primary" /><span className="block text-sm font-medium text-foreground">{name}</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{desc}</span></span>
+                  } />)}
+                </div>
+                {errors.trigger && <p className="mt-1 text-xs text-destructive">{errors.trigger}</p>}
+                  {draft.triggerKind && <div className="mt-3 max-w-sm">
                     <label className="pd-label" htmlFor="agent-trigger">{draft.triggerKind === 'schedule' ? 'Schedule' : draft.triggerKind === 'event' ? 'Document event' : 'Trigger label'}</label>
                     <Input id="agent-trigger" aria-label="Trigger" value={triggerLabel} onChange={e => setTriggerLabel(e.target.value)} placeholder={draft.triggerKind === 'event' ? 'e.g. Sent for approval' : draft.triggerKind === 'schedule' ? 'e.g. Daily at 9:00' : 'Manual only'} />
                   </div>}
-                </div>
-              </section>
+              </fieldset>
 
-              <section className="space-y-3 border-t border-border pt-4">
-                <h2 className="text-sm font-semibold text-foreground">Job and guardrails</h2>
+              <section className="pd-panel rounded-lg p-4 sm:p-5 space-y-4">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground"><ListChecks className="size-4 text-primary" />Its job</h2>
               {/* Instructions */}
               <div>
-                <label className="pd-label" htmlFor="agent-job">Its job</label>
                 <Textarea
                   id="agent-job"
                   aria-label="Its job"
                   value={draft.instructions}
                   onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
-                  rows={4}
+                  rows={5}
                   placeholder="In plain words: what should the agent check, and what should it do when something is wrong?"
                   invalid={!!errors.instructions}
                 />
                 {errors.instructions && <p className="text-xs text-destructive mt-1">{errors.instructions}</p>}
               </div>
+
+              </section>
 
               {/* Guardrails */}
               <div className="grid sm:grid-cols-2 gap-3">
@@ -305,8 +305,6 @@ export default function NewAgentPage() {
                   error={errors.donts}
                 />
               </div>
-
-              </section>
 
               {/* Policy sections preview */}
               {isPolicy && (
@@ -353,18 +351,19 @@ function RulesEditor({
 }) {
   const Icon = tone === 'do' ? Check : Ban;
   return (
-    <div>
-      <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+    <div className="pd-panel rounded-lg p-4 sm:p-5">
+      <label htmlFor={`agent-rules-${tone}`} className="text-sm font-medium text-foreground flex items-center gap-1.5">
         <Icon className={cn('h-3.5 w-3.5', tone === 'do' ? 'text-success' : 'text-destructive')} />
         {label}
       </label>
       <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
       <Textarea
+        id={`agent-rules-${tone}`}
         value={rules.join('\n')}
         onChange={(e) => onChange(e.target.value.split('\n'))}
         placeholder={placeholder}
         aria-label={label}
-        rows={3}
+        rows={7}
         invalid={!!error}
         className="mt-2"
       />
