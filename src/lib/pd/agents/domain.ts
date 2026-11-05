@@ -42,6 +42,10 @@ export interface PolicyDoc {
   file: string;
   instruction: string;
   when: string;
+  /** Uploaded file content; reference samples have metadata only. */
+  dataUrl?: string;
+  mimeType?: string;
+  size?: number;
 }
 
 export interface PolicySection {

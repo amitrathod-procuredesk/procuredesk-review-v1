@@ -1,5 +1,5 @@
 import { useDB, mutate } from '../store';
-import { AGENT_CATALOG, AGENT_RUNS, POLICY_SECTIONS, canCreatePolicyAgent, cleanRules, nextAgentId, validateNewAgent, type AgentDef, type AgentRun, type AgentStatus, type NewAgentDraft } from './domain';
+import { AGENT_CATALOG, AGENT_RUNS, POLICY_SECTIONS, canCreatePolicyAgent, cleanRules, nextAgentId, validateNewAgent, type AgentDef, type AgentRun, type AgentStatus, type NewAgentDraft, type PolicyDoc } from './domain';
 
 export interface AgentsState {
   agents: AgentDef[];
@@ -34,6 +34,18 @@ export function toggleSection(agentId: string, key: string) {
 }
 export function saveSectionText(agentId: string, key: string, text: string, who = 'You') {
   update(s => { const section = s.agents.find(a => a.id === agentId)?.sections?.find(v => v.key === key); if (section) { section.text = text; section.version += 1; section.editedBy = `Edited by ${who} · just now`; } });
+}
+export function changePolicyDocument(s: AgentsState, agentId: string, key: string, originalFile: string | null, doc: PolicyDoc | null) {
+  const section = s.agents.find(a => a.id === agentId)?.sections?.find(v => v.key === key);
+  if (!section) return;
+  if (doc && section.docs.some(d => d.file === doc.file && d.file !== originalFile)) throw new Error('A document with this filename already exists in this section.');
+  if (originalFile === null && doc) section.docs.push(structuredClone(doc));
+  else section.docs = section.docs.flatMap(d => d.file === originalFile ? (doc ? [structuredClone(doc)] : []) : [d]);
+  section.version += 1;
+  section.editedBy = 'Edited by You · just now';
+}
+export function savePolicyDocument(agentId: string, key: string, originalFile: string | null, doc: PolicyDoc | null) {
+  update(s => changePolicyDocument(s, agentId, key, originalFile, doc));
 }
 export function reviewVerdict(s: AgentsState, agentId: string, runId: string, key: string, mark: 'right' | 'wrong', who: string) {
   const run = s.runs[agentId]?.find(r => r.id === runId);
