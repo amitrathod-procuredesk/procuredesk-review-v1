@@ -233,6 +233,7 @@ export interface Org {
 }
 
 export interface DB {
+  agentWorkspace?: import('./agents/store').AgentsState;
   org: Org;
   users: User[];
   departments: Department[];
