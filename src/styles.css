@@ -344,3 +344,40 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
   font-size: clamp(16px, 11cqw, 28px);
   overflow-wrap: anywhere;
 }
+
+/* AI Hub: equal, inspectable agent identities; no featured agent or decorative hero. */
+.pd-hub { letter-spacing: 0; }
+.pd-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.pd-hub-card {
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  box-shadow: 0 2px 4px -2px color-mix(in oklab, var(--foreground) 8%, transparent);
+  transition: border-color .2s, box-shadow .2s;
+}
+.pd-hub-card:hover, .pd-hub-card:focus-within {
+  border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+  box-shadow: 0 5px 14px -6px color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+.pd-hub-card-open:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.pd-hub-profile {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px; flex-shrink: 0; color: var(--primary);
+}
+.pd-hub-profile-face { width: 72px; height: 72px; object-fit: contain; }
+.pd-hub-profile-purpose {
+  position: absolute; bottom: 0; right: 0; display: grid; place-items: center;
+  width: 23px; height: 23px; border-radius: 7px; border: 2px solid var(--surface);
+  background: var(--accent); color: var(--primary);
+}
+.pd-hub-profile-orders .pd-hub-profile-purpose { background: var(--transit-soft); color: var(--transit); }
+.pd-hub-profile-payments .pd-hub-profile-purpose { background: var(--success-soft); color: var(--success); }
+.pd-hub-profile-suppliers .pd-hub-profile-purpose { background: var(--warning-soft); color: var(--warning); }
+.pd-hub-profile-contracts .pd-hub-profile-purpose { background: var(--info-soft); color: var(--primary); }
+@keyframes pd-hub-breathe { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(2deg); } }
+@keyframes pd-hub-blink { 0%, 44%, 48%, 100% { transform: scaleY(1); } 46% { transform: scaleY(.12); } }
+@media (prefers-reduced-motion: no-preference) {
+  .pd-hub-profile-active .pd-hub-profile-face { animation: pd-hub-breathe 5s ease-in-out infinite; }
+  .pd-hub-card:nth-child(2n) .pd-hub-profile-face { animation-delay: -2s; }
+  .pd-hub-card:nth-child(3n) .pd-hub-profile-face { animation-delay: -3.5s; }
+  .pd-hub-profile-active .pd-hub-profile-eyes { transform-origin: 40px 40px; animation: pd-hub-blink 6s ease-in-out infinite; }
+}
