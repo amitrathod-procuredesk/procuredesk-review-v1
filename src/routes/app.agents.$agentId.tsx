@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
 import {
   ArrowLeft,
   Check,
@@ -48,7 +47,6 @@ type Tab = 'instructions' | 'team' | 'runs';
 
 export default function AgentDetailPage() {
   const { agentId: id } = Route.useParams();
-  const navigate = useNavigate();
   const { agents, runs, modeHistory } = useAgents();
   const agent = agents.find((a) => a.id === id);
 
@@ -70,7 +68,6 @@ export default function AgentDetailPage() {
     );
   }
 
-  const isLive = agent.status === 'live';
   const isPaused = agent.status === 'paused';
   const history = modeHistory[agent.id] ?? [];
 
@@ -394,7 +391,7 @@ function SectionsTab({ agentId, sections }: { agentId: string; sections: PolicyS
 
             {isEditing ? (
               <div className="mt-3 ml-0 sm:ml-11 space-y-2">
-                <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={6} className="h-auto py-2 text-sm" />
+                <Textarea aria-label="Policy section text" value={draft} onChange={(e) => setDraft(e.target.value)} rows={6} className="h-auto py-2 text-sm" />
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
@@ -531,6 +528,7 @@ function VerdictCard({
         <span className="ml-auto flex items-center gap-1.5">
           <Button variant="ghost"
             onClick={() => markVerdict(agentId, runId, verdict.key, 'right')}
+            aria-pressed={review?.mark === 'right'}
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
               review?.mark === 'right'
@@ -542,6 +540,7 @@ function VerdictCard({
           </Button>
           <Button variant="ghost"
             onClick={() => markVerdict(agentId, runId, verdict.key, 'wrong')}
+            aria-pressed={review?.mark === 'wrong'}
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
               review?.mark === 'wrong'

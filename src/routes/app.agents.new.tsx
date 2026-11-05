@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAgentNavigation as useNavigate } from '@/components/pd/agents/AgentBreadcrumb';
-import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Lock, Plus, X, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Ban, Calendar, Check, Eye, Hand, Lock, Zap } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import {
   POLICY_SECTIONS,
   agentCategory,
   canCreatePolicyAgent,
-  cleanRules,
   validateNewAgent,
   type AgentCategory,
   type AgentArea,
@@ -166,7 +165,7 @@ export default function NewAgentPage() {
                 onClick={pickPolicy}
                 aria-disabled={!policyAllowed}
                 className={cn(
-                  'h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
                   !policyAllowed ? 'opacity-70 cursor-not-allowed bg-secondary/40'
                     : isPolicy ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-sm'
                 )}
@@ -204,7 +203,7 @@ export default function NewAgentPage() {
               <Button variant="ghost"
                 onClick={pickCustom}
                 className={cn(
-                  'h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface border border-border transition-all group',
                   category === 'custom' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-sm'
                 )}
               >
@@ -231,7 +230,7 @@ export default function NewAgentPage() {
               <Button variant="ghost"
                 onClick={() => setDraft({ ...draft, mode: 'shadow' })}
                 className={cn(
-                  'h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
                   draft.mode === 'shadow' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
                 )}
               >
@@ -249,7 +248,7 @@ export default function NewAgentPage() {
               <Button variant="ghost"
                 onClick={() => setDraft({ ...draft, mode: 'live' })}
                 className={cn(
-                  'h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
+                  'block h-auto whitespace-normal text-left p-3.5 rounded-lg bg-surface transition-colors',
                   draft.mode === 'live' ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
                 )}
               >
@@ -288,6 +287,7 @@ export default function NewAgentPage() {
               <div>
                 <label className="text-sm font-medium text-foreground">Name</label>
                 <Input
+                  aria-label="Name"
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                   placeholder="e.g. Spend watchdog"
@@ -305,7 +305,7 @@ export default function NewAgentPage() {
                       key={area}
                       onClick={() => setDraft({ ...draft, area })}
                       className={cn(
-                        'rounded-full px-3.5 py-1.5 text-sm transition-colors',
+                        'rounded-md px-3.5 py-1.5 text-sm transition-colors',
                         draft.area === area
                           ? 'bg-primary text-primary-foreground font-medium'
                           : 'ring-1 ring-border text-muted-foreground hover:bg-secondary'
@@ -327,7 +327,7 @@ export default function NewAgentPage() {
                       key={t.id}
                       onClick={() => setDraft({ ...draft, triggerKind: t.id })}
                       className={cn(
-                        'h-auto whitespace-normal text-left p-3 rounded-lg bg-surface transition-colors',
+                        'block h-auto whitespace-normal text-left p-3 rounded-lg bg-surface transition-colors',
                         draft.triggerKind === t.id ? 'ring-2 ring-primary bg-primary/5' : 'ring-1 ring-border hover:bg-secondary/50'
                       )}
                     >
@@ -340,6 +340,7 @@ export default function NewAgentPage() {
                 {errors.trigger && <p className="text-xs text-destructive mt-1">{errors.trigger}</p>}
                 {draft.triggerKind && (
                   <Input
+                    aria-label="Trigger"
                     value={triggerLabel}
                     onChange={(e) => setTriggerLabel(e.target.value)}
                     placeholder={
@@ -356,6 +357,7 @@ export default function NewAgentPage() {
               <div>
                 <label className="text-sm font-medium text-foreground">Its job</label>
                 <Textarea
+                  aria-label="Its job"
                   value={draft.instructions}
                   onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
                   rows={4}
