@@ -6,6 +6,7 @@ import { TextInput, TextArea, Select } from '@/components/pd/form';
 import type { PolicyDoc } from '@/lib/pd/agents/domain';
 import { savePolicyDocument } from '@/lib/pd/agents/store';
 import { toast } from 'sonner';
+import { PolicyPdfPreview } from './PolicyPdfPreview';
 
 function fileBlob(doc: PolicyDoc): Blob | null {
   if (!doc.dataUrl) return null;
@@ -81,7 +82,7 @@ export function PolicyDocuments({ agentId, sectionKey, docs }: { agentId: string
     </DialogContent></Dialog>
     <Dialog open={!!preview} onOpenChange={open => { if (!open) setPreview(null); }}><DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{preview?.name}</DialogTitle><DialogDescription>{preview?.file} · {preview?.type}</DialogDescription></DialogHeader>
       {preview?.instruction && <p className="text-sm">{preview.instruction}</p>}{preview?.when && <p className="text-xs text-muted-foreground">{preview.when}</p>}
-      {!preview?.dataUrl ? <p className="border-t border-border pt-3 text-sm text-muted-foreground">This reference document has no file attached. Replace it with your document to view its contents.</p> : preview.mimeType?.startsWith('image/') ? <img src={previewUrl} alt={preview.name} className="max-h-80 w-full object-contain" /> : preview.mimeType?.startsWith('text/') ? <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-md bg-secondary p-3 text-xs">{text}</pre> : <p className="text-sm text-muted-foreground">Download this document to view its contents.</p>}
+      {!preview?.dataUrl ? <p className="border-t border-border pt-3 text-sm text-muted-foreground">This reference document has no file attached. Replace it with your document to view its contents.</p> : preview.mimeType === 'application/pdf' && previewUrl ? <PolicyPdfPreview url={previewUrl} /> : preview.mimeType?.startsWith('image/') ? <img src={previewUrl} alt={preview.name} className="max-h-80 w-full object-contain" /> : preview.mimeType?.startsWith('text/') ? <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-md bg-secondary p-3 text-xs">{text}</pre> : <p className="text-sm text-muted-foreground">Download this document to view its contents.</p>}
       <DialogFooter><Button variant="outline" onClick={() => { if (preview) setEdit({ original: preview.file, draft: { ...preview } }); setPreview(null); }}><Pencil className="size-3.5" />Edit document</Button>{preview?.dataUrl && <Button onClick={() => download(preview)}><Download className="size-3.5" />Download</Button>}</DialogFooter>
     </DialogContent></Dialog>
     <Dialog open={!!remove} onOpenChange={open => { if (!open) setRemove(null); }}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Remove document?</DialogTitle><DialogDescription>{remove?.name} will be removed from this policy section.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setRemove(null)}>Cancel</Button><Button variant="destructive-soft" onClick={() => { if (remove) savePolicyDocument(agentId, sectionKey, remove.file, null); setRemove(null); }}>Remove document</Button></DialogFooter></DialogContent></Dialog>
