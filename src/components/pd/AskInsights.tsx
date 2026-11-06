@@ -249,8 +249,23 @@ export function AskInsights({ threadId }: { threadId?: string }) {
     >
       <div
         className={cn(
+          "grid min-h-0 min-w-0 flex-1",
+          showingConversation && "md:grid-cols-[minmax(280px,29%)_minmax(0,1fr)]",
+        )}
+      >
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 flex-col",
+            !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
+            showingConversation
+              ? "border-border bg-surface md:border-r"
+              : "mx-auto w-full max-w-xl",
+          )}
+        >
+      <div
+        className={cn(
           "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
-          showingConversation && "border-b border-border bg-surface md:hidden",
+          showingConversation && "border-b border-border bg-surface",
         )}
       >
         <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
@@ -317,21 +332,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           </div>
         </TooltipProvider>
       </div>
-      <div
-        className={cn(
-          "grid min-h-0 min-w-0 flex-1",
-          showingConversation && "md:grid-cols-[minmax(260px,34%)_minmax(0,1fr)]",
-        )}
-      >
-        <div
-          className={cn(
-            "flex min-h-0 min-w-0 flex-col",
-            !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
-            showingConversation
-              ? "border-border bg-surface md:border-r"
-              : "mx-auto w-full max-w-xl",
-          )}
-        >
           {!messages.length && (
             <div className="mb-6 text-center">
               <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
@@ -354,7 +354,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
                           <div key={i} className="space-y-2">
-                            <Tool defaultOpen={false}>
+                            <Tool defaultOpen={false} className="mb-0 border-0">
                               <ToolHeader
                                 className="px-0 py-2 [&>div>svg]:hidden [&>div>span:last-child]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
                                 type="tool-create_report"
@@ -376,10 +376,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                                   ? "secondary"
                                   : "outline"
                               }
-                              className="h-auto w-full justify-start whitespace-normal p-3 text-left"
+                              className="h-auto w-full justify-start whitespace-normal border border-primary/20 bg-primary/5 p-3 text-left"
                               onClick={() => {
                                 setReport(p.report);
-                                if (window.innerWidth < 1024)
+                                if (window.innerWidth < 768)
                                   setTimeout(
                                     () =>
                                       reportPanel.current?.scrollIntoView({
@@ -395,7 +395,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                                 {p.report.title}
                                 <span className="block text-xs text-muted-foreground">
                                   {p.report.available
-                                    ? `${p.report.count} records`
+                                    ? report?.generatedAt === p.report.generatedAt ? "Showing" : `${p.report.count} records`
                                     : "Data not available"}
                                 </span>
                               </span>
@@ -440,13 +440,36 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             </Conversation>
           )}
           <div
-            className={cn("space-y-2", messages.length && "shrink-0 border-t border-border p-4")}
+            className={cn("space-y-2", messages.length && "shrink-0 p-4 pt-2")}
           >
+            {report && !busy && (
+              <div className="flex flex-wrap gap-2 pb-1">
+                {[
+                  ...(report.query.topic === "budgets"
+                    ? ["By category instead"]
+                    : ["Break it down by supplier", "By requestor instead"]),
+                  "Show current budget consumption",
+                ].map((t) => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-8 whitespace-normal rounded-full bg-surface px-3 text-left text-xs font-normal"
+                    onClick={() => {
+                      setQuestion(t);
+                      input.current?.focus();
+                    }}
+                  >
+                    {t}
+                  </Button>
+                ))}
+              </div>
+            )}
             <PromptInput
               onSubmit={({ text }) => ask(text)}
               className={cn(
                 "[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface",
-                !showingConversation && "relative",
+                "relative",
               )}
             >
               <PromptInputTextarea
@@ -459,14 +482,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
                 className={cn(
-                  "min-h-12 px-4 pt-3 text-sm",
-                  !showingConversation && "max-h-32 min-h-14 py-4 pr-16",
+                  "max-h-32 min-h-14 px-4 py-4 pr-16 text-sm",
                 )}
               />
               <PromptInputFooter
                 className={cn(
-                  "justify-end px-3 pb-3",
-                  !showingConversation && "absolute bottom-0 right-0 w-auto p-3",
+                  "absolute bottom-0 right-0 w-auto justify-end p-3",
                 )}
               >
                 <PromptInputSubmit
@@ -479,26 +500,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 </PromptInputSubmit>
               </PromptInputFooter>
             </PromptInput>
-            {report && !busy && (
-              <div className="flex flex-wrap gap-1">
-                {[
-                  ...(report.query.topic === "budgets"
-                    ? ["By category instead"]
-                    : ["Break it down by supplier", "By requestor instead"]),
-                  "Show current budget consumption",
-                ].map((t) => (
-                  <Button
-                    key={t}
-                    size="sm"
-                    variant="outline"
-                    className="h-auto min-h-7 whitespace-normal text-left text-xs"
-                    onClick={() => ask(t)}
-                  >
-                    {t}
-                  </Button>
-                ))}
-              </div>
-            )}
             {error && (
               <p role="alert" className="text-xs text-destructive">
                 {error}
@@ -550,7 +551,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         {showingConversation && (
           <div
             ref={reportPanel}
-            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border p-4 sm:p-6 md:border-t-0"
+            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border bg-subtle p-4 sm:p-6 md:border-t-0 md:p-7"
           >
             {report ? (
               <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
