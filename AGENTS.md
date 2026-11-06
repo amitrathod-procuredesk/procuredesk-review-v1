@@ -30,3 +30,4 @@
 - Policy document content and metadata use the shared workspace mutation path, with small embedded files matching the existing prototype session model; reference filenames without content are disclosed rather than fabricated.
 - Agent setup keeps mode and trigger selection as shared Radio controls and sizes long-form guardrails with textarea rows, preserving existing draft validation and creation actions.
 - Normal ProcureDesk sign-in establishes the server-validated session reused by Ask Insights; caller-scoped Cloud conversations use route-derived thread IDs, and isolated sample ledgers retain explicit provenance.
+- Ask Insights centers the existing AI Elements composer in empty conversations and reveals transcript/report panels only after messages; conversation navigation stays in a compact history popover to avoid empty-state scrolling.
