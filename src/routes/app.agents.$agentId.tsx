@@ -191,23 +191,26 @@ export default function AgentDetailPage() {
           {/* Right — working area */}
           <div className="min-w-0">
             {/* Tabs */}
-            <div className="pd-scroll-hide flex items-center gap-4 overflow-x-auto overflow-y-hidden border-b border-border">
+            <div className="pd-scroll-hide flex items-center gap-6 overflow-x-auto overflow-y-hidden border-b border-border" role="tablist">
               {tabs.map((t) => (
-                <Button variant="ghost"
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
                   key={t.id}
                   onClick={() => { setTab(t.id); setOpenRunId(null); }}
                   className={cn(
-                    'shrink-0 pb-3 text-sm border-b-2 transition-colors flex items-center gap-1.5',
+                    '-mb-px flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-0.5 pb-2.5 pt-1 text-sm transition-colors',
                     tab === t.id
-                      ? 'border-primary text-primary font-semibold'
+                      ? 'border-primary font-medium text-foreground'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
                   )}
                 >
                   {t.label}
                   {t.count !== undefined && (
-                    <span className="text-[11px] font-semibold rounded-full bg-secondary text-muted-foreground px-1.5 py-px">{t.count}</span>
+                    <span className="rounded-full bg-secondary px-1.5 py-px text-[11px] font-medium text-muted-foreground tabular-nums">{t.count}</span>
                   )}
-                </Button>
+                </button>
               ))}
             </div>
 
