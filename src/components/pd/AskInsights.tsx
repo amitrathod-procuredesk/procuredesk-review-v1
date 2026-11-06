@@ -308,7 +308,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         <div
           className={cn(
             "flex min-w-0 flex-col",
-            !messages.length && "justify-center px-5 pb-16 sm:px-7",
+            !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
             report ? "border-border lg:border-r" : "mx-auto w-full max-w-3xl",
           )}
         >
