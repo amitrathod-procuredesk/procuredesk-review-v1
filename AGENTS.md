@@ -29,4 +29,4 @@
 - The AI Hub directory uses AgentHubProfile for equal-profile agent cards; its portraits and motion remain presentation-only, leaving domain actions and detail flows unchanged.
 - Policy document content and metadata use the shared workspace mutation path, with small embedded files matching the existing prototype session model; reference filenames without content are disclosed rather than fabricated.
 - Agent setup keeps mode and trigger selection as shared Radio controls and sizes long-form guardrails with textarea rows, preserving existing draft validation and creation actions.
-- Ask Insights uses server-validated opaque sessions for existing prototype accounts, separate Cloud conversation storage and AI Elements streaming; report values come only from the pure reporting engine and missing ledgers never fall back silently to request values.
+- Ask Insights uses server-validated prototype sessions, caller-scoped Cloud conversations and route-derived thread IDs; its pure reporting engine keeps deterministic sample ledgers isolated from actual workspace finances and labels their provenance.
