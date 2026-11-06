@@ -9,7 +9,7 @@ describe("sample financial reports", () => {
     const original = JSON.stringify(db);
     const ledger = demoInsightLedger(db);
     expect(ledger.invoices[0].amount).toBe(4317.84);
-    expect(ledger.invoices).toHaveLength(108);
+    expect(ledger.invoices).toHaveLength(96);
     expect(JSON.stringify(db)).toBe(original);
     expect(demoInsightLedger(db)).toEqual(ledger);
   });

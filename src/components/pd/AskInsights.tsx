@@ -71,6 +71,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [report, setReport] = useState<Report>();
   const [refreshing, setRefreshing] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
+  const reportPanel = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const busy = status === "submitted" || status === "streaming";
   const currentUserId = me?.id;
@@ -351,19 +352,19 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       <div
         className={cn(
           "grid min-w-0 flex-1",
-          report && "xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]",
+          report && "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]",
         )}
       >
         <div
           className={cn(
             "flex min-w-0 flex-col",
-            report ? "border-border xl:border-r" : "mx-auto w-full max-w-3xl",
+            report ? "border-border lg:border-r" : "mx-auto w-full max-w-3xl",
           )}
         >
           <Conversation
             className={cn(
               "min-h-72",
-              report ? "max-h-[65dvh] xl:max-h-[calc(100dvh-260px)]" : "max-h-[calc(100dvh-280px)]",
+              report ? "max-h-[45dvh] lg:max-h-[calc(100dvh-320px)]" : "max-h-[calc(100dvh-280px)]",
             )}
           >
             <ConversationContent className="gap-6 p-5 sm:p-7">
@@ -430,7 +431,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           key={i}
                           variant="outline"
                           className="h-auto w-full justify-start whitespace-normal bg-surface p-3 text-left"
-                          onClick={() => setReport(p.report)}
+                          onClick={() => { setReport(p.report); if (window.innerWidth < 1024) setTimeout(()=>reportPanel.current?.scrollIntoView({behavior:"smooth",block:"start"}),0); }}
                         >
                           <BarChart3 className="text-primary" />
                           <span className="flex-1 text-foreground">
@@ -518,7 +519,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           </div>
         </div>
         {report && (
-          <div className="min-w-0 border-t border-border bg-surface p-5 sm:p-7 xl:border-t-0">
+          <div ref={reportPanel} className="min-w-0 scroll-mt-4 border-t border-border bg-surface p-5 sm:p-7 lg:border-t-0">
             <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
           </div>
         )}
