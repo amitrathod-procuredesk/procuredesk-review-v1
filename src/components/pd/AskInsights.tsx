@@ -7,7 +7,6 @@ import {
   Boxes,
   CircleDollarSign,
   FileText,
-  LockKeyhole,
   Plus,
   History,
 } from "lucide-react";
@@ -28,10 +27,8 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Tool, ToolHeader, ToolContent } from "@/components/ai-elements/tool";
 import { AgentNavIcon } from "@/components/pd/agents/AgentNavIcon";
 import { InsightReport } from "@/components/pd/InsightReport";
-import { TextInput } from "@/components/pd/form";
 import {
   loadInsights,
-  signInInsights,
   refreshInsight,
   createInsightsConversation,
 } from "@/lib/pd/insights.functions";
@@ -40,14 +37,13 @@ import {
   type InsightReport as Report,
   type InsightQuery,
 } from "@/lib/pd/insights";
-import { useMe } from "@/lib/pd/store";
+import { logout, useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 
 export function AskInsights({ threadId }: { threadId?: string }) {
   const me = useMe();
   const router = useRouter();
   const load = useServerFn(loadInsights);
-  const signIn = useServerFn(signInInsights);
   const refresh = useServerFn(refreshInsight);
   const createThread = useServerFn(createInsightsConversation);
   const [threads, setThreads] = useState<{ id: string; title: string; updated_at: string }[]>([]);
@@ -65,7 +61,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [status, setStatus] = useState<"ready" | "submitted" | "streaming" | "error">("ready");
   const [auth, setAuth] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
   const [report, setReport] = useState<Report>();
@@ -237,54 +232,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         <AgentNavIcon className="size-10 text-primary" />
         <h1 className="pd-h1">Ask Insights</h1>
         <p className="text-sm text-muted-foreground">
-          Confirm your ProcureDesk password to access your saved financial conversation.
+          Your session has expired. Sign in to ProcureDesk to continue.
         </p>
-        <form
-          className="space-y-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setError("");
-            try {
-              await signIn({ data: { email: me?.email ?? "", password } });
-              setPassword("");
-              setAuth(false);
-              const v = await load({ data: { userId: me?.id ?? "", threadId } });
-              setThreads(v.threads);
-              if (!threadId && v.selectedId) {
-                void router.navigate({
-                  to: "/app/insights/ask/$threadId",
-                  params: { threadId: v.selectedId },
-                  replace: true,
-                });
-              }
-              setMessages(v.messages);
-              setVersion(v.version);
-              const p = v.messages
-                .flatMap((m) => m.parts)
-                .filter((p) => p.type === "report")
-                .at(-1);
-              if (p?.type === "report") setReport(p.report);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not sign in.");
-            }
-          }}
-        >
-          <label className="pd-label" htmlFor="insights-password">
-            Password
-          </label>
-          <TextInput
-            id="insights-password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <Button type="submit">
-            <LockKeyhole />
-            Continue
-          </Button>
-        </form>
+        <Button onClick={() => { logout(); void router.navigate({to:"/",replace:true}); }}>Sign in</Button>
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
