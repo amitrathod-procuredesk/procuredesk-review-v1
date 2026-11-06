@@ -76,13 +76,14 @@ function AskInsights() {
   const input = useRef<HTMLTextAreaElement>(null);
   const abort = useRef<AbortController | null>(null);
   const busy = status === "submitted" || status === "streaming";
+  const currentUserId = me?.id;
   useEffect(() => {
     let active = true;
-    if (!me) return;
+    if (!currentUserId) return;
     setMessages([]);
     setReport(undefined);
     setLoaded(false);
-    load({ data: { userId: me.id } })
+    load({ data: { userId: currentUserId } })
       .then((v) => {
         if (active) {
           setMessages(v.messages);
@@ -106,7 +107,7 @@ function AskInsights() {
       active = false;
       abort.current?.abort();
     };
-  }, [load, me?.id]);
+  }, [load, currentUserId]);
   useEffect(() => {
     if (loaded && !auth && !busy) input.current?.focus();
   }, [loaded, auth, busy]);
@@ -214,7 +215,7 @@ function AskInsights() {
               await signIn({ data: { email: me?.email ?? "", password } });
               setPassword("");
               setAuth(false);
-              const v = await load();
+              const v = await load({ data: { userId: me?.id ?? "" } });
               setMessages(v.messages);
               setVersion(v.version);
               const p = v.messages

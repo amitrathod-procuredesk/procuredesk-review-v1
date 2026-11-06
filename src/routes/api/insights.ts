@@ -187,6 +187,7 @@ export const Route = createFileRoute("/api/insights")({
                         total: report.available ? report.total : null,
                         count: report.available ? report.count : null,
                         groups: report.groups,
+                        currency: report.currency,
                         notes: report.notes,
                         available: report.available,
                       }),

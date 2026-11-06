@@ -4,6 +4,11 @@ import { buildInsight, emptyQuery } from "../insights";
 import { budgetAvailable } from "../engine";
 
 describe("Ask Insights accuracy", () => {
+  it("does not relabel source USD amounts as a different currency", () => {
+    const db = seedDB();
+    db.org.currency = "EUR";
+    expect(buildInsight(db, emptyQuery("budgets")).currency).toBe("USD");
+  });
   for (const topic of ["invoices", "orders", "items"] as const)
     it(`does not invent ${topic} records`, () => {
       const r = buildInsight(seedDB(), emptyQuery(topic));
