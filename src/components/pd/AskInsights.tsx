@@ -86,7 +86,11 @@ export function AskInsights({ threadId }: { threadId?: string }) {
     load({ data: { userId: currentUserId, threadId } })
       .catch(async (e: unknown) => {
         if (!active) throw e;
-        if (!(e instanceof Error) || !/Sign in|session expired|switch Insights accounts/i.test(e.message)) throw e;
+        if (
+          !(e instanceof Error) ||
+          !/Sign in|session expired|switch Insights accounts/i.test(e.message)
+        )
+          throw e;
         if (!currentEmail || !currentPassword) throw e;
         // Revalidate the existing prototype account credential on the server;
         // never authorize history from the browser's user ID alone.
