@@ -9,12 +9,14 @@ type Snapshot = { data: Json; version: number } | null;
 
 const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
-export const getWorkspace = createServerFn({ method: "GET" }).handler(async (): Promise<Snapshot> => {
+export async function readWorkspaceSnapshot(): Promise<Snapshot> {
   const db = await admin();
   const { data, error } = await db.from("workspace_state").select("data, version").eq("id", "main").maybeSingle();
   if (error) throw new Error(`Could not load workspace: ${error.message}`);
   return data ? { data: data.data, version: data.version } : null;
-});
+}
+
+export const getWorkspace = createServerFn({ method: "GET" }).handler(readWorkspaceSnapshot);
 
 export const saveWorkspace = createServerFn({ method: "POST" })
   .validator((d: unknown) => {
