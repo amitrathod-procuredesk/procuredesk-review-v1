@@ -117,6 +117,26 @@ function startPolling() {
   window.addEventListener("focus", pull);
 }
 
+/** Resolve only after queued edits reach Cloud; local state alone is not a save receipt. */
+export function waitForWorkspaceSave(timeout = 12000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const check = () => {
+      if (pending.length || flushing || !hydrated) return;
+      cleanup();
+      if (syncError) reject(new Error("Your changes are kept on this device, but Cloud saving is unavailable. Retry without creating another request."));
+      else resolve();
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Cloud saving hasn’t completed. Your changes are kept on this device; retry to save the same request."));
+    }, timeout);
+    const cleanup = () => { clearTimeout(timer); listeners.delete(check); };
+    listeners.add(check);
+    if (pending.length && !flushing) void flush();
+    check();
+  });
+}
+
 /** True while edits are waiting to reach the shared workspace, or the last sync failed. */
 export const syncState = () => (syncError ? "error" : pending.length || flushing ? "saving" : "saved");
 /** Backfills catalog descriptions and splits line items whose description just repeated the item name. */
