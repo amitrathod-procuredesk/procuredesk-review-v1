@@ -61,7 +61,7 @@ export function InsightReport({
     : ["department", "supplier", "user"];
   return (
     <section className="min-w-0 space-y-4" aria-label={report.title}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0 space-y-3">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold">{report.title}</h2>
@@ -214,7 +214,7 @@ export function InsightReport({
           </div>
           {report.available && report.count > 0 && (
             <div>
-              <p className="text-sm text-muted-foreground">Average</p>
+              <p className="text-sm text-muted-foreground">Average line value</p>
               <p className="mt-1 text-xl font-semibold">{money(report.total / report.count)}</p>
             </div>
           )}
