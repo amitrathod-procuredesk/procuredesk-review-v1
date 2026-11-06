@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BarChart3, Download, List, RefreshCw, Table2 } from "lucide-react";
+import { BarChart3, Download, List, RefreshCw, Table2, SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, TextInput } from "@/components/pd/form";
 import { Tool, ToolHeader, ToolContent, ToolInput } from "@/components/ai-elements/tool";
 import { type InsightReport as Report, type InsightQuery } from "@/lib/pd/insights";
@@ -89,7 +90,7 @@ export function InsightReport({
       {report.demo && (
         <p className="text-xs font-medium text-primary">Demo data · Sample financial records</p>
       )}
-      <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-4">
         <div>
           <p className="text-xs text-muted-foreground">{budget ? "Committed" : "Total value"}</p>
           <p className="mt-1 break-words text-2xl font-semibold">
@@ -112,7 +113,10 @@ export function InsightReport({
       </div>
       {report.available && (
         <>
-          <div className="flex flex-wrap items-end gap-2">
+          <Popover>
+            <PopoverTrigger asChild><Button variant="outline" size="sm"><SlidersHorizontal />Filters · {report.query.group === "user" ? "Requestor" : report.query.group}</Button></PopoverTrigger>
+            <PopoverContent align="start" className="w-96 max-w-[calc(100vw-32px)]">
+          <div className="grid grid-cols-2 items-end gap-3">
             <label className="min-w-32 flex-1 text-xs text-muted-foreground">
               Group by
               <Select
@@ -175,6 +179,8 @@ export function InsightReport({
               </>
             )}
           </div>
+            </PopoverContent>
+          </Popover>
           <div className="flex gap-1 border-b border-border pb-2">
             {(
               [
@@ -202,7 +208,7 @@ export function InsightReport({
               No records match these filters.
             </div>
           ) : view === "chart" ? (
-            <div className="h-64 min-w-0">
+            <div className="h-64 min-w-0 rounded-lg border border-border bg-surface p-3">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={report.groups.slice(0, 20)}
@@ -224,6 +230,7 @@ export function InsightReport({
                     width={50}
                   />
                   <Tooltip
+                    cursor={{ fill: "var(--subtle)" }}
                     formatter={(v) => money(Number(v))}
                     contentStyle={{
                       background: "var(--surface)",
