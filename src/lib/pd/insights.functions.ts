@@ -45,13 +45,11 @@ export const signInInsights = createServerFn({ method: "POST" })
     if (!user) throw new Error("Email and password do not match an active ProcureDesk account.");
     const token = crypto.randomUUID() + crypto.randomUUID();
     const c = await client();
-    const { error } = await c
-      .from("insights_sessions")
-      .insert({
-        token_hash: await hash(token),
-        user_id: user.id,
-        expires_at: new Date(Date.now() + 86400000).toISOString(),
-      });
+    const { error } = await c.from("insights_sessions").insert({
+      token_hash: await hash(token),
+      user_id: user.id,
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+    });
     if (error) throw new Error("Could not start your Insights session.");
     setCookie("pd-insights-session", token, {
       httpOnly: true,
@@ -67,7 +65,10 @@ export const signOutInsights = createServerFn({ method: "POST" }).handler(async 
   const token = getCookie("pd-insights-session");
   if (token) {
     const c = await client();
-    const { error } = await c.from("insights_sessions").delete().eq("token_hash", await hash(token));
+    const { error } = await c
+      .from("insights_sessions")
+      .delete()
+      .eq("token_hash", await hash(token));
     if (error) throw new Error("Could not end your Insights session.");
   }
   deleteCookie("pd-insights-session", { path: "/" });
@@ -75,21 +76,22 @@ export const signOutInsights = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const loadInsights = createServerFn({ method: "GET" })
-.inputValidator((v: unknown) => z.object({ userId: z.string().min(1).max(120) }).parse(v))
-.handler(async ({ data: input }) => {
-  const { c, userId } = await insightsContext();
-  if (userId !== input.userId) throw new Error("Confirm your password to switch Insights accounts.");
-  const { data, error } = await c
-    .from("insights_history")
-    .select("messages, version")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw new Error("Could not load your saved conversation.");
-  return {
-    messages: (data?.messages ?? []) as unknown as InsightMessage[],
-    version: data?.version ?? 0,
-  };
-});
+  .inputValidator((v: unknown) => z.object({ userId: z.string().min(1).max(120) }).parse(v))
+  .handler(async ({ data: input }) => {
+    const { c, userId } = await insightsContext();
+    if (userId !== input.userId)
+      throw new Error("Confirm your password to switch Insights accounts.");
+    const { data, error } = await c
+      .from("insights_history")
+      .select("messages, version")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error("Could not load your saved conversation.");
+    return {
+      messages: (data?.messages ?? []) as unknown as InsightMessage[],
+      version: data?.version ?? 0,
+    };
+  });
 export const refreshInsight = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => insightQuerySchema.parse(v))
   .handler(async ({ data }) => {

@@ -389,7 +389,9 @@ function AskInsights() {
             {report && !busy && (
               <div className="flex flex-wrap gap-1">
                 {[
-                  ...(report.query.topic === "budgets" ? ["By category instead"] : ["Break it down by supplier", "By requestor instead"]),
+                  ...(report.query.topic === "budgets"
+                    ? ["By category instead"]
+                    : ["Break it down by supplier", "By requestor instead"]),
                   "Show current budget consumption",
                   "Show submitted request value for the last 12 months",
                 ].map((t) => (
