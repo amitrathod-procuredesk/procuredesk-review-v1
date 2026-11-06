@@ -262,76 +262,78 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               : "mx-auto w-full max-w-xl",
           )}
         >
-      <div
-        className={cn(
-          "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
-          showingConversation && "border-b border-border bg-surface",
-        )}
-      >
-        <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="New conversation"
-                  disabled={busy || !loaded}
-                  onClick={newConversation}
-                >
-                  <SquarePen className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>New conversation</TooltipContent>
-            </Tooltip>
-            <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
+              showingConversation && "border-b border-border bg-surface",
+            )}
+          >
+            <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
+            <TooltipProvider>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Conversation history"
-                      disabled={busy}
+                      aria-label="New conversation"
+                      disabled={busy || !loaded}
+                      onClick={newConversation}
                     >
-                      <History className="size-4" />
+                      <SquarePen className="size-4" />
                     </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Past conversations</TooltipContent>
-              </Tooltip>
-              <PopoverContent align="end" className="w-80 max-w-[calc(100vw-32px)] p-2">
-                <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
-                  Past conversations
-                </p>
-                <nav aria-label="Conversation history" className="max-h-64 overflow-y-auto">
-                  {threads.map((t) => (
-                    <Button
-                      key={t.id}
-                      variant={t.id === threadId ? "secondary" : "ghost"}
-                      className="h-auto w-full justify-start py-3 text-left"
-                      onClick={() => {
-                        setHistoryOpen(false);
-                        void router.navigate({
-                          to: "/app/insights/ask/$threadId",
-                          params: { threadId: t.id },
-                        });
-                      }}
-                    >
-                      <History />
-                      <span className="truncate">{t.title}</span>
-                    </Button>
-                  ))}
-                  {!threads.length && (
-                    <p className="py-3 text-sm text-muted-foreground">No past conversations yet.</p>
-                  )}
-                </nav>
-              </PopoverContent>
-            </Popover>
+                  </TooltipTrigger>
+                  <TooltipContent>New conversation</TooltipContent>
+                </Tooltip>
+                <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Conversation history"
+                          disabled={busy}
+                        >
+                          <History className="size-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Past conversations</TooltipContent>
+                  </Tooltip>
+                  <PopoverContent align="end" className="w-80 max-w-[calc(100vw-32px)] p-2">
+                    <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
+                      Past conversations
+                    </p>
+                    <nav aria-label="Conversation history" className="max-h-64 overflow-y-auto">
+                      {threads.map((t) => (
+                        <Button
+                          key={t.id}
+                          variant={t.id === threadId ? "secondary" : "ghost"}
+                          className="h-auto w-full justify-start py-3 text-left"
+                          onClick={() => {
+                            setHistoryOpen(false);
+                            void router.navigate({
+                              to: "/app/insights/ask/$threadId",
+                              params: { threadId: t.id },
+                            });
+                          }}
+                        >
+                          <History />
+                          <span className="truncate">{t.title}</span>
+                        </Button>
+                      ))}
+                      {!threads.length && (
+                        <p className="py-3 text-sm text-muted-foreground">
+                          No past conversations yet.
+                        </p>
+                      )}
+                    </nav>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipProvider>
           </div>
-        </TooltipProvider>
-      </div>
           {!messages.length && (
             <div className="mb-6 text-center">
               <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
@@ -395,7 +397,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                                 {p.report.title}
                                 <span className="block text-xs text-muted-foreground">
                                   {p.report.available
-                                    ? report?.generatedAt === p.report.generatedAt ? "Showing" : `${p.report.count} records`
+                                    ? report?.generatedAt === p.report.generatedAt
+                                      ? "Showing"
+                                      : `${p.report.count} records`
                                     : "Data not available"}
                                 </span>
                               </span>
@@ -408,7 +412,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   </Message>
                 ))}
                 {busy && (
-                            <Tool defaultOpen={false}>
+                  <Tool defaultOpen={false}>
                     <ToolHeader
                       type="tool-create_report"
                       state="input-available"
@@ -439,9 +443,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               <ConversationScrollButton />
             </Conversation>
           )}
-          <div
-            className={cn("space-y-2", messages.length && "shrink-0 p-4 pt-2")}
-          >
+          <div className={cn("space-y-2", messages.length && "shrink-0 p-4 pt-2")}>
             {report && !busy && (
               <div className="flex flex-wrap gap-2 pb-1">
                 {[
@@ -481,15 +483,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className={cn(
-                  "max-h-32 min-h-14 px-4 py-4 pr-16 text-sm",
-                )}
+                className={cn("max-h-32 min-h-14 px-4 py-4 pr-16 text-sm")}
               />
-              <PromptInputFooter
-                className={cn(
-                  "absolute bottom-0 right-0 w-auto justify-end p-3",
-                )}
-              >
+              <PromptInputFooter className={cn("absolute bottom-0 right-0 w-auto justify-end p-3")}>
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
