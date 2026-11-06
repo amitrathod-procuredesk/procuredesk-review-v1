@@ -54,12 +54,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [threads, setThreads] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const newConversation = async () => {
-    try {
-      const t = await createThread();
-      await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create conversation");
-    }
+    // A new conversation is only created when the user actually submits a
+    // question; this just returns to the empty starting screen.
+    setQuestion("");
+    setError("");
+    if (threadId) await router.navigate({ to: "/app/insights/ask" });
+    else input.current?.focus();
   };
   const [messages, setMessages] = useState<InsightMessage[]>([]);
   const [version, setVersion] = useState(0);
@@ -104,6 +104,16 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           setMessages(threadId ? v.messages : []);
           setVersion(threadId ? v.version : 0);
           setLoaded(true);
+          // An empty thread with nothing waiting to be asked has no report to
+          // show: return to the starting screen instead of an empty report view.
+          if (
+            threadId &&
+            !v.messages.length &&
+            !sessionStorage.getItem(`pd-insights-pending-${threadId}`)
+          ) {
+            void router.navigate({ to: "/app/insights/ask", replace: true });
+            return;
+          }
           const last = v.messages
             .flatMap((m) => m.parts)
             .filter((p) => p.type === "report")
