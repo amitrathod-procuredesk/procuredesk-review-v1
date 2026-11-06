@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BarChart3, Download, List, RefreshCw, Table2, SlidersHorizontal } from "lucide-react";
+import { BarChart3, ChevronDown, Info, List, RefreshCw, Table2 } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -59,18 +59,39 @@ export function InsightReport({
     ? ["department"]
     : ["department", "supplier", "user"];
   return (
-    <section className="min-w-0 space-y-3" aria-label={report.title}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">{report.title}</h2>
-          <p className="text-xs text-muted-foreground">
-            {budget
-              ? "Current snapshot"
-              : `${report.query.start ?? "All dates"} ${report.query.end ? `– ${report.query.end}` : ""}`}{" "}
-            · {report.currency}
-          </p>
-        </div>
-        <div className="flex gap-1">
+    <section className="min-w-0 space-y-4" aria-label={report.title}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold tracking-tight">{report.title}</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-7" aria-label="About this report">
+                  <Info className="size-4 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 text-xs text-muted-foreground">
+                {report.notes[0] ?? "Calculated from the records shown in this report."}
+              </PopoverContent>
+            </Popover>
+          </div>
+          {report.available && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="bg-surface font-normal">
+                    {budget
+                      ? "Current snapshot"
+                      : `${report.query.start ?? "All dates"}${report.query.end ? ` – ${report.query.end}` : ""}`}
+                    <ChevronDown />
+                  </Button>
+                  <Button variant="outline" size="sm" className="bg-surface font-normal">
+                    {report.query.department ?? "All departments"}
+                    <ChevronDown />
+                  </Button>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-96 max-w-[calc(100vw-32px)]">
           <Button
             variant="ghost"
             size="icon"
@@ -81,27 +102,24 @@ export function InsightReport({
           >
             <RefreshCw className={cn(loading && "animate-spin")} />
           </Button>
-          <Button variant="outline" size="sm" disabled={!report.available} onClick={exportCsv}>
-            <Download />
+          <Button variant="outline" disabled={!report.available} onClick={exportCsv}>
             Export
           </Button>
         </div>
       </div>
-      {report.demo && (
-        <p className="text-xs font-medium text-primary">Demo data · Sample financial records</p>
-      )}
-      <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-4">
-        <div>
-          <p className="text-xs text-muted-foreground">{budget ? "Committed" : "Total value"}</p>
-          <p className="mt-1 break-words text-2xl font-semibold">
+      <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{budget ? "Committed" : "Total value"}</p>
+          <p className="mt-1 break-words text-3xl font-semibold tracking-tight sm:text-4xl">
             {report.available ? money(report.total) : "Not available"}
           </p>
         </div>
-        <div className="border-l border-border pl-4">
-          <p className="text-xs text-muted-foreground">
+        <div>
+          <p className="text-sm text-muted-foreground">
             {budget ? "Budgets" : report.query.topic === "items" ? "Units received" : "Line items"}
           </p>
-          <p className="mt-1 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             {report.available
               ? (report.query.topic === "items"
                   ? report.rows.reduce((s, r) => s + r.quantity, 0)
@@ -110,17 +128,15 @@ export function InsightReport({
               : "—"}
           </p>
         </div>
+        {report.available && report.count > 0 && (
+          <div>
+            <p className="text-sm text-muted-foreground">Average</p>
+            <p className="mt-1 text-xl font-semibold">{money(report.total / report.count)}</p>
+          </div>
+        )}
       </div>
       {report.available && (
-        <>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <SlidersHorizontal />
-                Filters · {report.query.group === "user" ? "Requestor" : report.query.group}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-96 max-w-[calc(100vw-32px)]">
+        <div className="mt-5 space-y-3">
               <div className="grid grid-cols-2 items-end gap-3">
                 <label className="min-w-32 flex-1 text-xs text-muted-foreground">
                   Group by
