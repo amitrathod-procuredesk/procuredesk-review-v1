@@ -59,7 +59,7 @@ export function InsightReport({
     ? ["department"]
     : ["department", "supplier", "user"];
   return (
-    <section className="min-w-0 space-y-4" aria-label={report.title}>
+    <section className="min-w-0 space-y-3" aria-label={report.title}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold">{report.title}</h2>
@@ -213,7 +213,7 @@ export function InsightReport({
               No records match these filters.
             </div>
           ) : view === "chart" ? (
-            <div className="h-64 min-w-0 rounded-lg border border-border bg-surface p-3">
+            <div className="h-52 min-w-0 rounded-lg border border-border bg-surface p-3">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={report.groups.slice(0, 20)}

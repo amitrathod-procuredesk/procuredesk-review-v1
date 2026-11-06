@@ -148,7 +148,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       if (!threadId) {
         try {
           const t = await createThread();
-          sessionStorage.setItem("pd-insights-pending", text);
+        sessionStorage.setItem(`pd-insights-pending-${t.id}`, text);
           await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
         } catch (e) {
           setError(e instanceof Error ? e.message : "Could not start conversation");
@@ -240,9 +240,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   );
   useEffect(() => {
     if (threadId && loaded) {
-      const pending = sessionStorage.getItem("pd-insights-pending");
+      const pending = sessionStorage.getItem(`pd-insights-pending-${threadId}`);
       if (pending) {
-        sessionStorage.removeItem("pd-insights-pending");
+        sessionStorage.removeItem(`pd-insights-pending-${threadId}`);
         void ask(pending);
       }
     }
@@ -360,6 +360,11 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                         p.type === "text" ? (
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
+                          <div key={i} className="space-y-2">
+                          <Tool defaultOpen={false}>
+                            <ToolHeader type="tool-create_report" state="output-available" title={`Read ${p.report.count} records`} />
+                            <ToolContent><p className="text-xs text-muted-foreground">{p.report.demo ? "Sample financial records" : "Current workspace records"}</p></ToolContent>
+                          </Tool>
                           <Button
                             key={i}
                             variant={
@@ -390,6 +395,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                             </span>
                             <ArrowUpRight className="text-muted-foreground" />
                           </Button>
+                          </div>
                         ),
                       )}
                     </MessageContent>
@@ -452,7 +458,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   disabled={!loaded || (!busy && !question.trim())}
                   aria-label={busy ? "Stop" : "Send question"}
                 >
-                  {!busy && <ArrowUp className="size-4" />}
+                  {busy ? undefined : <ArrowUp className="size-4" />}
                 </PromptInputSubmit>
               </PromptInputFooter>
             </PromptInput>
