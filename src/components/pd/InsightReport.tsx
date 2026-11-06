@@ -86,7 +86,9 @@ export function InsightReport({
           </Button>
         </div>
       </div>
-      {report.demo && <p className="text-xs font-medium text-primary">Demo data · Sample financial records</p>}
+      {report.demo && (
+        <p className="text-xs font-medium text-primary">Demo data · Sample financial records</p>
+      )}
       <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
         <div>
           <p className="text-xs text-muted-foreground">{budget ? "Committed" : "Total value"}</p>
@@ -95,9 +97,16 @@ export function InsightReport({
           </p>
         </div>
         <div className="border-l border-border pl-4">
-          <p className="text-xs text-muted-foreground">{budget ? "Budgets" : report.query.topic === "items" ? "Units received" : "Line items"}</p>
+          <p className="text-xs text-muted-foreground">
+            {budget ? "Budgets" : report.query.topic === "items" ? "Units received" : "Line items"}
+          </p>
           <p className="mt-1 text-2xl font-semibold">
-            {report.available ? (report.query.topic === "items" ? report.rows.reduce((s,r)=>s+r.quantity,0) : report.count).toLocaleString() : "—"}
+            {report.available
+              ? (report.query.topic === "items"
+                  ? report.rows.reduce((s, r) => s + r.quantity, 0)
+                  : report.count
+                ).toLocaleString()
+              : "—"}
           </p>
         </div>
       </div>
