@@ -1,4 +1,5 @@
 # Maintenance screen
+- [x] Stop automatic latest-report navigation and compact the question field with suggestions; verified six-second idle stays on start, suggestion editing, one-submit report generation, explicit history restoration and 320–1002px layouts.
 - [x] Remove Ask Insights secondary sign-in screen; verified existing login and thread reload recover after cookies are removed without another sign-in.
 - [x] Match the reporting reference with conversation/progress left and visuals right, compact filter menus and automatic first-question handoff; verified generated reports, reload, working states and 320–1078px layouts; 15 financial tests pass.
 - [x] Simplify Ask Insights to a central question box and suggestions; verified 320–1280px empty screens without overflow, suggestion editing, a generated budget report and reload restoration; 15 financial tests pass.
