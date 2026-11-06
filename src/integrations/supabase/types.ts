@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      insights_conversations: {
+        Row: {
+          id: string
+          messages: Json
+          title: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          messages?: Json
+          title?: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          id?: string
+          messages?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       insights_history: {
         Row: {
           messages: Json

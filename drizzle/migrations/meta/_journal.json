@@ -15,6 +15,13 @@
       "when": 1793957006218,
       "tag": "0001_ask_insights_sessions_history",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793958094181,
+      "tag": "0002_insights_conversations",
+      "breakpoints": true
     }
   ]
 }
