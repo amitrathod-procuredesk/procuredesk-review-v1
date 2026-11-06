@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ArrowUp,
@@ -34,13 +34,14 @@ import {
   loadInsights,
   refreshInsight,
   createInsightsConversation,
+  signInInsights,
 } from "@/lib/pd/insights.functions";
 import {
   type InsightMessage,
   type InsightReport as Report,
   type InsightQuery,
 } from "@/lib/pd/insights";
-import { logout, useMe } from "@/lib/pd/store";
+import { useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 
 export function AskInsights({ threadId }: { threadId?: string }) {
@@ -49,6 +50,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const load = useServerFn(loadInsights);
   const refresh = useServerFn(refreshInsight);
   const createThread = useServerFn(createInsightsConversation);
+  const restoreSession = useServerFn(signInInsights);
   const [threads, setThreads] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const newConversation = async () => {
@@ -62,7 +64,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [messages, setMessages] = useState<InsightMessage[]>([]);
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<"ready" | "submitted" | "streaming" | "error">("ready");
-  const [auth, setAuth] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
@@ -72,14 +73,31 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const reportPanel = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const busy = status === "submitted" || status === "streaming";
+  const showingConversation = messages.length > 0;
   const currentUserId = me?.id;
+  const currentEmail = me?.email;
+  const currentPassword = me?.password;
   useEffect(() => {
     let active = true;
     if (!currentUserId) return;
     setMessages([]);
     setReport(undefined);
     setLoaded(false);
+    setError("");
     load({ data: { userId: currentUserId, threadId } })
+      .catch(async (e: unknown) => {
+        if (!active) throw e;
+        if (
+          !(e instanceof Error) ||
+          !/Sign in|session expired|switch Insights accounts/i.test(e.message)
+        )
+          throw e;
+        if (!currentEmail || !currentPassword) throw e;
+        // Revalidate the existing prototype account credential on the server;
+        // never authorize history from the browser's user ID alone.
+        await restoreSession({ data: { email: currentEmail, password: currentPassword } });
+        return load({ data: { userId: currentUserId, threadId } });
+      })
       .then((v) => {
         if (active) {
           setThreads(v.threads);
@@ -93,7 +111,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           setMessages(v.messages);
           setVersion(v.version);
           setLoaded(true);
-          setAuth(false);
           const last = v.messages
             .flatMap((m) => m.parts)
             .filter((p) => p.type === "report")
@@ -103,18 +120,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       })
       .catch(() => {
         if (active) {
-          setAuth(true);
-          setLoaded(true);
+          setError("Ask Insights could not connect. Please refresh and try again.");
         }
       });
     return () => {
       active = false;
       abort.current?.abort();
     };
-  }, [load, currentUserId, threadId, router]);
+  }, [load, restoreSession, currentUserId, currentEmail, currentPassword, threadId, router]);
   useEffect(() => {
-    if (loaded && !auth && !busy) input.current?.focus();
-  }, [loaded, auth, busy, threadId]);
+    if (loaded && !busy) input.current?.focus();
+  }, [loaded, busy, threadId]);
   const updateReport = async (q: InsightQuery) => {
     setRefreshing(true);
     setError("");
@@ -126,135 +142,124 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       setRefreshing(false);
     }
   };
-  const ask = async (text: string) => {
-    if (!text.trim() || busy) return;
-    if (!threadId) {
+  const ask = useCallback(
+    async (text: string) => {
+      if (!text.trim() || busy) return;
+      if (!threadId) {
+        try {
+          const t = await createThread();
+          sessionStorage.setItem(`pd-insights-pending-${t.id}`, text);
+          await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Could not start conversation");
+        }
+        return;
+      }
+      setError("");
+      setQuestion("");
+      setStatus("submitted");
+      const next: InsightMessage[] = [
+        ...messages,
+        { id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text }] },
+      ];
+      const assistant: InsightMessage = { id: crypto.randomUUID(), role: "assistant", parts: [] };
+      setMessages(next);
+      const controller = new AbortController();
+      abort.current = controller;
+      let completed = false;
       try {
-        const t = await createThread();
-        sessionStorage.setItem("pd-insights-pending", text);
-        await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not start conversation");
-      }
-      return;
-    }
-    setError("");
-    setQuestion("");
-    setStatus("submitted");
-    const next: InsightMessage[] = [
-      ...messages,
-      { id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text }] },
-    ];
-    const assistant: InsightMessage = { id: crypto.randomUUID(), role: "assistant", parts: [] };
-    setMessages(next);
-    const controller = new AbortController();
-    abort.current = controller;
-    let completed = false;
-    try {
-      const res = await fetch("/api/insights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, version, threadId }),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        const body = await res.json();
-        throw new Error(body.error ?? "Could not answer.");
-      }
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("Answer stream unavailable.");
-      let buffer = "";
-      const decoder = new TextDecoder();
-      for (;;) {
-        const chunk = await reader.read();
-        if (chunk.done) break;
-        buffer += decoder.decode(chunk.value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line) continue;
-          const event = JSON.parse(line);
-          setStatus("streaming");
-          if (event.type === "delta") {
-            const part = assistant.parts.at(-1);
-            if (part?.type === "text") part.text += event.text;
-            else assistant.parts.push({ type: "text", text: event.text });
-            setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
-          }
-          if (event.type === "report") {
-            assistant.parts.push({ type: "report", report: event.report });
-            setReport(event.report);
-            setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
-          }
-          if (event.type === "error") throw new Error(event.message);
-          if (event.type === "done") {
-            completed = true;
-            setMessages(event.messages);
-            setVersion(event.version);
-            setStatus("ready");
-            setThreads((ts) =>
-              ts.map((t) =>
-                t.id === threadId
-                  ? { ...t, title: messages.length ? t.title : text.slice(0, 80) }
-                  : t,
-              ),
-            );
+        const res = await fetch("/api/insights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, version, threadId }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body.error ?? "Could not answer.");
+        }
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("Answer stream unavailable.");
+        let buffer = "";
+        const decoder = new TextDecoder();
+        for (;;) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          buffer += decoder.decode(chunk.value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line) continue;
+            const event = JSON.parse(line);
+            setStatus("streaming");
+            if (event.type === "delta") {
+              const part = assistant.parts.at(-1);
+              if (part?.type === "text") part.text += event.text;
+              else assistant.parts.push({ type: "text", text: event.text });
+              setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
+            }
+            if (event.type === "report") {
+              assistant.parts.push({ type: "report", report: event.report });
+              setReport(event.report);
+              setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
+            }
+            if (event.type === "error") throw new Error(event.message);
+            if (event.type === "done") {
+              completed = true;
+              setMessages(event.messages);
+              setVersion(event.version);
+              setStatus("ready");
+              setThreads((ts) =>
+                ts.map((t) =>
+                  t.id === threadId
+                    ? { ...t, title: messages.length ? t.title : text.slice(0, 80) }
+                    : t,
+                ),
+              );
+            }
           }
         }
-      }
-      if (!completed) throw new Error("The answer stopped before it was saved.");
-    } catch (e) {
-      setStatus("error");
-      setQuestion(text);
-      setMessages(messages);
-      setError(
-        e instanceof Error && e.name === "AbortError"
-          ? "Stopped. Your question is preserved; the unfinished answer was not saved."
-          : e instanceof Error
-            ? e.message
-            : "Could not answer.",
-      );
-    } finally {
-      abort.current = null;
-      input.current?.focus();
-    }
-  };
-  useEffect(() => {
-    if (threadId && loaded && !auth) {
-      const pending = sessionStorage.getItem("pd-insights-pending");
-      if (pending) {
-        sessionStorage.removeItem("pd-insights-pending");
-        setQuestion(pending);
+        if (!completed) throw new Error("The answer stopped before it was saved.");
+      } catch (e) {
+        setStatus("error");
+        setQuestion(text);
+        setMessages(messages);
+        setError(
+          e instanceof Error && e.name === "AbortError"
+            ? "Stopped. Your question is preserved; the unfinished answer was not saved."
+            : e instanceof Error
+              ? e.message
+              : "Could not answer.",
+        );
+      } finally {
+        abort.current = null;
         input.current?.focus();
       }
+    },
+    [busy, threadId, createThread, router, messages, version],
+  );
+  useEffect(() => {
+    if (threadId && loaded) {
+      const pending = sessionStorage.getItem(`pd-insights-pending-${threadId}`);
+      if (pending) {
+        sessionStorage.removeItem(`pd-insights-pending-${threadId}`);
+        void ask(pending);
+      }
     }
-  }, [threadId, loaded, auth]);
-  if (auth)
-    return (
-      <div className="mx-auto max-w-md space-y-5 px-6 py-12">
-        <AgentNavIcon className="size-10 text-primary" />
-        <h1 className="pd-h1">Ask Insights</h1>
-        <p className="text-sm text-muted-foreground">
-          Your session has expired. Sign in to ProcureDesk to continue.
-        </p>
-        <Button
-          onClick={() => {
-            logout();
-            void router.navigate({ to: "/", replace: true });
-          }}
-        >
-          Sign in
-        </Button>
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-      </div>
-    );
+  }, [threadId, loaded, ask]);
   return (
-    <div className="flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7">
+    <div
+      className={cn(
+        "flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]",
+        showingConversation && "md:h-[calc(100dvh-60px)] md:min-h-0 md:overflow-hidden",
+      )}
+    >
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
+          showingConversation && "border-b border-border bg-surface",
+        )}
+      >
         <h1 className="text-sm font-medium text-muted-foreground">Ask Insights</h1>
         <TooltipProvider>
           <div className="flex items-center gap-1">
@@ -321,15 +326,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       </div>
       <div
         className={cn(
-          "grid min-w-0 flex-1",
-          report && "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]",
+          "grid min-h-0 min-w-0 flex-1",
+          showingConversation && "md:grid-cols-[minmax(260px,34%)_minmax(0,1fr)]",
         )}
       >
         <div
           className={cn(
-            "flex min-w-0 flex-col",
+            "flex min-h-0 min-w-0 flex-col",
             !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
-            report ? "border-border lg:border-r" : "mx-auto w-full max-w-3xl",
+            showingConversation
+              ? "border-border bg-surface md:border-r"
+              : "mx-auto w-full max-w-3xl",
           )}
         >
           {!messages.length && (
@@ -339,61 +346,87 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             </div>
           )}
           {!!messages.length && (
-            <Conversation
-              className={cn(
-                "min-h-72",
-                report
-                  ? "max-h-[45dvh] lg:max-h-[calc(100dvh-320px)]"
-                  : "max-h-[calc(100dvh-280px)]",
-              )}
-            >
-              <ConversationContent className="gap-6 p-5 sm:p-7">
+            <Conversation className={cn("min-h-0 flex-1 max-h-[50dvh] md:max-h-none")}>
+              <ConversationContent className="gap-5 p-4 sm:p-5">
                 {messages.map((m) => (
                   <Message key={m.id} from={m.role}>
                     <MessageContent
                       className={cn(
                         "min-w-0 max-w-full",
-                        m.role === "user" && "bg-primary text-primary-foreground",
+                        m.role === "user" && "bg-secondary text-secondary-foreground",
                       )}
                     >
                       {m.parts.map((p, i) =>
                         p.type === "text" ? (
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
-                          <Button
-                            key={i}
-                            variant="outline"
-                            className="h-auto w-full justify-start whitespace-normal bg-surface p-3 text-left"
-                            onClick={() => {
-                              setReport(p.report);
-                              if (window.innerWidth < 1024)
-                                setTimeout(
-                                  () =>
-                                    reportPanel.current?.scrollIntoView({
-                                      behavior: "smooth",
-                                      block: "start",
-                                    }),
-                                  0,
-                                );
-                            }}
-                          >
-                            <BarChart3 className="text-primary" />
-                            <span className="flex-1 text-foreground">
-                              {p.report.title}
-                              <span className="block text-xs text-muted-foreground">
-                                {p.report.available
-                                  ? `${p.report.count} records`
-                                  : "Data not available"}
+                          <div key={i} className="space-y-2">
+                            <Tool defaultOpen={false}>
+                              <ToolHeader
+                                type="tool-create_report"
+                                state="output-available"
+                                title={`Read ${p.report.count} records`}
+                              />
+                              <ToolContent>
+                                <p className="text-xs text-muted-foreground">
+                                  {p.report.demo
+                                    ? "Sample financial records"
+                                    : "Current workspace records"}
+                                </p>
+                              </ToolContent>
+                            </Tool>
+                            <Button
+                              key={i}
+                              variant={
+                                report?.generatedAt === p.report.generatedAt
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                              className="h-auto w-full justify-start whitespace-normal p-3 text-left"
+                              onClick={() => {
+                                setReport(p.report);
+                                if (window.innerWidth < 1024)
+                                  setTimeout(
+                                    () =>
+                                      reportPanel.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                      }),
+                                    0,
+                                  );
+                              }}
+                            >
+                              <BarChart3 className="text-primary" />
+                              <span className="flex-1 text-foreground">
+                                {p.report.title}
+                                <span className="block text-xs text-muted-foreground">
+                                  {p.report.available
+                                    ? `${p.report.count} records`
+                                    : "Data not available"}
+                                </span>
                               </span>
-                            </span>
-                            <ArrowUpRight className="text-muted-foreground" />
-                          </Button>
+                              <ArrowUpRight className="text-muted-foreground" />
+                            </Button>
+                          </div>
                         ),
                       )}
                     </MessageContent>
                   </Message>
                 ))}
-                {busy && <Shimmer>Reading current records…</Shimmer>}
+                {busy && (
+                  <Tool defaultOpen={false}>
+                    <ToolHeader
+                      type="tool-create_report"
+                      state="input-available"
+                      title={report ? "Writing your summary" : "Reading records"}
+                    />
+                    <ToolContent>
+                      <Shimmer>
+                        {report ? "Preparing the explanation…" : "Reading current records…"}
+                      </Shimmer>
+                    </ToolContent>
+                  </Tool>
+                )}
                 {error && (
                   <Tool defaultOpen={false}>
                     <ToolHeader
@@ -412,28 +445,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               <ConversationScrollButton />
             </Conversation>
           )}
-          <div className={cn("space-y-2", messages.length && "mt-auto p-4 sm:p-5")}>
-            {report && !busy && (
-              <div className="flex flex-wrap gap-1">
-                {[
-                  ...(report.query.topic === "budgets"
-                    ? ["By category instead"]
-                    : ["Break it down by supplier", "By requestor instead"]),
-                  "Show current budget consumption",
-                  "Show submitted request value for the last 12 months",
-                ].map((t) => (
-                  <Button
-                    key={t}
-                    size="sm"
-                    variant="ghost"
-                    className="h-auto whitespace-normal text-left text-xs"
-                    onClick={() => ask(t)}
-                  >
-                    {t}
-                  </Button>
-                ))}
-              </div>
-            )}
+          <div
+            className={cn("space-y-2", messages.length && "shrink-0 border-t border-border p-4")}
+          >
             <PromptInput
               onSubmit={({ text }) => ask(text)}
               className="[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface"
@@ -447,7 +461,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className="min-h-16 px-4 pt-4 text-sm"
+                className="min-h-12 px-4 pt-3 text-sm"
               />
               <PromptInputFooter className="justify-end px-3 pb-3">
                 <PromptInputSubmit
@@ -456,10 +470,30 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   disabled={!loaded || (!busy && !question.trim())}
                   aria-label={busy ? "Stop" : "Send question"}
                 >
-                  {!busy && <ArrowUp className="size-4" />}
+                  {busy ? undefined : <ArrowUp className="size-4" />}
                 </PromptInputSubmit>
               </PromptInputFooter>
             </PromptInput>
+            {report && !busy && (
+              <div className="flex flex-wrap gap-1">
+                {[
+                  ...(report.query.topic === "budgets"
+                    ? ["By category instead"]
+                    : ["Break it down by supplier", "By requestor instead"]),
+                  "Show current budget consumption",
+                ].map((t) => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-7 whitespace-normal text-left text-xs"
+                    onClick={() => ask(t)}
+                  >
+                    {t}
+                  </Button>
+                ))}
+              </div>
+            )}
             {error && (
               <p role="alert" className="text-xs text-destructive">
                 {error}
@@ -508,12 +542,23 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             </div>
           )}
         </div>
-        {report && (
+        {showingConversation && (
           <div
             ref={reportPanel}
-            className="min-w-0 scroll-mt-4 border-t border-border bg-surface p-5 sm:p-7 lg:border-t-0"
+            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border p-4 sm:p-6 md:border-t-0"
           >
-            <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
+            {report ? (
+              <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
+            ) : (
+              <div className="flex min-h-64 h-full items-center justify-center text-center">
+                <div className="space-y-3">
+                  <BarChart3 className="mx-auto size-8 text-primary" />
+                  <Shimmer>
+                    {busy ? "Preparing your report…" : "Your report will appear here"}
+                  </Shimmer>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

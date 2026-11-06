@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BarChart3, Download, List, RefreshCw, Table2 } from "lucide-react";
+import { BarChart3, Download, List, RefreshCw, Table2, SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, TextInput } from "@/components/pd/form";
 import { Tool, ToolHeader, ToolContent, ToolInput } from "@/components/ai-elements/tool";
 import { type InsightReport as Report, type InsightQuery } from "@/lib/pd/insights";
@@ -58,7 +59,7 @@ export function InsightReport({
     ? ["department"]
     : ["department", "supplier", "user"];
   return (
-    <section className="min-w-0 space-y-4" aria-label={report.title}>
+    <section className="min-w-0 space-y-3" aria-label={report.title}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold">{report.title}</h2>
@@ -89,7 +90,7 @@ export function InsightReport({
       {report.demo && (
         <p className="text-xs font-medium text-primary">Demo data · Sample financial records</p>
       )}
-      <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-4">
         <div>
           <p className="text-xs text-muted-foreground">{budget ? "Committed" : "Total value"}</p>
           <p className="mt-1 break-words text-2xl font-semibold">
@@ -112,69 +113,79 @@ export function InsightReport({
       </div>
       {report.available && (
         <>
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="min-w-32 flex-1 text-xs text-muted-foreground">
-              Group by
-              <Select
-                aria-label="Group report by"
-                value={report.query.group}
-                onChange={(e) => update({ group: e.target.value as InsightQuery["group"] })}
-              >
-                {(budget
-                  ? ["budget", "department", "category"]
-                  : ["month", "supplier", "user", "department", "category", "account", "item"]
-                ).map((g) => (
-                  <option key={g} value={g}>
-                    {g === "user" ? "Requestor" : g.charAt(0).toUpperCase() + g.slice(1)}
-                  </option>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal />
+                Filters · {report.query.group === "user" ? "Requestor" : report.query.group}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-96 max-w-[calc(100vw-32px)]">
+              <div className="grid grid-cols-2 items-end gap-3">
+                <label className="min-w-32 flex-1 text-xs text-muted-foreground">
+                  Group by
+                  <Select
+                    aria-label="Group report by"
+                    value={report.query.group}
+                    onChange={(e) => update({ group: e.target.value as InsightQuery["group"] })}
+                  >
+                    {(budget
+                      ? ["budget", "department", "category"]
+                      : ["month", "supplier", "user", "department", "category", "account", "item"]
+                    ).map((g) => (
+                      <option key={g} value={g}>
+                        {g === "user" ? "Requestor" : g.charAt(0).toUpperCase() + g.slice(1)}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                {filterKeys.map((k) => (
+                  <label key={k} className="min-w-32 flex-1 text-xs text-muted-foreground">
+                    {k === "user" ? "Requestor" : k.charAt(0).toUpperCase() + k.slice(1)}
+                    <Select
+                      aria-label={`Filter ${k}`}
+                      value={report.query[k] ?? ""}
+                      onChange={(e) => update({ [k]: e.target.value || null })}
+                    >
+                      <option value="">All</option>
+                      {(k === "department"
+                        ? db.departments
+                        : k === "supplier"
+                          ? db.vendors
+                          : db.users
+                      ).map((v) => (
+                        <option key={v.id} value={v.name}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
                 ))}
-              </Select>
-            </label>
-            {filterKeys.map((k) => (
-              <label key={k} className="min-w-32 flex-1 text-xs text-muted-foreground">
-                {k === "user" ? "Requestor" : k.charAt(0).toUpperCase() + k.slice(1)}
-                <Select
-                  aria-label={`Filter ${k}`}
-                  value={report.query[k] ?? ""}
-                  onChange={(e) => update({ [k]: e.target.value || null })}
-                >
-                  <option value="">All</option>
-                  {(k === "department"
-                    ? db.departments
-                    : k === "supplier"
-                      ? db.vendors
-                      : db.users
-                  ).map((v) => (
-                    <option key={v.id} value={v.name}>
-                      {v.name}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            ))}
-            {!budget && (
-              <>
-                <label className="text-xs text-muted-foreground">
-                  From
-                  <TextInput
-                    aria-label="Report start date"
-                    type="date"
-                    value={report.query.start ?? ""}
-                    onChange={(e) => update({ start: e.target.value || null })}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  To
-                  <TextInput
-                    aria-label="Report end date"
-                    type="date"
-                    value={report.query.end ?? ""}
-                    onChange={(e) => update({ end: e.target.value || null })}
-                  />
-                </label>
-              </>
-            )}
-          </div>
+                {!budget && (
+                  <>
+                    <label className="text-xs text-muted-foreground">
+                      From
+                      <TextInput
+                        aria-label="Report start date"
+                        type="date"
+                        value={report.query.start ?? ""}
+                        onChange={(e) => update({ start: e.target.value || null })}
+                      />
+                    </label>
+                    <label className="text-xs text-muted-foreground">
+                      To
+                      <TextInput
+                        aria-label="Report end date"
+                        type="date"
+                        value={report.query.end ?? ""}
+                        onChange={(e) => update({ end: e.target.value || null })}
+                      />
+                    </label>
+                  </>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="flex gap-1 border-b border-border pb-2">
             {(
               [
@@ -202,7 +213,7 @@ export function InsightReport({
               No records match these filters.
             </div>
           ) : view === "chart" ? (
-            <div className="h-64 min-w-0">
+            <div className="h-52 min-w-0 rounded-lg border border-border bg-surface p-3">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={report.groups.slice(0, 20)}
@@ -224,6 +235,7 @@ export function InsightReport({
                     width={50}
                   />
                   <Tooltip
+                    cursor={{ fill: "var(--subtle)" }}
                     formatter={(v) => money(Number(v))}
                     contentStyle={{
                       background: "var(--surface)",
