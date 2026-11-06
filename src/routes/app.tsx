@@ -138,7 +138,7 @@ function SideNav({ collapsed, setCollapsed, pendingCount, role, onChat }: { coll
     },
     { label: "Pay", icon: CreditCard, children: [{ label: "Invoices" }, { label: "Payments" }] },
     { label: "Budgets", icon: PieChart, children: [{ label: "Overview" }, { label: "Forecasts" }] },
-    { label: "Insights", icon: Lightbulb, children: [{ label: "Spend" }, { label: "Adoption", to: "/app/insights/adoption" }, { label: "Reports", to: "/app/reports" }] },
+    { label: "Insights", icon: Lightbulb, children: [{ label: "Ask Insights", to: "/app/insights/ask" }, { label: "Spend" }, { label: "Adoption", to: "/app/insights/adoption" }, { label: "Reports", to: "/app/reports" }] },
     { label: "AI agents", icon: AgentNavIcon, to: "/app/agents" },
     { label: "Expenses", icon: CircleDollarSign },
     { label: "Contracts", icon: FileText },
