@@ -236,19 +236,19 @@ export function InsightReport({
         {!report.available ? (
           <p className="p-4 text-sm text-muted-foreground">This data isn't available for the selected view.</p>
         ) : (
-          <div className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x [&>*]:min-w-0 [&>*]:px-4 [&>*]:py-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] divide-x divide-border [&>*]:min-w-0 [&>*]:px-4 [&>*]:py-3">
             <button type="button" className="min-w-0 text-left" onClick={() => onDrill("")} title={`See the ${recordNoun(q.topic)}`}>
               <p className="text-xs text-muted-foreground">{budget ? "Committed" : `Total ${q.topic === "invoices" ? "invoiced" : "value"}`}</p>
-              <p className="num mt-1 truncate text-lg font-semibold tracking-tight hover:text-primary">{money(report.total)}</p>
+              <p className="mt-1 whitespace-nowrap tabular-nums text-lg font-semibold tracking-tight hover:text-primary">{money(report.total)}</p>
             </button>
             <button type="button" className="text-left" onClick={() => onDrill("")}>
               <p className="text-xs capitalize text-muted-foreground">{recordNoun(q.topic)}</p>
-              <p className="num mt-1 text-lg font-semibold hover:text-primary">{report.count.toLocaleString()}</p>
+              <p className="mt-1 tabular-nums text-lg font-semibold hover:text-primary">{report.count.toLocaleString()}</p>
             </button>
             {report.count > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground">Average {recordNoun(q.topic, 1)}</p>
-                <p className="num mt-1 truncate text-lg font-semibold">{money(report.total / report.count)}</p>
+                <p className="mt-1 whitespace-nowrap tabular-nums text-lg font-semibold">{money(report.total / report.count)}</p>
               </div>
             )}
             {top && report.total > 0 && (
