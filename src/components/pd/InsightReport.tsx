@@ -75,9 +75,14 @@ export function InsightReport({
                   <Info className="size-4 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 space-y-2 text-xs text-muted-foreground">
+              <PopoverContent
+                align="start"
+                className="w-80 space-y-2 text-xs text-muted-foreground"
+              >
                 {report.demo && <p>Sample financial records, not actual company transactions.</p>}
-                {report.notes.map((note) => <p key={note}>{note}</p>)}
+                {report.notes.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
                 <p>Updated {new Date(report.generatedAt).toLocaleString()}</p>
               </PopoverContent>
             </Popover>
