@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
+  ArrowUp,
   BarChart3,
   Boxes,
   CircleDollarSign,
@@ -11,6 +12,8 @@ import {
   History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Conversation,
   ConversationContent,
@@ -243,40 +246,33 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       </div>
     );
   return (
-    <div className="flex min-h-[calc(100dvh-116px)] flex-col md:min-h-[calc(100dvh-60px)]">
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-5 py-4">
-        <div className="flex items-center gap-3">
-          <AgentNavIcon className="size-7 text-primary" />
-          <div>
-            <h1 className="pd-h1">Ask Insights</h1>
-            <p className="text-xs text-muted-foreground">
-              Workspace budgets · Sample invoice and purchase data
-            </p>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => router.navigate({ to: "/app/reports" })}>
-          All reports
-          <ArrowUpRight />
-        </Button>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-5 py-2">
-        <Button variant="outline" size="sm" disabled={busy || !loaded} onClick={newConversation}>
-          <Plus />
-          New conversation
-        </Button>
-        <Button variant="ghost" size="sm" disabled={busy} onClick={() => setHistoryOpen((v) => !v)}>
-          <History />
-          History ({threads.length})
-        </Button>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {threads.find((t) => t.id === threadId)?.title ?? "New conversation"}
-        </span>
-      </div>
-      {historyOpen && (
-        <nav
-          aria-label="Conversation history"
-          className="max-h-56 overflow-y-auto border-b border-border bg-surface px-5 py-2"
-        >
+    <div className="flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7">
+        <h1 className="text-sm font-medium text-muted-foreground">Ask Insights</h1>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="New conversation" disabled={busy || !loaded} onClick={newConversation}>
+                  <Plus className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>New conversation</TooltipContent>
+            </Tooltip>
+            <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="Conversation history" disabled={busy}>
+                      <History className="size-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Past conversations</TooltipContent>
+              </Tooltip>
+              <PopoverContent align="end" className="w-80 max-w-[calc(100vw-32px)] p-2">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground">Past conversations</p>
+                <nav aria-label="Conversation history" className="max-h-64 overflow-y-auto">
           {threads.map((t) => (
             <Button
               key={t.id}
@@ -297,8 +293,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           {!threads.length && (
             <p className="py-3 text-sm text-muted-foreground">No past conversations yet.</p>
           )}
-        </nav>
-      )}
+                </nav>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </TooltipProvider>
+      </div>
       <div
         className={cn(
           "grid min-w-0 flex-1",
@@ -308,63 +308,23 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         <div
           className={cn(
             "flex min-w-0 flex-col",
+            !messages.length && "justify-center px-5 pb-16 sm:px-7",
             report ? "border-border lg:border-r" : "mx-auto w-full max-w-3xl",
           )}
         >
-          <Conversation
+          {!messages.length && (
+            <div className="mb-6 text-center">
+              <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
+              <h2 className="text-2xl font-semibold sm:text-3xl">What would you like to know?</h2>
+            </div>
+          )}
+          {!!messages.length && <Conversation
             className={cn(
               "min-h-72",
               report ? "max-h-[45dvh] lg:max-h-[calc(100dvh-320px)]" : "max-h-[calc(100dvh-280px)]",
             )}
           >
             <ConversationContent className="gap-6 p-5 sm:p-7">
-              {!messages.length && (
-                <div className="py-7 sm:py-12">
-                  <div className="mb-5 inline-flex size-14 items-center justify-center rounded-lg border border-primary/20 bg-accent">
-                    <AgentNavIcon className="size-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-semibold">What would you like to understand?</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Spend, purchases and budgets — one question at a time.
-                  </p>
-                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                    {[
-                      {
-                        icon: FileText,
-                        label: "Invoiced spend",
-                        text: "Show invoiced spend for the last 12 months",
-                      },
-                      {
-                        icon: CircleDollarSign,
-                        label: "Purchase commitments",
-                        text: "How much have we committed in purchase orders this year?",
-                      },
-                      {
-                        icon: Boxes,
-                        label: "Purchased items",
-                        text: "Which items did we purchase this year?",
-                      },
-                      {
-                        icon: BarChart3,
-                        label: "Budget consumption",
-                        text: "Show current budget consumption by department",
-                      },
-                    ].map((s) => (
-                      <Button
-                        key={s.label}
-                        variant="outline"
-                        className="h-auto justify-start whitespace-normal bg-surface p-4 text-left"
-                        disabled={!loaded || busy}
-                        onClick={() => ask(s.text)}
-                      >
-                        <s.icon className="text-primary" />
-                        <span className="flex-1">{s.label}</span>
-                        <ArrowUpRight className="text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
               {messages.map((m) => (
                 <Message key={m.id} from={m.role}>
                   <MessageContent
@@ -427,8 +387,8 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               )}
             </ConversationContent>
             <ConversationScrollButton />
-          </Conversation>
-          <div className="mt-auto space-y-2 border-t border-border bg-surface p-4 sm:p-5">
+          </Conversation>}
+          <div className={cn("space-y-2", messages.length && "mt-auto p-4 sm:p-5")}>
             {report && !busy && (
               <div className="flex flex-wrap gap-1">
                 {[
@@ -450,7 +410,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 ))}
               </div>
             )}
-            <PromptInput onSubmit={({ text }) => ask(text)} className="bg-surface">
+            <PromptInput onSubmit={({ text }) => ask(text)} className="[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface">
               <PromptInputTextarea
                 ref={input}
                 aria-label="Ask a financial question"
@@ -460,16 +420,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
+                className="min-h-16 px-4 pt-4 text-sm"
               />
-              <PromptInputFooter>
-                <span className="text-[11px] text-muted-foreground">
-                  Read-only · Saved to your account
-                </span>
+              <PromptInputFooter className="justify-end px-3 pb-3">
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
                   disabled={!loaded || (!busy && !question.trim())}
-                />
+                  aria-label={busy ? "Stop" : "Send question"}
+                >
+                  {!busy && <ArrowUp className="size-4" />}
+                </PromptInputSubmit>
               </PromptInputFooter>
             </PromptInput>
             {error && (
@@ -478,6 +439,21 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               </p>
             )}
           </div>
+          {!messages.length && (
+            <div className="mt-4 flex flex-wrap justify-center gap-x-2 gap-y-1">
+              {[
+                { icon: FileText, label: "Spend over 12 months", text: "Show invoiced spend for the last 12 months" },
+                { icon: CircleDollarSign, label: "Open purchase orders", text: "How much have we committed in purchase orders this year?" },
+                { icon: Boxes, label: "Purchased items", text: "Which items did we purchase this year?" },
+                { icon: BarChart3, label: "Budget by department", text: "Show current budget consumption by department" },
+              ].map((s) => (
+                <Button key={s.label} variant="ghost" size="sm" className="h-auto min-h-9 whitespace-normal text-xs text-muted-foreground" disabled={!loaded || busy} onClick={() => { setQuestion(s.text); input.current?.focus(); }}>
+                  <s.icon className="size-3.5" />
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
         {report && (
           <div
