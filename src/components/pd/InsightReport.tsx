@@ -5,7 +5,6 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGri
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, TextInput } from "@/components/pd/form";
-import { Tool, ToolHeader, ToolContent, ToolInput } from "@/components/ai-elements/tool";
 import { type InsightReport as Report, type InsightQuery } from "@/lib/pd/insights";
 import { useDB } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
@@ -76,8 +75,15 @@ export function InsightReport({
                   <Info className="size-4 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 text-xs text-muted-foreground">
-                {report.notes[0] ?? "Calculated from the records shown in this report."}
+              <PopoverContent
+                align="start"
+                className="w-80 space-y-2 text-xs text-muted-foreground"
+              >
+                {report.demo && <p>Sample financial records, not actual company transactions.</p>}
+                {report.notes.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
+                <p>Updated {new Date(report.generatedAt).toLocaleString()}</p>
               </PopoverContent>
             </Popover>
           </div>
@@ -365,29 +371,6 @@ export function InsightReport({
           </div>
         )}
       </div>
-      <div className="space-y-1 text-xs text-muted-foreground">
-        {report.demo && (
-          <p className="font-medium text-primary">Demo data · Sample financial records</p>
-        )}
-        {report.notes.map((n) => (
-          <p key={n}>{n}</p>
-        ))}
-        <p>
-          Read from workspace version {report.version} ·{" "}
-          {new Date(report.generatedAt).toLocaleString()}
-        </p>
-      </div>
-      <Tool defaultOpen={false} className="border-0">
-        <ToolHeader
-          type="tool-create_report"
-          state="output-available"
-          title="Report calculation"
-          className="px-0 py-2 [&>div>span:last-child]:hidden"
-        />
-        <ToolContent>
-          <ToolInput input={report.query} />
-        </ToolContent>
-      </Tool>
     </section>
   );
 }
