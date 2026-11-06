@@ -443,7 +443,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           >
             <PromptInput
               onSubmit={({ text }) => ask(text)}
-              className={cn("[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface", !showingConversation && "relative")}
+              className={cn(
+                "[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface",
+                !showingConversation && "relative",
+              )}
             >
               <PromptInputTextarea
                 ref={input}
@@ -454,9 +457,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className={cn("min-h-12 px-4 pt-3 text-sm", !showingConversation && "max-h-32 min-h-14 py-4 pr-16")}
+                className={cn(
+                  "min-h-12 px-4 pt-3 text-sm",
+                  !showingConversation && "max-h-32 min-h-14 py-4 pr-16",
+                )}
               />
-              <PromptInputFooter className={cn("justify-end px-3 pb-3", !showingConversation && "absolute bottom-0 right-0 w-auto p-3")}>
+              <PromptInputFooter
+                className={cn(
+                  "justify-end px-3 pb-3",
+                  !showingConversation && "absolute bottom-0 right-0 w-auto p-3",
+                )}
+              >
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
