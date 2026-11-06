@@ -411,7 +411,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                         m.role === "user" && "bg-secondary text-secondary-foreground",
                       )}
                     >
-                      {m.parts.map((p, i) =>
+                      {[...m.parts].sort((a, b) => (a.type === "text" ? 0 : 1) - (b.type === "text" ? 0 : 1)).map((p, i) =>
                         p.type === "text" ? (
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
