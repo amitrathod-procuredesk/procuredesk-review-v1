@@ -370,7 +370,7 @@ export function InsightReport({
                         <p className="max-w-56 truncate text-xs text-muted-foreground">{r.item || r.label}</p>
                       </td>
                       <td>{budget ? r.department : r.supplier}</td>
-                      <td className="text-right tabular-nums">{money(r.amount)}</td>
+                      <td className="whitespace-nowrap text-right tabular-nums">{money(r.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
