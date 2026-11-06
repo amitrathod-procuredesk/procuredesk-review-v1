@@ -8,7 +8,7 @@ import {
   Boxes,
   CircleDollarSign,
   FileText,
-  Plus,
+  SquarePen,
   History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -250,10 +250,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       <div
         className={cn(
           "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
-          showingConversation && "border-b border-border bg-surface",
+          showingConversation && "border-b border-border bg-surface md:hidden",
         )}
       >
-        <h1 className="text-sm font-medium text-muted-foreground">Ask Insights</h1>
+        <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
         <TooltipProvider>
           <div className="flex items-center gap-1">
             <Tooltip>
@@ -265,7 +265,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   disabled={busy || !loaded}
                   onClick={newConversation}
                 >
-                  <Plus className="size-4" />
+                  <SquarePen className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>New conversation</TooltipContent>
@@ -356,6 +356,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           <div key={i} className="space-y-2">
                             <Tool defaultOpen={false}>
                               <ToolHeader
+                                className="px-0 py-2 [&>div>svg]:hidden [&>div>span:last-child]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
                                 type="tool-create_report"
                                 state="output-available"
                                 title={`Read ${p.report.count} records`}
@@ -407,7 +408,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   </Message>
                 ))}
                 {busy && (
-                  <Tool defaultOpen={false}>
+                            <Tool defaultOpen={false}>
                     <ToolHeader
                       type="tool-create_report"
                       state="input-available"
