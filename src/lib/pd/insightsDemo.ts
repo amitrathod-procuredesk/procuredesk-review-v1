@@ -64,7 +64,12 @@ export function demoInsightLedger(db: DB): DemoLedger {
         amount,
       };
       const id = 10000 + month * 6 + i;
-      if (month < 14 || i === 5 || i % 2 === 1) result.invoices.push({ ...base, id: `INV-DEMO-${id}`, amount: month >= 14 && i !== 5 ? Math.round(amount * 0.5 * 100) / 100 : amount });
+      if (month < 14 || i === 5 || i % 2 === 1)
+        result.invoices.push({
+          ...base,
+          id: `INV-DEMO-${id}`,
+          amount: month >= 14 && i !== 5 ? Math.round(amount * 0.5 * 100) / 100 : amount,
+        });
       // Recent open POs include partially invoiced balances; historical POs are fully closed.
       if (month >= 14 && i !== 5)
         result.orders.push({

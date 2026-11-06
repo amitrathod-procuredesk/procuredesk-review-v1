@@ -431,7 +431,18 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           key={i}
                           variant="outline"
                           className="h-auto w-full justify-start whitespace-normal bg-surface p-3 text-left"
-                          onClick={() => { setReport(p.report); if (window.innerWidth < 1024) setTimeout(()=>reportPanel.current?.scrollIntoView({behavior:"smooth",block:"start"}),0); }}
+                          onClick={() => {
+                            setReport(p.report);
+                            if (window.innerWidth < 1024)
+                              setTimeout(
+                                () =>
+                                  reportPanel.current?.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "start",
+                                  }),
+                                0,
+                              );
+                          }}
                         >
                           <BarChart3 className="text-primary" />
                           <span className="flex-1 text-foreground">
@@ -519,7 +530,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           </div>
         </div>
         {report && (
-          <div ref={reportPanel} className="min-w-0 scroll-mt-4 border-t border-border bg-surface p-5 sm:p-7 lg:border-t-0">
+          <div
+            ref={reportPanel}
+            className="min-w-0 scroll-mt-4 border-t border-border bg-surface p-5 sm:p-7 lg:border-t-0"
+          >
             <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
           </div>
         )}
