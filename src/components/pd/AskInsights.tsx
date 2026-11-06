@@ -148,7 +148,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       if (!threadId) {
         try {
           const t = await createThread();
-        sessionStorage.setItem(`pd-insights-pending-${t.id}`, text);
+          sessionStorage.setItem(`pd-insights-pending-${t.id}`, text);
           await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
         } catch (e) {
           setError(e instanceof Error ? e.message : "Could not start conversation");
@@ -361,40 +361,52 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
                           <div key={i} className="space-y-2">
-                          <Tool defaultOpen={false}>
-                            <ToolHeader type="tool-create_report" state="output-available" title={`Read ${p.report.count} records`} />
-                            <ToolContent><p className="text-xs text-muted-foreground">{p.report.demo ? "Sample financial records" : "Current workspace records"}</p></ToolContent>
-                          </Tool>
-                          <Button
-                            key={i}
-                            variant={
-                              report?.generatedAt === p.report.generatedAt ? "secondary" : "outline"
-                            }
-                            className="h-auto w-full justify-start whitespace-normal p-3 text-left"
-                            onClick={() => {
-                              setReport(p.report);
-                              if (window.innerWidth < 1024)
-                                setTimeout(
-                                  () =>
-                                    reportPanel.current?.scrollIntoView({
-                                      behavior: "smooth",
-                                      block: "start",
-                                    }),
-                                  0,
-                                );
-                            }}
-                          >
-                            <BarChart3 className="text-primary" />
-                            <span className="flex-1 text-foreground">
-                              {p.report.title}
-                              <span className="block text-xs text-muted-foreground">
-                                {p.report.available
-                                  ? `${p.report.count} records`
-                                  : "Data not available"}
+                            <Tool defaultOpen={false}>
+                              <ToolHeader
+                                type="tool-create_report"
+                                state="output-available"
+                                title={`Read ${p.report.count} records`}
+                              />
+                              <ToolContent>
+                                <p className="text-xs text-muted-foreground">
+                                  {p.report.demo
+                                    ? "Sample financial records"
+                                    : "Current workspace records"}
+                                </p>
+                              </ToolContent>
+                            </Tool>
+                            <Button
+                              key={i}
+                              variant={
+                                report?.generatedAt === p.report.generatedAt
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                              className="h-auto w-full justify-start whitespace-normal p-3 text-left"
+                              onClick={() => {
+                                setReport(p.report);
+                                if (window.innerWidth < 1024)
+                                  setTimeout(
+                                    () =>
+                                      reportPanel.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                      }),
+                                    0,
+                                  );
+                              }}
+                            >
+                              <BarChart3 className="text-primary" />
+                              <span className="flex-1 text-foreground">
+                                {p.report.title}
+                                <span className="block text-xs text-muted-foreground">
+                                  {p.report.available
+                                    ? `${p.report.count} records`
+                                    : "Data not available"}
+                                </span>
                               </span>
-                            </span>
-                            <ArrowUpRight className="text-muted-foreground" />
-                          </Button>
+                              <ArrowUpRight className="text-muted-foreground" />
+                            </Button>
                           </div>
                         ),
                       )}
