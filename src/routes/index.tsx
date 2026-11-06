@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { signInInsights } from "@/lib/pd/insights.functions";
 import { Button } from "@/components/ui/button";
 import { login, useDB, useHydrated, useMe } from "@/lib/pd/store";
 import { AiGlyph } from "@/components/pd/bits";
@@ -20,6 +22,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Login() {
+  const startSession = useServerFn(signInInsights);
+  const [signingIn, setSigningIn] = useState(false);
   const nav = useNavigate();
   const db = useDB();
   const me = useMe();
@@ -33,13 +37,19 @@ function Login() {
     if (hydrated && me) nav({ to: "/app/requests", replace: true });
   }, [hydrated, me, nav]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email || !password) return setError("Enter your email and password.");
-    const u = login(email, password);
-    if (!u) return setError("That email and password don't match an active account.");
-    nav({ to: "/app/requests", replace: true });
+    setSigningIn(true);
+    try {
+      await startSession({ data: { email, password } });
+      const u = login(email, password);
+      if (!u) return setError("That email and password don't match an active account.");
+      nav({ to: "/app/requests", replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not sign in. Please try again.");
+    } finally { setSigningIn(false); }
   };
 
   return (
@@ -73,7 +83,7 @@ function Login() {
               <button type="button" className="w-full text-xs text-muted-foreground hover:text-foreground" onClick={() => setForgot(false)}>Back to sign in</button>
             </div>
           ) : (
-            <Button type="submit" className="w-full">Sign in</Button>
+            <Button type="submit" className="w-full" disabled={signingIn}>{signingIn ? "Signing in…" : "Sign in"}</Button>
           )}
         </form>
         <div className="mx-auto w-full max-w-sm">
