@@ -79,6 +79,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.01 270);
   --primary: oklch(0.51 0.23 277);
+  --shadow-composer: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent), 0 8px 28px -12px color-mix(in oklab, var(--primary) 22%, transparent);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.955 0.004 270);
   --secondary-foreground: oklch(0.25 0.012 250);

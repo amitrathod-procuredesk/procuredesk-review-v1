@@ -44,6 +44,11 @@ import {
 import { useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
 export function AskInsights({ threadId }: { threadId?: string }) {
   const me = useMe();
   const router = useRouter();
@@ -54,12 +59,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [threads, setThreads] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const newConversation = async () => {
-    try {
-      const t = await createThread();
-      await router.navigate({ to: "/app/insights/ask/$threadId", params: { threadId: t.id } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create conversation");
-    }
+    // A new conversation is only created when the user actually submits a
+    // question; this just returns to the empty starting screen.
+    setQuestion("");
+    setError("");
+    if (threadId) await router.navigate({ to: "/app/insights/ask" });
+    else input.current?.focus();
   };
   const [messages, setMessages] = useState<InsightMessage[]>([]);
   const [version, setVersion] = useState(0);
@@ -104,6 +109,16 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           setMessages(threadId ? v.messages : []);
           setVersion(threadId ? v.version : 0);
           setLoaded(true);
+          // An empty thread with nothing waiting to be asked has no report to
+          // show: return to the starting screen instead of an empty report view.
+          if (
+            threadId &&
+            !v.messages.length &&
+            !sessionStorage.getItem(`pd-insights-pending-${threadId}`)
+          ) {
+            void router.navigate({ to: "/app/insights/ask", replace: true });
+            return;
+          }
           const last = v.messages
             .flatMap((m) => m.parts)
             .filter((p) => p.type === "report")
@@ -243,7 +258,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   return (
     <div
       className={cn(
-        "flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]",
+        "relative flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]",
         showingConversation && "md:h-[calc(100dvh-60px)] md:min-h-0 md:overflow-hidden",
       )}
     >
@@ -256,19 +271,25 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         <div
           className={cn(
             "flex min-h-0 min-w-0 flex-col",
-            !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
+            !messages.length && "justify-center px-5 pb-[12vh] pt-16 sm:px-7",
             showingConversation
               ? "border-border bg-surface md:border-r"
-              : "mx-auto w-full max-w-xl",
+              : "mx-auto w-full max-w-2xl",
           )}
         >
           <div
             className={cn(
-              "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
-              showingConversation && "border-b border-border bg-surface",
+              "flex shrink-0 items-center justify-between gap-3",
+              showingConversation
+                ? "border-b border-border bg-surface px-5 py-3 sm:px-7"
+                : "absolute right-3 top-3 sm:right-5",
             )}
           >
-            <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
+            <h1
+              className={cn("text-sm font-semibold text-foreground", !showingConversation && "sr-only")}
+            >
+              Ask Insights
+            </h1>
             <TooltipProvider>
               <div className="flex items-center gap-1">
                 <Tooltip>
@@ -335,9 +356,15 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             </TooltipProvider>
           </div>
           {!messages.length && (
-            <div className="mb-6 text-center">
-              <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
-              <h2 className="text-2xl font-semibold">Ask about your spend or budget</h2>
+            <div className="mb-7 text-center">
+              <AgentNavIcon className="mx-auto mb-5 size-7 text-primary" />
+              <h2 className="text-balance text-[26px] font-semibold tracking-tight text-foreground sm:text-3xl">
+                {greeting()}
+                {me?.name ? `, ${me.name.split(" ")[0]}` : ""}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Ask anything about spend, purchase orders, invoices or budgets.
+              </p>
             </div>
           )}
           {!!messages.length && (
@@ -470,8 +497,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             <PromptInput
               onSubmit={({ text }) => ask(text)}
               className={cn(
-                "[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface",
-                "relative",
+                "[&>[data-slot=input-group]]:bg-surface",
+                showingConversation
+                  ? "relative [&>[data-slot=input-group]]:rounded-lg"
+                  : "[&>[data-slot=input-group]]:rounded-2xl [&>[data-slot=input-group]]:shadow-[var(--shadow-composer)]",
               )}
             >
               <PromptInputTextarea
@@ -483,9 +512,25 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className={cn("max-h-32 min-h-14 px-4 py-4 pr-16 text-sm")}
+                className={cn(
+                  "text-sm",
+                  showingConversation
+                    ? "max-h-32 min-h-14 px-4 py-4 pr-16"
+                    : "max-h-48 min-h-16 px-5 pt-4 pb-1 text-[15px]",
+                )}
               />
-              <PromptInputFooter className={cn("absolute bottom-0 right-0 w-auto justify-end p-3")}>
+              <PromptInputFooter
+                className={cn(
+                  showingConversation
+                    ? "absolute bottom-0 right-0 w-auto justify-end p-3"
+                    : "justify-between px-3 pb-3 pt-1",
+                )}
+              >
+                {!showingConversation && (
+                  <span className="pl-2 text-xs text-muted-foreground">
+                    Answers use your live ProcureDesk records
+                  </span>
+                )}
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
@@ -503,7 +548,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             )}
           </div>
           {!messages.length && (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
               {[
                 {
                   icon: FileText,
@@ -530,7 +575,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                   key={s.label}
                   variant="outline"
                   size="sm"
-                  className="h-auto min-h-10 justify-start whitespace-normal bg-surface text-left text-xs text-muted-foreground"
+                  className="h-8 rounded-full bg-surface px-3.5 text-xs font-normal text-muted-foreground shadow-none hover:text-foreground"
                   disabled={!loaded || busy}
                   onClick={() => {
                     setQuestion(s.text);
