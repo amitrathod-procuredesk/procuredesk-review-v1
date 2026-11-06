@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ArrowUp,
@@ -73,6 +73,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const reportPanel = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const busy = status === "submitted" || status === "streaming";
+  const showingConversation = messages.length > 0;
   const currentUserId = me?.id;
   const currentEmail = me?.email;
   const currentPassword = me?.password;
@@ -141,7 +142,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       setRefreshing(false);
     }
   };
-  const ask = async (text: string) => {
+  const ask = useCallback(async (text: string) => {
     if (!text.trim() || busy) return;
     if (!threadId) {
       try {
@@ -233,20 +234,19 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       abort.current = null;
       input.current?.focus();
     }
-  };
+  }, [busy, threadId, createThread, router, messages, version]);
   useEffect(() => {
     if (threadId && loaded) {
       const pending = sessionStorage.getItem("pd-insights-pending");
       if (pending) {
         sessionStorage.removeItem("pd-insights-pending");
-        setQuestion(pending);
-        input.current?.focus();
+        void ask(pending);
       }
     }
-  }, [threadId, loaded]);
+  }, [threadId, loaded, ask]);
   return (
-    <div className="flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7">
+    <div className={cn("flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]", showingConversation && "md:h-[calc(100dvh-60px)] md:min-h-0 md:overflow-hidden")}>
+      <div className={cn("flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7", showingConversation && "border-b border-border bg-surface")}>
         <h1 className="text-sm font-medium text-muted-foreground">Ask Insights</h1>
         <TooltipProvider>
           <div className="flex items-center gap-1">
@@ -313,15 +313,15 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       </div>
       <div
         className={cn(
-          "grid min-w-0 flex-1",
-          report && "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]",
+          "grid min-h-0 min-w-0 flex-1",
+          showingConversation && "md:grid-cols-[minmax(260px,34%)_minmax(0,1fr)]",
         )}
       >
         <div
           className={cn(
-            "flex min-w-0 flex-col",
+            "flex min-h-0 min-w-0 flex-col",
             !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
-            report ? "border-border lg:border-r" : "mx-auto w-full max-w-3xl",
+            showingConversation ? "border-border bg-surface md:border-r" : "mx-auto w-full max-w-3xl",
           )}
         >
           {!messages.length && (
@@ -333,19 +333,16 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           {!!messages.length && (
             <Conversation
               className={cn(
-                "min-h-72",
-                report
-                  ? "max-h-[45dvh] lg:max-h-[calc(100dvh-320px)]"
-                  : "max-h-[calc(100dvh-280px)]",
+                "min-h-0 flex-1 max-h-[50dvh] md:max-h-none",
               )}
             >
-              <ConversationContent className="gap-6 p-5 sm:p-7">
+              <ConversationContent className="gap-5 p-4 sm:p-5">
                 {messages.map((m) => (
                   <Message key={m.id} from={m.role}>
                     <MessageContent
                       className={cn(
                         "min-w-0 max-w-full",
-                        m.role === "user" && "bg-primary text-primary-foreground",
+                        m.role === "user" && "bg-secondary text-secondary-foreground",
                       )}
                     >
                       {m.parts.map((p, i) =>
@@ -354,8 +351,8 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                         ) : (
                           <Button
                             key={i}
-                            variant="outline"
-                            className="h-auto w-full justify-start whitespace-normal bg-surface p-3 text-left"
+                            variant={report?.generatedAt === p.report.generatedAt ? "secondary" : "outline"}
+                            className="h-auto w-full justify-start whitespace-normal p-3 text-left"
                             onClick={() => {
                               setReport(p.report);
                               if (window.innerWidth < 1024)
@@ -385,7 +382,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                     </MessageContent>
                   </Message>
                 ))}
-                {busy && <Shimmer>Reading current records…</Shimmer>}
+                {busy && (
+                  <Tool defaultOpen={false}>
+                    <ToolHeader type="tool-create_report" state="input-available" title={report ? "Writing your summary" : "Reading records"} />
+                    <ToolContent><Shimmer>{report ? "Preparing the explanation…" : "Reading current records…"}</Shimmer></ToolContent>
+                  </Tool>
+                )}
                 {error && (
                   <Tool defaultOpen={false}>
                     <ToolHeader
@@ -404,7 +406,16 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               <ConversationScrollButton />
             </Conversation>
           )}
-          <div className={cn("space-y-2", messages.length && "mt-auto p-4 sm:p-5")}>
+          <div className={cn("space-y-2", messages.length && "shrink-0 border-t border-border p-4")}>
+            <PromptInput
+              onSubmit={({ text }) => ask(text)}
+              className="[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface"
+            >
+              <PromptInputTextarea ref={input} aria-label="Ask a financial question" placeholder={messages.length ? "Ask a follow-up…" : "Ask about your spend or budget…"} value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={4000} className="min-h-12 px-4 pt-3 text-sm" />
+              <PromptInputFooter className="justify-end px-3 pb-3">
+                <PromptInputSubmit status={status} onStop={() => abort.current?.abort()} disabled={!loaded || (!busy && !question.trim())} aria-label={busy ? "Stop" : "Send question"}>{!busy && <ArrowUp className="size-4" />}</PromptInputSubmit>
+              </PromptInputFooter>
+            </PromptInput>
             {report && !busy && (
               <div className="flex flex-wrap gap-1">
                 {[
@@ -412,13 +423,12 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                     ? ["By category instead"]
                     : ["Break it down by supplier", "By requestor instead"]),
                   "Show current budget consumption",
-                  "Show submitted request value for the last 12 months",
                 ].map((t) => (
                   <Button
                     key={t}
                     size="sm"
-                    variant="ghost"
-                    className="h-auto whitespace-normal text-left text-xs"
+                    variant="outline"
+                    className="h-auto min-h-7 whitespace-normal text-left text-xs"
                     onClick={() => ask(t)}
                   >
                     {t}
@@ -426,32 +436,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 ))}
               </div>
             )}
-            <PromptInput
-              onSubmit={({ text }) => ask(text)}
-              className="[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface"
-            >
-              <PromptInputTextarea
-                ref={input}
-                aria-label="Ask a financial question"
-                placeholder={
-                  messages.length ? "Ask a follow-up…" : "Ask about your spend or budget…"
-                }
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                maxLength={4000}
-                className="min-h-16 px-4 pt-4 text-sm"
-              />
-              <PromptInputFooter className="justify-end px-3 pb-3">
-                <PromptInputSubmit
-                  status={status}
-                  onStop={() => abort.current?.abort()}
-                  disabled={!loaded || (!busy && !question.trim())}
-                  aria-label={busy ? "Stop" : "Send question"}
-                >
-                  {!busy && <ArrowUp className="size-4" />}
-                </PromptInputSubmit>
-              </PromptInputFooter>
-            </PromptInput>
             {error && (
               <p role="alert" className="text-xs text-destructive">
                 {error}
@@ -500,12 +484,16 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             </div>
           )}
         </div>
-        {report && (
+        {showingConversation && (
           <div
             ref={reportPanel}
-            className="min-w-0 scroll-mt-4 border-t border-border bg-surface p-5 sm:p-7 lg:border-t-0"
+            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border p-4 sm:p-6 md:border-t-0"
           >
-            <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
+            {report ? <InsightReport report={report} loading={refreshing} onRefresh={updateReport} /> : (
+              <div className="flex min-h-64 h-full items-center justify-center text-center">
+                <div className="space-y-3"><BarChart3 className="mx-auto size-8 text-primary" /><Shimmer>{busy ? "Preparing your report…" : "Your report will appear here"}</Shimmer></div>
+              </div>
+            )}
           </div>
         )}
       </div>
