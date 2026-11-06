@@ -101,21 +101,14 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       .then((v) => {
         if (active) {
           setThreads(v.threads);
-          if (!threadId && v.selectedId) {
-            void router.navigate({
-              to: "/app/insights/ask/$threadId",
-              params: { threadId: v.selectedId },
-              replace: true,
-            });
-          }
-          setMessages(v.messages);
-          setVersion(v.version);
+          setMessages(threadId ? v.messages : []);
+          setVersion(threadId ? v.version : 0);
           setLoaded(true);
           const last = v.messages
             .flatMap((m) => m.parts)
             .filter((p) => p.type === "report")
             .at(-1);
-          if (last?.type === "report") setReport(last.report);
+          if (threadId && last?.type === "report") setReport(last.report);
         }
       })
       .catch(() => {
@@ -336,13 +329,13 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             !messages.length && "justify-center px-5 pb-8 sm:px-7 sm:pb-16",
             showingConversation
               ? "border-border bg-surface md:border-r"
-              : "mx-auto w-full max-w-3xl",
+              : "mx-auto w-full max-w-xl",
           )}
         >
           {!messages.length && (
             <div className="mb-6 text-center">
               <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
-              <h2 className="text-2xl font-semibold sm:text-3xl">What would you like to know?</h2>
+              <h2 className="text-2xl font-semibold">Ask about your spend or budget</h2>
             </div>
           )}
           {!!messages.length && (
@@ -450,7 +443,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           >
             <PromptInput
               onSubmit={({ text }) => ask(text)}
-              className="[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface"
+              className={cn("[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface", !showingConversation && "relative")}
             >
               <PromptInputTextarea
                 ref={input}
@@ -461,9 +454,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className="min-h-12 px-4 pt-3 text-sm"
+                className={cn("min-h-12 px-4 pt-3 text-sm", !showingConversation && "max-h-32 min-h-14 py-4 pr-16")}
               />
-              <PromptInputFooter className="justify-end px-3 pb-3">
+              <PromptInputFooter className={cn("justify-end px-3 pb-3", !showingConversation && "absolute bottom-0 right-0 w-auto p-3")}>
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
@@ -501,7 +494,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             )}
           </div>
           {!messages.length && (
-            <div className="mt-4 flex flex-wrap justify-center gap-x-2 gap-y-1">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {[
                 {
                   icon: FileText,
@@ -526,9 +519,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               ].map((s) => (
                 <Button
                   key={s.label}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="h-auto min-h-9 whitespace-normal text-xs text-muted-foreground"
+                  className="h-auto min-h-10 justify-start whitespace-normal bg-surface text-left text-xs text-muted-foreground"
                   disabled={!loaded || busy}
                   onClick={() => {
                     setQuestion(s.text);
