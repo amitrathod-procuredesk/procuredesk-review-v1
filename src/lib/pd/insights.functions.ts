@@ -1,5 +1,5 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
-import { getCookie, setCookie } from "@tanstack/react-start/server";
+import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { readWorkspaceSnapshot } from "./workspace.functions";
 import type { DB } from "./types";
@@ -63,8 +63,22 @@ export const signInInsights = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const loadInsights = createServerFn({ method: "GET" }).handler(async () => {
+export const signOutInsights = createServerFn({ method: "POST" }).handler(async () => {
+  const token = getCookie("pd-insights-session");
+  if (token) {
+    const c = await client();
+    const { error } = await c.from("insights_sessions").delete().eq("token_hash", await hash(token));
+    if (error) throw new Error("Could not end your Insights session.");
+  }
+  deleteCookie("pd-insights-session", { path: "/" });
+  return { ok: true };
+});
+
+export const loadInsights = createServerFn({ method: "GET" })
+.inputValidator((v: unknown) => z.object({ userId: z.string().min(1).max(120) }).parse(v))
+.handler(async ({ data: input }) => {
   const { c, userId } = await insightsContext();
+  if (userId !== input.userId) throw new Error("Confirm your password to switch Insights accounts.");
   const { data, error } = await c
     .from("insights_history")
     .select("messages, version")

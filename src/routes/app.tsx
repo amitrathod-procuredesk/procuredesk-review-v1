@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AlarmClock, Box, ArrowLeftRight, ShieldCheck, Briefcase, ChevronDown, CircleDollarSign, ClipboardCheck, CreditCard, FileText, HeartHandshake, Lightbulb, LogOut, MessageSquare, MessageSquarePlus, ChevronLeft, ChevronRight, PieChart, RotateCcw, Search, Settings2, ShoppingBasket, WalletCards } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { signOutInsights } from "@/lib/pd/insights.functions";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -246,9 +248,15 @@ function AdminSideNav({ collapsed, setCollapsed }: { collapsed: boolean; setColl
 }
 
 function UserMenu({ compact, adminMode }: { compact?: boolean; adminMode?: boolean }) {
-  const me = useMe()!;
+  const me = useMe();
   const db = useDB();
   const nav = useNavigate();
+  const endInsights = useServerFn(signOutInsights);
+  const endSession = async () => {
+    try { await endInsights(); return true; }
+    catch { toast.error("Could not end your Insights session. Please try again."); return false; }
+  };
+  if (!me) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={compact ? "flex items-center gap-1.5 rounded-full bg-subtle py-1 pl-1 pr-2 transition-colors hover:bg-sidebar-accent" : "flex items-center gap-2 border-t border-sidebar-border px-4 py-3 text-left hover:bg-sidebar-accent"}>
@@ -277,14 +285,14 @@ function UserMenu({ compact, adminMode }: { compact?: boolean; adminMode?: boole
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">Switch demo user</DropdownMenuLabel>
         {db.users.filter((u) => u.active && u.id !== me.id).slice(0, 8).map((u) => (
-          <DropdownMenuItem key={u.id} onClick={() => { mutate((d) => (d.session.userId = u.id)); if (!(adminMode && u.role === "admin")) nav({ to: "/app/requests" }); }}>
+          <DropdownMenuItem key={u.id} onClick={async () => { if (!await endSession()) return; mutate((d) => (d.session.userId = u.id)); if (!(adminMode && u.role === "admin")) nav({ to: "/app/requests" }); }}>
             <UserAvatar user={u} /> <span className="truncate">{u.name}</span>
             <span className="ml-auto text-[11px] capitalize text-muted-foreground">{u.role}</span>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => { resetDemo(); nav({ to: "/" }); }}><RotateCcw /> Reset demo data</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { logout(); nav({ to: "/" }); }}><LogOut /> Sign out</DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => { if (!await endSession()) return; resetDemo(); nav({ to: "/" }); }}><RotateCcw /> Reset demo data</DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => { if (!await endSession()) return; logout(); nav({ to: "/" }); }}><LogOut /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
