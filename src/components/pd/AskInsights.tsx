@@ -29,7 +29,7 @@ import {
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Tool, ToolHeader, ToolContent } from "@/components/ai-elements/tool";
 import { AgentNavIcon } from "@/components/pd/agents/AgentNavIcon";
-import { InsightReport } from "@/components/pd/InsightReport";
+import { InsightReport, periodLabel, recordNoun } from "@/components/pd/InsightReport";
 import {
   loadInsights,
   refreshInsight,
@@ -43,6 +43,37 @@ import {
 } from "@/lib/pd/insights";
 import { useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
+
+function followUps(r: Report): { label: string; ask?: string }[] {
+  const q = r.query;
+  const out: { label: string; ask?: string }[] = [];
+  const noun = recordNoun(q.topic);
+  if (q.topic === "budgets") {
+    if (q.group !== "department") out.push({ label: "By department", ask: "Break it down by department instead." });
+    if (q.group !== "category") out.push({ label: "By category", ask: "Break it down by category instead." });
+    out.push({ label: "Invoiced spend instead", ask: "Show invoiced spend for this year instead." });
+  } else {
+    if (q.group === "month") {
+      out.push({ label: "By supplier", ask: "Break it down by supplier instead." });
+      out.push({ label: "By department", ask: "Break it down by department instead." });
+    } else {
+      out.push({ label: "Month by month", ask: "Break it down by month instead." });
+      const top = r.groups[0]?.label;
+      if (top && q.group === "supplier")
+        out.push({ label: `${top} month by month`, ask: `Show ${top} month by month.` });
+      else if (q.group !== "supplier") out.push({ label: "By supplier", ask: "Break it down by supplier instead." });
+    }
+    const y = q.start?.slice(0, 4);
+    if (y && q.start === `${y}-01-01`) {
+      const prev = Number(y) - 1;
+      out.push({ label: `${prev} instead`, ask: `Show the same for ${prev} instead (Jan 1 – Dec 31, ${prev}).` });
+    } else out.push({ label: "Last year only", ask: "Limit this to last year." });
+    if (q.topic === "invoices") out.push({ label: "Committed instead", ask: "Show committed purchase orders for the same period instead." });
+    else if (q.topic === "orders") out.push({ label: "Invoiced instead", ask: "Show invoiced spend for the same period instead." });
+    if (r.count) out.push({ label: `See the ${noun}` });
+  }
+  return out;
+}
 
 function greeting() {
   const h = new Date().getHours();
@@ -74,6 +105,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [question, setQuestion] = useState("");
   const [report, setReport] = useState<Report>();
   const [refreshing, setRefreshing] = useState(false);
+  const [drill, setDrill] = useState<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const reportPanel = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -209,6 +241,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             if (event.type === "report") {
               assistant.parts.push({ type: "report", report: event.report });
               setReport(event.report);
+              setDrill(null);
               setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
             }
             if (event.type === "error") throw new Error(event.message);
@@ -378,17 +411,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                         m.role === "user" && "bg-secondary text-secondary-foreground",
                       )}
                     >
-                      {m.parts.map((p, i) =>
+                      {[...m.parts].sort((a, b) => (a.type === "text" ? 0 : 1) - (b.type === "text" ? 0 : 1)).map((p, i) =>
                         p.type === "text" ? (
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
                           <div key={i} className="space-y-2">
                             <Tool defaultOpen={false} className="mb-0 border-0">
                               <ToolHeader
-                                className="px-0 py-2 [&>div>svg]:hidden [&>div>span:last-child]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
+                                className="justify-start gap-1 px-0 py-1 [&>div>svg]:hidden [&>div>div]:hidden [&_[data-slot=badge]]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
                                 type="tool-create_report"
                                 state="output-available"
-                                title={`Read ${p.report.count} records`}
+                                title={`Read ${p.report.count} ${recordNoun(p.report.query.topic, p.report.count)}`}
                               />
                               <ToolContent>
                                 <p className="text-xs text-muted-foreground">
@@ -408,6 +441,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                               className="h-auto w-full justify-start whitespace-normal border border-primary/20 bg-primary/5 p-3 text-left"
                               onClick={() => {
                                 setReport(p.report);
+                                setDrill(null);
                                 if (window.innerWidth < 768)
                                   setTimeout(
                                     () =>
@@ -422,12 +456,14 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                               <BarChart3 className="text-primary" />
                               <span className="flex-1 text-foreground">
                                 {p.report.title}
-                                <span className="block text-xs text-muted-foreground">
-                                  {p.report.available
-                                    ? report?.generatedAt === p.report.generatedAt
+                                {p.report.query.topic !== "budgets" &&
+                                  ` · ${periodLabel(p.report.query).split(" · ")[0]}`}
+                                <span className="block text-xs text-primary">
+                                  {!p.report.available
+                                    ? "Data not available"
+                                    : report?.generatedAt === p.report.generatedAt
                                       ? "Showing"
-                                      : `${p.report.count} records`
-                                    : "Data not available"}
+                                      : "Open in panel"}
                                 </span>
                               </span>
                               <ArrowUpRight className="text-muted-foreground" />
@@ -473,23 +509,15 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           <div className={cn("space-y-2", messages.length && "shrink-0 p-4 pt-2")}>
             {report && !busy && (
               <div className="flex flex-wrap gap-2 pb-1">
-                {[
-                  ...(report.query.topic === "budgets"
-                    ? ["By category instead"]
-                    : ["Break it down by supplier", "By requestor instead"]),
-                  "Show current budget consumption",
-                ].map((t) => (
+                {followUps(report).map((t) => (
                   <Button
-                    key={t}
+                    key={t.label}
                     size="sm"
                     variant="outline"
                     className="h-auto min-h-8 whitespace-normal rounded-full bg-surface px-3 text-left text-xs font-normal"
-                    onClick={() => {
-                      setQuestion(t);
-                      input.current?.focus();
-                    }}
+                    onClick={() => (t.ask ? void ask(t.ask) : setDrill(""))}
                   >
-                    {t}
+                    {t.label}
                   </Button>
                 ))}
               </div>
@@ -595,7 +623,13 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border bg-subtle p-4 sm:p-6 md:border-t-0 md:p-7"
           >
             {report ? (
-              <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
+              <InsightReport
+                report={report}
+                loading={refreshing}
+                onRefresh={updateReport}
+                drill={drill}
+                onDrill={setDrill}
+              />
             ) : (
               <div className="flex min-h-64 h-full items-center justify-center text-center">
                 <div className="space-y-3">
