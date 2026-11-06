@@ -123,14 +123,14 @@ export function InsightReport({
   const max = Math.max(1, ...groups.map((g) => g.amount));
 
   return (
-    <section className="min-w-0 space-y-4" aria-label={title}>
+    <section className="min-w-0 space-y-3" aria-label={title}>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-        <div className="min-w-0 space-y-3">
-          <div className="flex items-center gap-1.5">
-            <h2 className="truncate text-2xl font-semibold tracking-tight">{title}</h2>
+        <div className="min-w-0 space-y-2.5">
+          <div className="flex items-center gap-1">
+            <h2 className="pd-h1 truncate">{title}</h2>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-7" aria-label="About this report">
+                <Button variant="ghost" size="icon" className="size-6" aria-label="About this report">
                   <Info className="size-4 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
@@ -223,38 +223,38 @@ export function InsightReport({
           )}
         </div>
         <div className="flex shrink-0 gap-1">
-          <Button variant="ghost" size="icon" aria-label="Refresh report" disabled={loading} onClick={() => onRefresh(q)}>
+          <Button variant="ghost" size="icon" className="size-8" aria-label="Refresh report" disabled={loading} onClick={() => onRefresh(q)}>
             <RefreshCw className={cn(loading && "animate-spin")} />
           </Button>
-          <Button variant="outline" disabled={!report.available} onClick={() => exportCsv(report.rows, "procuredesk-insights.csv")}>
+          <Button variant="outline" size="sm" disabled={!report.available} onClick={() => exportCsv(report.rows, "procuredesk-insights.csv")}>
             Export
           </Button>
         </div>
       </div>
 
-      <div className={cn("rounded-xl border border-border bg-surface p-5 sm:p-6", loading && "opacity-60")}>
+      <div className={cn("pd-panel overflow-hidden", loading && "opacity-60")}>
         {!report.available ? (
-          <p className="text-sm text-muted-foreground">This data isn't available for the selected view.</p>
+          <p className="p-4 text-sm text-muted-foreground">This data isn't available for the selected view.</p>
         ) : (
-          <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] divide-x divide-border [&>*]:min-w-0 [&>*]:px-4 [&>*]:py-3">
             <button type="button" className="min-w-0 text-left" onClick={() => onDrill("")} title={`See the ${recordNoun(q.topic)}`}>
-              <p className="text-sm text-muted-foreground">{budget ? "Committed" : `Total ${q.topic === "invoices" ? "invoiced" : "value"}`}</p>
-              <p className="mt-1 break-words text-3xl font-semibold tracking-tight hover:text-primary sm:text-4xl">{money(report.total)}</p>
+              <p className="text-xs text-muted-foreground">{budget ? "Committed" : `Total ${q.topic === "invoices" ? "invoiced" : "value"}`}</p>
+              <p className="mt-1 whitespace-nowrap tabular-nums text-lg font-semibold tracking-tight hover:text-primary">{money(report.total)}</p>
             </button>
             <button type="button" className="text-left" onClick={() => onDrill("")}>
-              <p className="text-sm capitalize text-muted-foreground">{recordNoun(q.topic)}</p>
-              <p className="mt-1 text-xl font-semibold hover:text-primary">{report.count.toLocaleString()}</p>
+              <p className="text-xs capitalize text-muted-foreground">{recordNoun(q.topic)}</p>
+              <p className="mt-1 tabular-nums text-lg font-semibold hover:text-primary">{report.count.toLocaleString()}</p>
             </button>
             {report.count > 0 && (
               <div>
-                <p className="text-sm text-muted-foreground">Average {recordNoun(q.topic, 1)}</p>
-                <p className="mt-1 text-xl font-semibold">{money(report.total / report.count)}</p>
+                <p className="text-xs text-muted-foreground">Average {recordNoun(q.topic, 1)}</p>
+                <p className="mt-1 whitespace-nowrap tabular-nums text-lg font-semibold">{money(report.total / report.count)}</p>
               </div>
             )}
             {top && report.total > 0 && (
               <button type="button" className="min-w-0 text-left" onClick={() => onDrill(top.label)}>
-                <p className="text-sm text-muted-foreground">Top {GROUP_LABEL[q.group].toLowerCase()}</p>
-                <p className="mt-1 truncate text-xl font-semibold hover:text-primary">
+                <p className="text-xs text-muted-foreground">Top {GROUP_LABEL[q.group].toLowerCase()}</p>
+                <p className="mt-1 truncate text-lg font-semibold hover:text-primary">
                   {top.label} ({((top.amount / report.total) * 100).toFixed(1)}%)
                 </p>
               </button>
@@ -264,7 +264,7 @@ export function InsightReport({
       </div>
 
       {report.available && !report.rows.length && (
-        <div className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
           No {recordNoun(q.topic)} match this period.
         </div>
       )}
@@ -272,19 +272,22 @@ export function InsightReport({
       {report.available && report.rows.length > 0 && (
         <>
           {q.group === "month" ? (
-            <div className="h-64 min-w-0 rounded-xl border border-border bg-surface p-4">
+            <div className="pd-panel min-w-0">
+              <header className="flex items-center justify-between border-b border-border/60 px-4 py-2.5"><h3 className="pd-section-title">By month</h3><span className="text-xs text-muted-foreground">Click a bar to see the {recordNoun(q.topic)}</span></header>
+              <div className="h-44 px-2 pb-2 pt-3">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={groups.map((g) => ({ ...g, name: monthLabel(g.label) }))} margin={{ left: 4, right: 8, top: 8 }}>
                   <CartesianGrid stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
-                  <YAxis width={50} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickFormatter={(v) => new Intl.NumberFormat("en", { notation: "compact" }).format(v)} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
+                  <YAxis width={44} axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickFormatter={(v) => new Intl.NumberFormat("en", { notation: "compact" }).format(v)} />
                   <Tooltip cursor={{ fill: "var(--subtle)" }} formatter={(v) => money(Number(v))} contentStyle={{ background: "var(--surface)", borderColor: "var(--border)", borderRadius: 8 }} />
-                  <Bar dataKey="amount" name="Amount" fill="var(--chart-1)" radius={[4, 4, 0, 0]} className="cursor-pointer" onClick={(d) => onDrill((d as unknown as { label: string }).label)} />
+                  <Bar dataKey="amount" name="Amount" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={36} className="cursor-pointer" onClick={(d) => onDrill((d as unknown as { label: string }).label)} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
           ) : (
-            <div className="space-y-1 rounded-xl border border-border bg-surface p-4">
+            <div className="pd-panel space-y-0.5 p-2">
               {groups.slice(0, 10).map((g) => (
                 <button
                   key={g.label}
@@ -302,7 +305,7 @@ export function InsightReport({
               {groups.length > 10 && <p className="px-2 pt-1 text-xs text-muted-foreground">Top 10 shown. The table and export include all.</p>}
             </div>
           )}
-          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+          <div className="pd-panel overflow-x-auto">
             <table className="pd-table">
               <thead>
                 <tr>
