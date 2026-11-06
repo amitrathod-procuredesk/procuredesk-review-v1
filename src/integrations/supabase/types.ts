@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      insights_history: {
+        Row: {
+          messages: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          messages?: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          messages?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      insights_sessions: {
+        Row: {
+          expires_at: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workspace_state: {
         Row: {
           data: Json
