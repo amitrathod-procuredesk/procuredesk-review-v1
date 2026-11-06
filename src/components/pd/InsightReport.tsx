@@ -114,71 +114,76 @@ export function InsightReport({
       {report.available && (
         <>
           <Popover>
-            <PopoverTrigger asChild><Button variant="outline" size="sm"><SlidersHorizontal />Filters · {report.query.group === "user" ? "Requestor" : report.query.group}</Button></PopoverTrigger>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal />
+                Filters · {report.query.group === "user" ? "Requestor" : report.query.group}
+              </Button>
+            </PopoverTrigger>
             <PopoverContent align="start" className="w-96 max-w-[calc(100vw-32px)]">
-          <div className="grid grid-cols-2 items-end gap-3">
-            <label className="min-w-32 flex-1 text-xs text-muted-foreground">
-              Group by
-              <Select
-                aria-label="Group report by"
-                value={report.query.group}
-                onChange={(e) => update({ group: e.target.value as InsightQuery["group"] })}
-              >
-                {(budget
-                  ? ["budget", "department", "category"]
-                  : ["month", "supplier", "user", "department", "category", "account", "item"]
-                ).map((g) => (
-                  <option key={g} value={g}>
-                    {g === "user" ? "Requestor" : g.charAt(0).toUpperCase() + g.slice(1)}
-                  </option>
+              <div className="grid grid-cols-2 items-end gap-3">
+                <label className="min-w-32 flex-1 text-xs text-muted-foreground">
+                  Group by
+                  <Select
+                    aria-label="Group report by"
+                    value={report.query.group}
+                    onChange={(e) => update({ group: e.target.value as InsightQuery["group"] })}
+                  >
+                    {(budget
+                      ? ["budget", "department", "category"]
+                      : ["month", "supplier", "user", "department", "category", "account", "item"]
+                    ).map((g) => (
+                      <option key={g} value={g}>
+                        {g === "user" ? "Requestor" : g.charAt(0).toUpperCase() + g.slice(1)}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                {filterKeys.map((k) => (
+                  <label key={k} className="min-w-32 flex-1 text-xs text-muted-foreground">
+                    {k === "user" ? "Requestor" : k.charAt(0).toUpperCase() + k.slice(1)}
+                    <Select
+                      aria-label={`Filter ${k}`}
+                      value={report.query[k] ?? ""}
+                      onChange={(e) => update({ [k]: e.target.value || null })}
+                    >
+                      <option value="">All</option>
+                      {(k === "department"
+                        ? db.departments
+                        : k === "supplier"
+                          ? db.vendors
+                          : db.users
+                      ).map((v) => (
+                        <option key={v.id} value={v.name}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
                 ))}
-              </Select>
-            </label>
-            {filterKeys.map((k) => (
-              <label key={k} className="min-w-32 flex-1 text-xs text-muted-foreground">
-                {k === "user" ? "Requestor" : k.charAt(0).toUpperCase() + k.slice(1)}
-                <Select
-                  aria-label={`Filter ${k}`}
-                  value={report.query[k] ?? ""}
-                  onChange={(e) => update({ [k]: e.target.value || null })}
-                >
-                  <option value="">All</option>
-                  {(k === "department"
-                    ? db.departments
-                    : k === "supplier"
-                      ? db.vendors
-                      : db.users
-                  ).map((v) => (
-                    <option key={v.id} value={v.name}>
-                      {v.name}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            ))}
-            {!budget && (
-              <>
-                <label className="text-xs text-muted-foreground">
-                  From
-                  <TextInput
-                    aria-label="Report start date"
-                    type="date"
-                    value={report.query.start ?? ""}
-                    onChange={(e) => update({ start: e.target.value || null })}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  To
-                  <TextInput
-                    aria-label="Report end date"
-                    type="date"
-                    value={report.query.end ?? ""}
-                    onChange={(e) => update({ end: e.target.value || null })}
-                  />
-                </label>
-              </>
-            )}
-          </div>
+                {!budget && (
+                  <>
+                    <label className="text-xs text-muted-foreground">
+                      From
+                      <TextInput
+                        aria-label="Report start date"
+                        type="date"
+                        value={report.query.start ?? ""}
+                        onChange={(e) => update({ start: e.target.value || null })}
+                      />
+                    </label>
+                    <label className="text-xs text-muted-foreground">
+                      To
+                      <TextInput
+                        aria-label="Report end date"
+                        type="date"
+                        value={report.query.end ?? ""}
+                        onChange={(e) => update({ end: e.target.value || null })}
+                      />
+                    </label>
+                  </>
+                )}
+              </div>
             </PopoverContent>
           </Popover>
           <div className="flex gap-1 border-b border-border pb-2">
