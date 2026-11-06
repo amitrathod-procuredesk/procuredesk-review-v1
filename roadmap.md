@@ -2,8 +2,8 @@
 - [x] Build Ask Insights reporting engine, conversational AI and Cloud history.
 - [x] Add visual reports, filters, source inspection, export and navigation.
 - [x] Verify financial rules, saved conversation, missing-ledger disclosure, sign-out and desktop/mobile interactions; 11 financial tests pass.
-- [ ] Finalize conversation shape and storage after the user's choices.
-- [ ] Connect actual invoice, open-PO and purchased-item ledgers; blocked on source/API details from the user.
+- [ ] Add separate ongoing conversations and Cloud history with individual conversation URLs.
+- [ ] Add realistic, clearly labeled sample invoice, open-PO and purchased-item ledgers and verify reports.
 - [x] Restructure agent setup into clear cards, expose all three run choices and enlarge guardrails; verified mode/trigger selection and form editing at 320, 390, 1002 and 1280px with no horizontal overflow; 23 agent tests passed.
 - [x] Redesign the AI Hub with equal agent cards, animated profiles and clear controls; verified search, filters, detail/setup navigation, pause/resume persistence, keyboard access, reduced motion and 320–1280px layouts; 23 agent tests passed.
 - [x] Refine AI agents placement within main navigation, remove off-brand highlights, and use a custom icon; verified signed-in expanded, collapsed and mobile navigation with 23 agent tests passing.
