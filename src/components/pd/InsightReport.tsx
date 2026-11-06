@@ -331,24 +331,25 @@ export function InsightReport({
       )}
 
       <Sheet open={drill != null} onOpenChange={(o) => !o && onDrill(null)}>
-        <SheetContent className="w-full overflow-y-auto bg-surface sm:max-w-xl">
-          <SheetHeader className="pr-8 text-left">
-            <p className="text-xs font-medium text-muted-foreground">
+        <SheetContent className="w-full gap-0 overflow-y-auto bg-surface p-0 sm:max-w-lg">
+          <SheetHeader className="space-y-0.5 border-b border-border px-5 py-4 pr-12 text-left">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               {recordNoun(q.topic).replace(/^./, (c) => c.toUpperCase())} behind this figure
             </p>
-            <SheetTitle>{drill ? monthLabel(drill) : title}</SheetTitle>
-            <SheetDescription>{budget ? "Current snapshot" : periodLabel(q)}</SheetDescription>
+            <SheetTitle className="text-base">{drill ? monthLabel(drill) : title}</SheetTitle>
+            <SheetDescription className="text-xs">{budget ? "Current snapshot" : periodLabel(q)}</SheetDescription>
           </SheetHeader>
-          <div className="space-y-3 px-4 pb-6">
-            <div className="flex items-center justify-between gap-3">
-              <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">
+          <div className="space-y-3 p-4">
+            <div className="flex items-center gap-2 rounded-md border border-success/25 bg-success/10 px-3 py-2">
+              <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+              <p className="min-w-0 flex-1 text-xs text-success">
                 These {drillRows.length} {recordNoun(q.topic, drillRows.length)} total {money(drillTotal)}, matching the figure in the report.
               </p>
-              <Button variant="outline" size="sm" className="shrink-0" onClick={() => exportCsv(drillRows, "procuredesk-records.csv")}>
+              <Button variant="outline" size="sm" className="h-7 shrink-0 px-2.5 text-xs" onClick={() => exportCsv(drillRows, "procuredesk-records.csv")}>
                 Download CSV
               </Button>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="overflow-x-auto rounded-md border border-border">
               <table className="pd-table">
                 <thead>
                   <tr>
@@ -361,7 +362,7 @@ export function InsightReport({
                 <tbody>
                   {drillRows.slice(0, 200).map((r) => (
                     <tr key={r.id}>
-                      {!budget && <td className="whitespace-nowrap">{r.date ? fmtDate(r.date) : "—"}</td>}
+                      {!budget && <td className="whitespace-nowrap text-muted-foreground">{r.date ? fmtDate(r.date) : "—"}</td>}
                       <td>
                         {r.requestId ? (
                           <Link to="/app/requests/$id" params={{ id: r.requestId }} className="text-primary hover:underline">
@@ -370,10 +371,10 @@ export function InsightReport({
                         ) : (
                           <span className="text-primary">{r.id.replace("-DEMO", "")}</span>
                         )}
-                        <p className="max-w-56 truncate text-xs text-muted-foreground">{r.item || r.label}</p>
+                        <p className="max-w-44 truncate text-xs text-muted-foreground">{r.item || r.label}</p>
                       </td>
-                      <td>{budget ? r.department : r.supplier}</td>
-                      <td className="whitespace-nowrap text-right tabular-nums">{money(r.amount)}</td>
+                      <td className="whitespace-nowrap">{budget ? r.department : r.supplier}</td>
+                      <td className="whitespace-nowrap text-right font-medium tabular-nums">{money(r.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
