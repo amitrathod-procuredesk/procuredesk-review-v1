@@ -55,7 +55,8 @@ export const signInInsights = createServerFn({ method: "POST" })
     setCookie("pd-insights-session", token, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "none",
+      partitioned: true,
       path: "/",
       maxAge: 86400,
     });

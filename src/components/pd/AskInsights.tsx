@@ -34,13 +34,14 @@ import {
   loadInsights,
   refreshInsight,
   createInsightsConversation,
+  signInInsights,
 } from "@/lib/pd/insights.functions";
 import {
   type InsightMessage,
   type InsightReport as Report,
   type InsightQuery,
 } from "@/lib/pd/insights";
-import { logout, useMe } from "@/lib/pd/store";
+import { useMe } from "@/lib/pd/store";
 import { cn } from "@/lib/utils";
 
 export function AskInsights({ threadId }: { threadId?: string }) {
@@ -49,6 +50,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const load = useServerFn(loadInsights);
   const refresh = useServerFn(refreshInsight);
   const createThread = useServerFn(createInsightsConversation);
+  const restoreSession = useServerFn(signInInsights);
   const [threads, setThreads] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const newConversation = async () => {
@@ -62,7 +64,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const [messages, setMessages] = useState<InsightMessage[]>([]);
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<"ready" | "submitted" | "streaming" | "error">("ready");
-  const [auth, setAuth] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
@@ -73,13 +74,25 @@ export function AskInsights({ threadId }: { threadId?: string }) {
   const abort = useRef<AbortController | null>(null);
   const busy = status === "submitted" || status === "streaming";
   const currentUserId = me?.id;
+  const currentEmail = me?.email;
+  const currentPassword = me?.password;
   useEffect(() => {
     let active = true;
     if (!currentUserId) return;
     setMessages([]);
     setReport(undefined);
     setLoaded(false);
+    setError("");
     load({ data: { userId: currentUserId, threadId } })
+      .catch(async (e: unknown) => {
+        if (!active) throw e;
+        if (!(e instanceof Error) || !/Sign in|session expired|switch Insights accounts/i.test(e.message)) throw e;
+        if (!currentEmail || !currentPassword) throw e;
+        // Revalidate the existing prototype account credential on the server;
+        // never authorize history from the browser's user ID alone.
+        await restoreSession({ data: { email: currentEmail, password: currentPassword } });
+        return load({ data: { userId: currentUserId, threadId } });
+      })
       .then((v) => {
         if (active) {
           setThreads(v.threads);
@@ -93,7 +106,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
           setMessages(v.messages);
           setVersion(v.version);
           setLoaded(true);
-          setAuth(false);
           const last = v.messages
             .flatMap((m) => m.parts)
             .filter((p) => p.type === "report")
@@ -103,18 +115,17 @@ export function AskInsights({ threadId }: { threadId?: string }) {
       })
       .catch(() => {
         if (active) {
-          setAuth(true);
-          setLoaded(true);
+          setError("Ask Insights could not connect. Please refresh and try again.");
         }
       });
     return () => {
       active = false;
       abort.current?.abort();
     };
-  }, [load, currentUserId, threadId, router]);
+  }, [load, restoreSession, currentUserId, currentEmail, currentPassword, threadId, router]);
   useEffect(() => {
-    if (loaded && !auth && !busy) input.current?.focus();
-  }, [loaded, auth, busy, threadId]);
+    if (loaded && !busy) input.current?.focus();
+  }, [loaded, busy, threadId]);
   const updateReport = async (q: InsightQuery) => {
     setRefreshing(true);
     setError("");
@@ -220,7 +231,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
     }
   };
   useEffect(() => {
-    if (threadId && loaded && !auth) {
+    if (threadId && loaded) {
       const pending = sessionStorage.getItem("pd-insights-pending");
       if (pending) {
         sessionStorage.removeItem("pd-insights-pending");
@@ -228,30 +239,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         input.current?.focus();
       }
     }
-  }, [threadId, loaded, auth]);
-  if (auth)
-    return (
-      <div className="mx-auto max-w-md space-y-5 px-6 py-12">
-        <AgentNavIcon className="size-10 text-primary" />
-        <h1 className="pd-h1">Ask Insights</h1>
-        <p className="text-sm text-muted-foreground">
-          Your session has expired. Sign in to ProcureDesk to continue.
-        </p>
-        <Button
-          onClick={() => {
-            logout();
-            void router.navigate({ to: "/", replace: true });
-          }}
-        >
-          Sign in
-        </Button>
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-      </div>
-    );
+  }, [threadId, loaded]);
   return (
     <div className="flex min-h-[calc(100dvh-124px)] flex-col md:min-h-[calc(100dvh-60px)]">
       <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7">
