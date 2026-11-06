@@ -8,7 +8,7 @@ import {
   Boxes,
   CircleDollarSign,
   FileText,
-  Plus,
+  SquarePen,
   History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -249,78 +249,8 @@ export function AskInsights({ threadId }: { threadId?: string }) {
     >
       <div
         className={cn(
-          "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
-          showingConversation && "border-b border-border bg-surface",
-        )}
-      >
-        <h1 className="text-sm font-medium text-muted-foreground">Ask Insights</h1>
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="New conversation"
-                  disabled={busy || !loaded}
-                  onClick={newConversation}
-                >
-                  <Plus className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>New conversation</TooltipContent>
-            </Tooltip>
-            <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Conversation history"
-                      disabled={busy}
-                    >
-                      <History className="size-4" />
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Past conversations</TooltipContent>
-              </Tooltip>
-              <PopoverContent align="end" className="w-80 max-w-[calc(100vw-32px)] p-2">
-                <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
-                  Past conversations
-                </p>
-                <nav aria-label="Conversation history" className="max-h-64 overflow-y-auto">
-                  {threads.map((t) => (
-                    <Button
-                      key={t.id}
-                      variant={t.id === threadId ? "secondary" : "ghost"}
-                      className="h-auto w-full justify-start py-3 text-left"
-                      onClick={() => {
-                        setHistoryOpen(false);
-                        void router.navigate({
-                          to: "/app/insights/ask/$threadId",
-                          params: { threadId: t.id },
-                        });
-                      }}
-                    >
-                      <History />
-                      <span className="truncate">{t.title}</span>
-                    </Button>
-                  ))}
-                  {!threads.length && (
-                    <p className="py-3 text-sm text-muted-foreground">No past conversations yet.</p>
-                  )}
-                </nav>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </TooltipProvider>
-      </div>
-      <div
-        className={cn(
           "grid min-h-0 min-w-0 flex-1",
-          showingConversation && "md:grid-cols-[minmax(260px,34%)_minmax(0,1fr)]",
+          showingConversation && "md:grid-cols-[minmax(280px,29%)_minmax(0,1fr)]",
         )}
       >
         <div
@@ -332,6 +262,78 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               : "mx-auto w-full max-w-xl",
           )}
         >
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-between gap-3 px-5 py-3 sm:px-7",
+              showingConversation && "border-b border-border bg-surface",
+            )}
+          >
+            <h1 className="text-sm font-semibold text-foreground">Ask Insights</h1>
+            <TooltipProvider>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="New conversation"
+                      disabled={busy || !loaded}
+                      onClick={newConversation}
+                    >
+                      <SquarePen className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>New conversation</TooltipContent>
+                </Tooltip>
+                <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Conversation history"
+                          disabled={busy}
+                        >
+                          <History className="size-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Past conversations</TooltipContent>
+                  </Tooltip>
+                  <PopoverContent align="end" className="w-80 max-w-[calc(100vw-32px)] p-2">
+                    <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
+                      Past conversations
+                    </p>
+                    <nav aria-label="Conversation history" className="max-h-64 overflow-y-auto">
+                      {threads.map((t) => (
+                        <Button
+                          key={t.id}
+                          variant={t.id === threadId ? "secondary" : "ghost"}
+                          className="h-auto w-full justify-start py-3 text-left"
+                          onClick={() => {
+                            setHistoryOpen(false);
+                            void router.navigate({
+                              to: "/app/insights/ask/$threadId",
+                              params: { threadId: t.id },
+                            });
+                          }}
+                        >
+                          <History />
+                          <span className="truncate">{t.title}</span>
+                        </Button>
+                      ))}
+                      {!threads.length && (
+                        <p className="py-3 text-sm text-muted-foreground">
+                          No past conversations yet.
+                        </p>
+                      )}
+                    </nav>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipProvider>
+          </div>
           {!messages.length && (
             <div className="mb-6 text-center">
               <AgentNavIcon className="mx-auto mb-4 size-8 text-primary" />
@@ -354,8 +356,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           <MessageResponse key={i}>{p.text}</MessageResponse>
                         ) : (
                           <div key={i} className="space-y-2">
-                            <Tool defaultOpen={false}>
+                            <Tool defaultOpen={false} className="mb-0 border-0">
                               <ToolHeader
+                                className="px-0 py-2 [&>div>svg]:hidden [&>div>span:last-child]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
                                 type="tool-create_report"
                                 state="output-available"
                                 title={`Read ${p.report.count} records`}
@@ -375,10 +378,10 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                                   ? "secondary"
                                   : "outline"
                               }
-                              className="h-auto w-full justify-start whitespace-normal p-3 text-left"
+                              className="h-auto w-full justify-start whitespace-normal border border-primary/20 bg-primary/5 p-3 text-left"
                               onClick={() => {
                                 setReport(p.report);
-                                if (window.innerWidth < 1024)
+                                if (window.innerWidth < 768)
                                   setTimeout(
                                     () =>
                                       reportPanel.current?.scrollIntoView({
@@ -394,7 +397,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                                 {p.report.title}
                                 <span className="block text-xs text-muted-foreground">
                                   {p.report.available
-                                    ? `${p.report.count} records`
+                                    ? report?.generatedAt === p.report.generatedAt
+                                      ? "Showing"
+                                      : `${p.report.count} records`
                                     : "Data not available"}
                                 </span>
                               </span>
@@ -438,14 +443,35 @@ export function AskInsights({ threadId }: { threadId?: string }) {
               <ConversationScrollButton />
             </Conversation>
           )}
-          <div
-            className={cn("space-y-2", messages.length && "shrink-0 border-t border-border p-4")}
-          >
+          <div className={cn("space-y-2", messages.length && "shrink-0 p-4 pt-2")}>
+            {report && !busy && (
+              <div className="flex flex-wrap gap-2 pb-1">
+                {[
+                  ...(report.query.topic === "budgets"
+                    ? ["By category instead"]
+                    : ["Break it down by supplier", "By requestor instead"]),
+                  "Show current budget consumption",
+                ].map((t) => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-8 whitespace-normal rounded-full bg-surface px-3 text-left text-xs font-normal"
+                    onClick={() => {
+                      setQuestion(t);
+                      input.current?.focus();
+                    }}
+                  >
+                    {t}
+                  </Button>
+                ))}
+              </div>
+            )}
             <PromptInput
               onSubmit={({ text }) => ask(text)}
               className={cn(
                 "[&>[data-slot=input-group]]:rounded-lg [&>[data-slot=input-group]]:bg-surface",
-                !showingConversation && "relative",
+                "relative",
               )}
             >
               <PromptInputTextarea
@@ -457,17 +483,9 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={4000}
-                className={cn(
-                  "min-h-12 px-4 pt-3 text-sm",
-                  !showingConversation && "max-h-32 min-h-14 py-4 pr-16",
-                )}
+                className={cn("max-h-32 min-h-14 px-4 py-4 pr-16 text-sm")}
               />
-              <PromptInputFooter
-                className={cn(
-                  "justify-end px-3 pb-3",
-                  !showingConversation && "absolute bottom-0 right-0 w-auto p-3",
-                )}
-              >
+              <PromptInputFooter className={cn("absolute bottom-0 right-0 w-auto justify-end p-3")}>
                 <PromptInputSubmit
                   status={status}
                   onStop={() => abort.current?.abort()}
@@ -478,26 +496,6 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                 </PromptInputSubmit>
               </PromptInputFooter>
             </PromptInput>
-            {report && !busy && (
-              <div className="flex flex-wrap gap-1">
-                {[
-                  ...(report.query.topic === "budgets"
-                    ? ["By category instead"]
-                    : ["Break it down by supplier", "By requestor instead"]),
-                  "Show current budget consumption",
-                ].map((t) => (
-                  <Button
-                    key={t}
-                    size="sm"
-                    variant="outline"
-                    className="h-auto min-h-7 whitespace-normal text-left text-xs"
-                    onClick={() => ask(t)}
-                  >
-                    {t}
-                  </Button>
-                ))}
-              </div>
-            )}
             {error && (
               <p role="alert" className="text-xs text-destructive">
                 {error}
@@ -549,7 +547,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
         {showingConversation && (
           <div
             ref={reportPanel}
-            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border p-4 sm:p-6 md:border-t-0"
+            className="min-h-0 min-w-0 scroll-mt-4 overflow-y-auto border-t border-border bg-subtle p-4 sm:p-6 md:border-t-0 md:p-7"
           >
             {report ? (
               <InsightReport report={report} loading={refreshing} onRefresh={updateReport} />
