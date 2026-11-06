@@ -31,6 +31,7 @@ import { Route as AppRequestsIndexRouteImport } from './routes/app.requests.inde
 import { Route as AppAssetsMaintenanceAssetIdRouteImport } from './routes/app.assets.maintenance_.$assetId'
 import { Route as AppAssetsRegisterIndexRouteImport } from './routes/app.assets.register.index'
 import { Route as AppAssetsRegisterNewRouteImport } from './routes/app.assets.register.new'
+import { Route as AppInsightsAskThreadIdRouteImport } from './routes/app.insights.ask_.$threadId'
 import { Route as AppRequestsIdIndexRouteImport } from './routes/app.requests.$id.index'
 import { Route as AppRequestsIdEditRouteImport } from './routes/app.requests.$id.edit'
 
@@ -146,6 +147,11 @@ const AppAssetsRegisterNewRoute = AppAssetsRegisterNewRouteImport.update({
   path: '/assets/register/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInsightsAskThreadIdRoute = AppInsightsAskThreadIdRouteImport.update({
+  id: '/insights/ask_/$threadId',
+  path: '/insights/ask/$threadId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRequestsIdIndexRoute = AppRequestsIdIndexRouteImport.update({
   id: '/requests/$id/',
   path: '/requests/$id/',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
+  '/app/insights/ask/$threadId': typeof AppInsightsAskThreadIdRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/app/requests': typeof AppRequestsIndexRoute
   '/app/assets/maintenance/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
+  '/app/insights/ask/$threadId': typeof AppInsightsAskThreadIdRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id': typeof AppRequestsIdIndexRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/app/requests/': typeof AppRequestsIndexRoute
   '/app/assets/maintenance_/$assetId': typeof AppAssetsMaintenanceAssetIdRoute
   '/app/assets/register/new': typeof AppAssetsRegisterNewRoute
+  '/app/insights/ask_/$threadId': typeof AppInsightsAskThreadIdRoute
   '/app/requests/$id/edit': typeof AppRequestsIdEditRoute
   '/app/assets/register/': typeof AppAssetsRegisterIndexRoute
   '/app/requests/$id/': typeof AppRequestsIdIndexRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/app/requests/'
     | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
+    | '/app/insights/ask/$threadId'
     | '/app/requests/$id/edit'
     | '/app/assets/register/'
     | '/app/requests/$id/'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/app/requests'
     | '/app/assets/maintenance/$assetId'
     | '/app/assets/register/new'
+    | '/app/insights/ask/$threadId'
     | '/app/requests/$id/edit'
     | '/app/assets/register'
     | '/app/requests/$id'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/app/requests/'
     | '/app/assets/maintenance_/$assetId'
     | '/app/assets/register/new'
+    | '/app/insights/ask_/$threadId'
     | '/app/requests/$id/edit'
     | '/app/assets/register/'
     | '/app/requests/$id/'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsRegisterNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/insights/ask_/$threadId': {
+      id: '/app/insights/ask_/$threadId'
+      path: '/insights/ask/$threadId'
+      fullPath: '/app/insights/ask/$threadId'
+      preLoaderRoute: typeof AppInsightsAskThreadIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/requests/$id/': {
       id: '/app/requests/$id/'
       path: '/requests/$id'
@@ -513,6 +532,7 @@ interface AppRouteChildren {
   AppRequestsIndexRoute: typeof AppRequestsIndexRoute
   AppAssetsMaintenanceAssetIdRoute: typeof AppAssetsMaintenanceAssetIdRoute
   AppAssetsRegisterNewRoute: typeof AppAssetsRegisterNewRoute
+  AppInsightsAskThreadIdRoute: typeof AppInsightsAskThreadIdRoute
   AppRequestsIdEditRoute: typeof AppRequestsIdEditRoute
   AppAssetsRegisterIndexRoute: typeof AppAssetsRegisterIndexRoute
   AppRequestsIdIndexRoute: typeof AppRequestsIdIndexRoute
@@ -537,6 +557,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRequestsIndexRoute: AppRequestsIndexRoute,
   AppAssetsMaintenanceAssetIdRoute: AppAssetsMaintenanceAssetIdRoute,
   AppAssetsRegisterNewRoute: AppAssetsRegisterNewRoute,
+  AppInsightsAskThreadIdRoute: AppInsightsAskThreadIdRoute,
   AppRequestsIdEditRoute: AppRequestsIdEditRoute,
   AppAssetsRegisterIndexRoute: AppAssetsRegisterIndexRoute,
   AppRequestsIdIndexRoute: AppRequestsIdIndexRoute,
