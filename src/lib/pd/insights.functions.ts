@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { readWorkspaceSnapshot } from "./workspace.functions";
@@ -10,7 +10,7 @@ const hash = async (s: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))))
     .map((x) => x.toString(16).padStart(2, "0"))
     .join("");
-export async function insightsContext() {
+export const insightsContext = createServerOnlyFn(async () => {
   const token = getCookie("pd-insights-session");
   if (!token) throw new Error("Sign in to Ask Insights.");
   const c = await client();
@@ -27,7 +27,7 @@ export async function insightsContext() {
   if (!db.users.some((u) => u.id === data.user_id && u.active))
     throw new Error("Account is inactive.");
   return { c, userId: data.user_id, db, version: snapshot.version };
-}
+});
 
 export const signInInsights = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) =>
