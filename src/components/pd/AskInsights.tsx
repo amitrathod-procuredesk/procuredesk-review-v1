@@ -241,6 +241,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
             if (event.type === "report") {
               assistant.parts.push({ type: "report", report: event.report });
               setReport(event.report);
+              setDrill(null);
               setMessages([...next, { ...assistant, parts: [...assistant.parts] }]);
             }
             if (event.type === "error") throw new Error(event.message);
@@ -440,6 +441,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                               className="h-auto w-full justify-start whitespace-normal border border-primary/20 bg-primary/5 p-3 text-left"
                               onClick={() => {
                                 setReport(p.report);
+                                setDrill(null);
                                 if (window.innerWidth < 768)
                                   setTimeout(
                                     () =>
