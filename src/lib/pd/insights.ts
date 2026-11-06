@@ -88,7 +88,10 @@ export function buildInsight(
   at = new Date().toISOString(),
 ): InsightReport {
   const notes: string[] = [];
-  if (db.org.currency !== "USD") notes.push("Source values follow the workspace's USD reporting convention; no currency conversion is applied.");
+  if (db.org.currency !== "USD")
+    notes.push(
+      "Source values follow the workspace's USD reporting convention; no currency conversion is applied.",
+    );
   const unavailable = ["invoices", "orders", "items"].includes(query.topic);
   const name = (id: string | undefined, list: { id: string; name: string }[]) =>
     list.find((x) => x.id === id)?.name ?? "Unassigned";
