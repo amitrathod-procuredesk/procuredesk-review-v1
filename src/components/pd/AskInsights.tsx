@@ -418,7 +418,7 @@ export function AskInsights({ threadId }: { threadId?: string }) {
                           <div key={i} className="space-y-2">
                             <Tool defaultOpen={false} className="mb-0 border-0">
                               <ToolHeader
-                                className="px-0 py-2 [&>div>svg]:hidden [&>div>span:last-child]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
+                                className="justify-start gap-1 px-0 py-1 [&>div>svg]:hidden [&>div>div]:hidden [&_[data-slot=badge]]:hidden [&>div>span]:text-xs [&>div>span]:text-muted-foreground"
                                 type="tool-create_report"
                                 state="output-available"
                                 title={`Read ${p.report.count} ${recordNoun(p.report.query.topic, p.report.count)}`}
