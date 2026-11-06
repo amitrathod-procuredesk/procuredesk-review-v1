@@ -1,5 +1,5 @@
 # Maintenance screen
-- [ ] Simplify Ask Insights to a central question box and suggestions; preserve saved conversations and reporting, and verify compact desktop/mobile layouts.
+- [x] Simplify Ask Insights to a central question box and suggestions; verified 320–1280px empty screens without overflow, suggestion editing, a generated budget report and reload restoration; 15 financial tests pass.
 - [x] Build Ask Insights reporting engine, conversational AI and Cloud history.
 - [x] Add visual reports, filters, source inspection, export and navigation.
 - [x] Verify financial rules, saved conversation, missing-ledger disclosure, sign-out and desktop/mobile interactions; 11 financial tests pass.
