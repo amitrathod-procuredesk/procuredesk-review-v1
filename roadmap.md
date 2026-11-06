@@ -1,5 +1,6 @@
 # Maintenance screen
-- [ ] Remove Ask Insights secondary sign-in screen and verify access from existing signed-in sessions, including missing cookies.
+- [x] Remove Ask Insights secondary sign-in screen; verified existing login and thread reload recover after cookies are removed without another sign-in.
+- [ ] Match the report experience to the supplied reference: conversation and real progress on the left, visual report on the right, automatic transition after submitting the first question.
 - [x] Simplify Ask Insights to a central question box and suggestions; verified 320–1280px empty screens without overflow, suggestion editing, a generated budget report and reload restoration; 15 financial tests pass.
 - [x] Build Ask Insights reporting engine, conversational AI and Cloud history.
 - [x] Add visual reports, filters, source inspection, export and navigation.
