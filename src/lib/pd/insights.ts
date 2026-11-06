@@ -95,15 +95,24 @@ export function buildInsight(
     notes.push(
       "Source values follow the workspace's USD reporting convention; no currency conversion is applied.",
     );
-  const ledgerTopic = query.topic === "invoices" || query.topic === "orders" || query.topic === "items";
+  const ledgerTopic =
+    query.topic === "invoices" || query.topic === "orders" || query.topic === "items";
   const unavailable = ledgerTopic && !demo;
   const name = (id: string | undefined, list: { id: string; name: string }[]) =>
     list.find((x) => x.id === id)?.name ?? "Unassigned";
   let rows: InsightRow[] = [];
   if (ledgerTopic && demo) {
-    rows = demo[query.topic as keyof DemoLedger].filter(r => r.date <= at.slice(0, 10));
-    notes.push("Demo data · Realistic sample records, not your company's actual financial activity.");
-    notes.push(query.topic === "invoices" ? "Posted invoice line amounts including tax, grouped by invoice date. Not paid spend." : query.topic === "orders" ? "Current open PO balances after invoicing; closed and cancelled orders excluded. Date filters use order date, not historical balance snapshots." : "Received purchase lines and quantities at acquisition cost including tax. Internal-stock issues excluded.");
+    rows = demo[query.topic as keyof DemoLedger].filter((r) => r.date <= at.slice(0, 10));
+    notes.push(
+      "Demo data · Realistic sample records, not your company's actual financial activity.",
+    );
+    notes.push(
+      query.topic === "invoices"
+        ? "Posted invoice line amounts including tax, grouped by invoice date. Not paid spend."
+        : query.topic === "orders"
+          ? "Current open PO balances after invoicing; closed and cancelled orders excluded. Date filters use order date, not historical balance snapshots."
+          : "Received purchase lines and quantities at acquisition cost including tax. Internal-stock issues excluded.",
+    );
   } else if (unavailable)
     notes.push(
       `${TOPICS[query.topic]} is unavailable: this workspace has no ${query.topic === "invoices" ? "invoice ledger" : query.topic === "orders" ? "purchase order ledger with open balances" : "purchase or receipt ledger"}. Request values are not a substitute for these records.`,
