@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { budgetAvailable, lineTotal } from "./engine";
 import type { DB } from "./types";
+import type { DemoLedger } from "./insightsDemo";
 
 export const insightQuerySchema = z.object({
   topic: z.enum(["invoices", "orders", "items", "budgets", "requests"]),
@@ -58,6 +59,7 @@ export type InsightReport = {
   available: boolean;
   generatedAt: string;
   version: number;
+  demo?: boolean;
 };
 export type InsightPart =
   { type: "text"; text: string } | { type: "report"; report: InsightReport };
@@ -86,17 +88,32 @@ export function buildInsight(
   query: InsightQuery,
   version = 0,
   at = new Date().toISOString(),
+  demo?: DemoLedger,
 ): InsightReport {
   const notes: string[] = [];
   if (db.org.currency !== "USD")
     notes.push(
       "Source values follow the workspace's USD reporting convention; no currency conversion is applied.",
     );
-  const unavailable = ["invoices", "orders", "items"].includes(query.topic);
+  const ledgerTopic =
+    query.topic === "invoices" || query.topic === "orders" || query.topic === "items";
+  const unavailable = ledgerTopic && !demo;
   const name = (id: string | undefined, list: { id: string; name: string }[]) =>
     list.find((x) => x.id === id)?.name ?? "Unassigned";
   let rows: InsightRow[] = [];
-  if (unavailable)
+  if (ledgerTopic && demo) {
+    rows = demo[query.topic as keyof DemoLedger].filter((r) => r.date <= at.slice(0, 10));
+    notes.push(
+      "Demo data · Realistic sample records, not your company's actual financial activity.",
+    );
+    notes.push(
+      query.topic === "invoices"
+        ? "Posted invoice line amounts including tax, grouped by invoice date. Not paid spend."
+        : query.topic === "orders"
+          ? "Current open PO balances after invoicing; closed and cancelled orders excluded. Date filters use order date, not historical balance snapshots."
+          : "Received purchase lines and quantities at acquisition cost including tax. Internal-stock issues excluded.",
+    );
+  } else if (unavailable)
     notes.push(
       `${TOPICS[query.topic]} is unavailable: this workspace has no ${query.topic === "invoices" ? "invoice ledger" : query.topic === "orders" ? "purchase order ledger with open balances" : "purchase or receipt ledger"}. Request values are not a substitute for these records.`,
     );
@@ -206,5 +223,6 @@ export function buildInsight(
     notes,
     generatedAt: at,
     version,
+    demo: ledgerTopic && !!demo,
   };
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { readWorkspaceSnapshot } from "./workspace.functions";
 import type { DB } from "./types";
 import { insightQuerySchema, buildInsight, type InsightMessage } from "./insights";
+import { demoInsightLedger } from "./insightsDemo";
 
 const client = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 const hash = async (s: string) =>
@@ -76,25 +77,57 @@ export const signOutInsights = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const loadInsights = createServerFn({ method: "GET" })
-  .inputValidator((v: unknown) => z.object({ userId: z.string().min(1).max(120) }).parse(v))
+  .inputValidator((v: unknown) =>
+    z
+      .object({ userId: z.string().min(1).max(120), threadId: z.string().uuid().optional() })
+      .parse(v),
+  )
   .handler(async ({ data: input }) => {
     const { c, userId } = await insightsContext();
     if (userId !== input.userId)
       throw new Error("Confirm your password to switch Insights accounts.");
-    const { data, error } = await c
-      .from("insights_history")
-      .select("messages, version")
+    const { data: threads, error } = await c
+      .from("insights_conversations")
+      .select("id,title,updated_at")
       .eq("user_id", userId)
-      .maybeSingle();
+      .order("updated_at", { ascending: false });
     if (error) throw new Error("Could not load your saved conversation.");
+    const selectedId = input.threadId ?? threads?.[0]?.id;
+    const { data, error: detailError } = selectedId
+      ? await c
+          .from("insights_conversations")
+          .select("messages,version")
+          .eq("id", selectedId)
+          .eq("user_id", userId)
+          .maybeSingle()
+      : { data: null, error: null };
+    if (detailError || (input.threadId && !data)) throw new Error("Conversation is unavailable.");
     return {
+      threads: threads ?? [],
+      selectedId,
       messages: (data?.messages ?? []) as unknown as InsightMessage[],
       version: data?.version ?? 0,
     };
   });
+export const createInsightsConversation = createServerFn({ method: "POST" }).handler(async () => {
+  const { c, userId } = await insightsContext();
+  const { data, error } = await c
+    .from("insights_conversations")
+    .insert({ user_id: userId })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error("Could not create your conversation.");
+  return data;
+});
 export const refreshInsight = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => insightQuerySchema.parse(v))
   .handler(async ({ data }) => {
     const ctx = await insightsContext();
-    return buildInsight(ctx.db, data, ctx.version);
+    return buildInsight(
+      ctx.db,
+      data,
+      ctx.version,
+      new Date().toISOString(),
+      demoInsightLedger(ctx.db),
+    );
   });
