@@ -98,7 +98,7 @@ function ProductChoices({
                   <span className="mt-0.5 block text-[11px] text-muted-foreground">
                     {item.supplier}
                   </span>
-                  <span className="mt-1 block text-[11px] text-muted-foreground">
+                  <span className="mt-1 line-clamp-1 block text-[11px] text-muted-foreground">
                     {item.description}
                   </span>
                 </span>
