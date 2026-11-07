@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { insightsContext } from "./insights.functions";
+import { writeWorkspaceVersion } from "./workspace.functions";
 import {
   agentProposalSchema,
   applyAgentConfirmation,
@@ -34,7 +35,7 @@ export const confirmProcurementProposal = createServerFn({ method: "POST" })
       .parse(v),
   )
   .handler(async ({ data }) => {
-    const { c, db, userId, version } = await insightsContext();
+    const { db, userId, version } = await insightsContext();
     const saved = applyAgentConfirmation(
       db,
       data.proposal,
@@ -43,24 +44,14 @@ export const confirmProcurementProposal = createServerFn({ method: "POST" })
       data.action,
       data.fingerprint,
     );
-    const { data: rows, error } = await c
-      .from("workspace_state")
-      .update({
-        data: {
-          ...db,
-          session: { userId: null },
-        } as unknown as import("@/integrations/supabase/types").Json,
-        version: version + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", "main")
-      .eq("version", version)
-      .select("version");
-    if (error)
-      throw new Error(
-        "Cloud could not confirm saving. Retry the same action; a second request will not be created.",
-      );
-    if (!rows?.length)
+    const savedVersion = await writeWorkspaceVersion(
+      {
+        ...db,
+        session: { userId: null },
+      } as unknown as import("@/integrations/supabase/types").Json,
+      version,
+    );
+    if (!savedVersion)
       throw new Error("The workspace changed. Refresh the summary before confirming again.");
     return {
       id: saved.id,
