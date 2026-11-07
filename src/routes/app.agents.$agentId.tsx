@@ -10,7 +10,7 @@ import {
   ThumbsUp,
   X,
 } from 'lucide-react';
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router';
 import { PageBreadcrumb, useAgentNavigation } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -246,6 +246,10 @@ export default function AgentDetailPage() {
               ) : (
                 <div className="pd-panel mt-3 p-3.5">
                   <p className="text-sm text-foreground leading-relaxed">{agent.description}</p>
+                  {canEditCustomAgent(agent) && <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div><h2 className="text-xs font-semibold text-foreground">What it should do</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">{agent.dos?.map((rule, i) => <li key={i}>{rule}</li>)}</ul></div>
+                    <div><h2 className="text-xs font-semibold text-foreground">What it must not do</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">{agent.donts?.map((rule, i) => <li key={i}>{rule}</li>)}</ul></div>
+                  </div>}
                   <p className="text-xs text-muted-foreground mt-3">
                     {isPreconfiguredAgent(agent)
                       ? "This agent's instructions are managed by ProcureDesk. Pause it or switch its mode from the panel on the left."
@@ -583,7 +587,7 @@ export const Route = createFileRoute("/app/agents/$agentId")({
 });
 
 function AgentDetailRoute() {
-  const editing = Route.useMatch({ select: match => match.pathname.endsWith('/edit') });
+  const editing = useRouterState({ select: state => state.location.pathname.endsWith('/edit') });
   // Child editing routes replace the detail view rather than rendering inside it.
-  return editing ? <Outlet /> : <AgentDetailPage />;
+  return <>{!editing && <AgentDetailPage />}<Outlet /></>;
 }
