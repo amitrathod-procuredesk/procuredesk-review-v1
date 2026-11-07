@@ -90,6 +90,11 @@ describe("Personalized Procurement AI rules", () => {
   it("never presents unrelated catalog products as pens or paper", () => {
     expect(searchAgentCatalog(seedDB(), ["pens", "A4 paper"], "Office Supplies")).toEqual([]);
   });
+  it("finds a laptop and ergonomic mouse independently without matching laptop docks", () => {
+    const ids = searchAgentCatalog(seedDB(), ["laptop", "ergonomic mouse"]).map((c) => c.id);
+    expect(ids).toEqual(["c_mbp", "c_dell", "c_mouse"]);
+    expect(ids).not.toContain("c_dock");
+  });
   it("offers a draft for selected items with unknown prices but blocks approval", () => {
     const p = previewAgentProposal(seedDB(), stationery(), "u_amit");
     expect(p.draftMissing).toEqual([]);

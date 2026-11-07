@@ -270,7 +270,7 @@ export function searchAgentCatalog(db: DB, queries: string[], category?: string 
         (ts) =>
           ts.length &&
           ts.every((t) =>
-            `${c.name} ${c.description} ${c.keywords.join(" ")}`.toLowerCase().includes(t),
+            `${c.name} ${c.keywords.join(" ")}`.toLowerCase().includes(t),
           ),
       ),
   );
