@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
+  ChevronDown,
   FileText,
   Laptop,
   PenLine,
@@ -199,6 +200,7 @@ export function ProcurementAgent() {
   const [preview, setPreview] = useState<AgentPreview>();
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState<"ready" | "submitted" | "streaming">("ready");
+  const [showMissing, setShowMissing] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<{ id: string; status: string }>();
@@ -975,22 +977,42 @@ export function ProcurementAgent() {
                       )}
                     </dl>
                     <div className="mt-4 border-t border-border pt-3">
-                      <p className="text-xs font-medium">
-                        {preview.approvalMissing.length
-                          ? "Needed before approval"
-                          : "Ready for confirmation"}
-                      </p>
                       {preview.approvalMissing.length ? (
-                        <ul className="mt-2 space-y-1 text-[11px] text-muted-foreground">
-                          {preview.approvalMissing.map((m) => (
-                            <li key={m}>{m}</li>
-                          ))}
-                        </ul>
+                        <div>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-2 text-xs font-medium transition-colors hover:text-primary"
+                            aria-expanded={showMissing}
+                            onClick={() => setShowMissing((v) => !v)}
+                          >
+                            <span>
+                              {preview.approvalMissing.length} detail
+                              {preview.approvalMissing.length === 1 ? "" : "s"} needed before
+                              approval
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "size-3.5 shrink-0 text-muted-foreground transition-transform",
+                                showMissing && "rotate-180",
+                              )}
+                            />
+                          </button>
+                          {showMissing && (
+                            <ul className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+                              {preview.approvalMissing.map((m) => (
+                                <li key={m}>{m}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       ) : (
-                        <p className="mt-2 flex items-start gap-1.5 text-xs text-success">
-                          <Check className="size-3.5 shrink-0" />
-                          {preview.approvers.join(" → ")}
-                        </p>
+                        <>
+                          <p className="text-xs font-medium">Ready for confirmation</p>
+                          <p className="mt-2 flex items-start gap-1.5 text-xs text-success">
+                            <Check className="size-3.5 shrink-0" />
+                            {preview.approvers.join(" → ")}
+                          </p>
+                        </>
                       )}
                     </div>
                   </>
