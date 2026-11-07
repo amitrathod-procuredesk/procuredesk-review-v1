@@ -44,7 +44,13 @@ export const confirmProcurementProposal = createServerFn({ method: "POST" })
       data.action,
       data.fingerprint,
     );
-    const savedVersion = await writeWorkspaceVersion({ ...db, session: { userId: null } } as unknown as import("@/integrations/supabase/types").Json, version);
+    const savedVersion = await writeWorkspaceVersion(
+      {
+        ...db,
+        session: { userId: null },
+      } as unknown as import("@/integrations/supabase/types").Json,
+      version,
+    );
     if (!savedVersion)
       throw new Error("The workspace changed. Refresh the summary before confirming again.");
     return {
