@@ -157,6 +157,8 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                 ),
               ];
               let finished = false;
+              let choicesOffered = false;
+              let suppliersShown = false;
               for (let turn = 0; turn < 8; turn++) {
                 const response = await streamResponse(
                   {
@@ -243,7 +245,11 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                           livePunchout: false,
                           exactProductAvailability: "unconfirmed unless in catalog",
                         };
-                        if (items.length) part({ type: "suppliers", items });
+                        const allSourced = proposal.items.length > 0 && proposal.items.every((i) => i.supplierId);
+                        if (items.length && !allSourced && !suppliersShown) {
+                          part({ type: "suppliers", items });
+                          suppliersShown = true;
+                        }
                         part({
                           type: "tool",
                           id,
@@ -326,6 +332,7 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                           })
                           .parse(args);
                         part({ type: "choices", choices: a.choices });
+                        choicesOffered = true;
                         output = { displayed: true };
                       } else throw new Error("Unsupported action.");
                     } catch (error) {
@@ -351,6 +358,10 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                   );
                 if (text) modelInput.push({ role: "assistant", content: text });
                 if (!called) {
+                  if (!choicesOffered && turn < 6) {
+                    modelInput.push({ role: "user", content: "Before finishing, call offer_choices with 2-4 relevant optional next answers or actions for your last question. Do not fabricate quantity/price defaults. Do not repeat your previous reply afterwards." });
+                    continue;
+                  }
                   finished = true;
                   break;
                 }
