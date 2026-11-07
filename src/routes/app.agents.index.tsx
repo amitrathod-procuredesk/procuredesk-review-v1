@@ -91,7 +91,7 @@ function PolicyAgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => voi
         <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
       </div>
     </Button>
-    <div className="flex items-center justify-end border-t border-border bg-subtle/45 px-4 py-2.5 sm:border-l sm:border-t-0 sm:px-3">
+    <div className="flex items-center justify-end border-t border-border bg-subtle/45 px-4 py-2.5 sm:w-14 sm:self-stretch sm:items-center sm:justify-center sm:border-l sm:border-t-0 sm:px-0 sm:py-0">
       <Button variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground" onClick={() => {
         togglePause(agent.id);
         toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
