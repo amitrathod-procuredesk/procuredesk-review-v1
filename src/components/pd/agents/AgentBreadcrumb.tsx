@@ -7,6 +7,7 @@ export function useAgentNavigation() {
   return (path: string) => {
     if (path === '/agents') void nav({ to: '/app/agents' });
     else if (path === '/agents/new') void nav({ to: '/app/agents/new' });
+    else if (path.endsWith('/edit')) void nav({ to: '/app/agents/$agentId/edit', params: { agentId: path.split('/').at(-2) ?? '' } });
     else void nav({ to: '/app/agents/$agentId', params: { agentId: path.split('/').pop() ?? '' } });
   };
 }

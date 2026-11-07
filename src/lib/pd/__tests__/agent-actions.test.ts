@@ -1,9 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { addAgent, reviewVerdict, seedAgents, changePolicyDocument } from '../agents/store';
-import type { NewAgentDraft } from '../agents/domain';
+import { addAgent, editCustomAgent, reviewVerdict, seedAgents, changePolicyDocument } from '../agents/store';
+import { isPreconfiguredAgent, canEditCustomAgent, type NewAgentDraft } from '../agents/domain';
 
 const draft: NewAgentDraft = { name: 'Spend watchdog', area: 'Requests', triggerKind: 'manual', instructions: 'Review spending.', mode: 'shadow', category: 'custom', dos: ['  Flag risks  ', ''], donts: ['Never approve requests'] };
 describe('Reference agent mutation flows', () => {
+  it('groups Penny and the supplied agents as preconfigured, not custom', () => {
+    const s = seedAgents();
+    expect(s.agents.filter(isPreconfiguredAgent).map(a => a.id)).toEqual(['penny', 'policy-agent', 'contract-agent', 'order-follow-up', 'approval-nudge', 'payment-run-prep', 'contract-renewal-watch']);
+    expect(s.agents.find(a => a.id === 'penny')?.team).toHaveLength(10);
+    expect(isPreconfiguredAgent(addAgent(s, draft))).toBe(false);
+  });
+  it('allows editing user-created agents, not supplied agents', () => {
+    const s = seedAgents(); const a = addAgent(s, draft);
+    expect(canEditCustomAgent(a)).toBe(true);
+    for (const id of ['penny', 'policy-agent', 'contract-agent']) {
+      expect(() => editCustomAgent(s, id, { ...draft, triggerLabel: 'Daily' })).toThrow('Only custom agents');
+    }
+  });
+  it('updates custom setup without changing status, identity or history', () => {
+    const s = seedAgents(); const a = addAgent(s, draft); a.status = 'paused';
+    const history = structuredClone(s.modeHistory[a.id]);
+    editCustomAgent(s, a.id, { ...draft, name: 'Invoice watchdog', area: 'Invoices', triggerKind: 'schedule', triggerLabel: 'Daily at 9:00', instructions: 'Review invoice risks.', dos: [' Flag duplicates '], donts: ['Never pay invoices'], mode: 'live' });
+    expect(a).toMatchObject({ id: a.id, name: 'Invoice watchdog', area: 'Invoices', triggerKind: 'schedule', trigger: 'Daily at 9:00', description: 'Review invoice risks.', dos: ['Flag duplicates'], donts: ['Never pay invoices'], status: 'paused' });
+    expect(s.modeHistory[a.id]).toEqual(history); expect(s.runs[a.id]).toEqual([]);
+  });
+  it('rejects incomplete and duplicate edits without changing the agent', () => {
+    const s = seedAgents(); const a = addAgent(s, draft); const original = structuredClone(a);
+    expect(() => editCustomAgent(s, a.id, { ...draft, instructions: '', triggerLabel: '' })).toThrow('Complete the agent setup');
+    expect(() => editCustomAgent(s, a.id, { ...draft, name: 'penny', triggerLabel: '' })).toThrow('An agent with this name already exists');
+    expect(a).toEqual(original);
+  });
   it('adds a document with file contents to its policy section only', () => {
     const s = seedAgents(); const doc = { name: 'Policy', type: 'Reference' as const, file: 'policy.txt', instruction: 'Read policy', when: 'Before approval', dataUrl: 'data:text/plain;base64,UG9saWN5' };
     changePolicyDocument(s, 'policy-agent', 'po', null, doc);
