@@ -1,4 +1,7 @@
 # Maintenance screen
+- [ ] Upgrade Procurement AI from scripted responses to grounded, real-time reasoning with contextual suggestions and item-specific multi-selection.
+- [ ] Add conversational draft/approval confirmation based on mandatory details and the actual approval route; preserve explicit user control.
+- [ ] Verify stationery, mixed-item, corrections, supplier refusal, draft, submission, error recovery and mobile flows.
 - [x] Align Ask Insights conversation-local header and report layout with the latest reference, move editable suggestions above the compact composer, and verify saved report restoration plus desktop/mobile overflow; 11 reporting tests pass.
 - [x] Stop automatic latest-report navigation and compact the question field with suggestions; verified six-second idle stays on start, suggestion editing, one-submit report generation, explicit history restoration and 320–1002px layouts.
 - [x] Remove Ask Insights secondary sign-in screen; verified existing login and thread reload recover after cookies are removed without another sign-in.
