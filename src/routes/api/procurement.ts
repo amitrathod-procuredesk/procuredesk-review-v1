@@ -345,6 +345,34 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                             "Checked only your previous requests. Prior selections are suggestions, not current orders.",
                         });
                       } else if (call.name === "prepare_proposal") {
+                        if (catalogShown) {
+                          output = {
+                            error:
+                              "Catalog matches were presented in this reply. Wait for the user to choose items before preparing a proposal; do not add placeholder lines.",
+                            changed: false,
+                          };
+                          part({
+                            type: "tool",
+                            id,
+                            name,
+                            status: "error",
+                            summary: "Waiting for the user to choose catalog items first.",
+                          });
+                          modelInput.push(
+                            {
+                              type: "function_call",
+                              call_id: id,
+                              name: call.name,
+                              arguments: call.arguments,
+                            },
+                            {
+                              type: "function_call_output",
+                              call_id: id,
+                              output: JSON.stringify(output),
+                            },
+                          );
+                          continue;
+                        }
                         proposal = normalizeAgentProposal(db, agentProposalSchema.parse(args));
                         const preview = previewAgentProposal(db, proposal, userId);
                         output = { proposal, ...preview, fingerprint: undefined, saved: false };
