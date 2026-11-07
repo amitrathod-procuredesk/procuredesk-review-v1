@@ -73,38 +73,6 @@ export default function AgentsPage() {
   </div>;
 }
 
-function PolicyAgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
-  const isPaused = agent.status === 'paused';
-  return <article className="group flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:border-primary/35 hover:shadow-md sm:flex-row sm:items-stretch" aria-label={agent.name}>
-    <Button variant="ghost" onClick={onOpen} aria-label={`Open ${agent.name}`} className="block h-auto min-w-0 flex-1 whitespace-normal rounded-none p-4 text-left font-normal hover:bg-transparent hover:text-foreground sm:p-5">
-      <div className="flex items-start gap-3">
-        <AgentIconTile icon="shield" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-semibold text-foreground">{agent.name}</h2>
-            <AgentStatusBadge status={agent.status} />
-          </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{agent.area} · Created by ProcureDesk · Its own policy configuration</p>
-          <p className="mt-2 text-sm leading-5 text-muted-foreground">{agent.description}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            <span><strong className="font-semibold text-foreground tabular-nums">{agent.runs30d ?? '—'}</strong> runs · 30d</span>
-            <span className="flex items-center gap-1"><Clock3 className="size-3" />{agent.lastRun ?? 'Not run yet'}</span>
-          </div>
-        </div>
-        <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-      </div>
-    </Button>
-    <div className="flex items-center justify-end border-t border-border bg-subtle/45 px-4 py-2.5 sm:w-14 sm:self-stretch sm:items-center sm:justify-center sm:border-l sm:border-t-0 sm:px-0 sm:py-0">
-      <Button variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground" onClick={() => {
-        togglePause(agent.id);
-        toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
-      }} title={isPaused ? 'Resume agent' : 'Pause agent'} aria-label={`${isPaused ? 'Resume' : 'Pause'} ${agent.name}`}>
-        {isPaused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-      </Button>
-    </div>
-  </article>;
-}
-
 function AgentCard({ agent, onOpen, onEdit }: { agent: AgentDef; onOpen: () => void; onEdit?: () => void }) {
   const isPaused = agent.status === 'paused';
   const isDefault = isPreconfiguredAgent(agent);
