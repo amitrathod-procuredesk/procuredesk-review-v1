@@ -31,6 +31,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Checkbox } from "./form";
+import { PdAiIcon } from "./PdAiIcon";
 import { useDB, useMe, waitForWorkspaceSave } from "@/lib/pd/store";
 import { money, smartDate } from "@/lib/pd/engine";
 import { signInInsights } from "@/lib/pd/insights.functions";
