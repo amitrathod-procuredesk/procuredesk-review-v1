@@ -49,8 +49,18 @@ export default function AgentsPage() {
       </div>
     </div>
 
+    {policyAgent && (
+      <section aria-label="Policy agent" className="mb-6">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">System agent</h2>
+        <PolicyAgentCard agent={policyAgent} onOpen={() => navigate(`/agents/${policyAgent.id}`)} />
+      </section>
+    )}
+
+    {others.length > 0 && policyAgent && (
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your agents</h2>
+    )}
     <div className="pd-hub-grid">
-      {visible.map((agent) => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />)}
+      {others.map((agent) => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />)}
     </div>
     {visible.length === 0 && <div className="py-16 text-center">
       <Search className="mx-auto mb-3 size-6 text-muted-foreground" />
