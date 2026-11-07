@@ -31,6 +31,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Checkbox } from "./form";
+import { PdAiIcon } from "./PdAiIcon";
 import { useDB, useMe, waitForWorkspaceSave } from "@/lib/pd/store";
 import { money, smartDate } from "@/lib/pd/engine";
 import { signInInsights } from "@/lib/pd/insights.functions";
@@ -57,7 +58,7 @@ type StreamEvent =
   | { type: "error"; message: string };
 const mark = (
   <span className="pd-ai-mark size-7 shrink-0">
-    <Package className="size-4" />
+    <PdAiIcon className="size-[18px]" />
   </span>
 );
 
@@ -434,6 +435,10 @@ export function ProcurementAgent() {
   const proposalsValid = !error && !!preview && hasItems;
   const missing = confirmation === "approval" ? preview?.approvalMissing : preview?.draftMissing;
   const suggestions = lastAssistant?.parts.filter((p) => p.type === "choices").at(-1);
+  const recentPurchases = db.requests
+    .filter((r) => r.requesterId === me.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 3);
 
   return (
     <>
@@ -534,6 +539,37 @@ export function ProcurementAgent() {
                       <p className="mt-2 text-sm text-muted-foreground">
                         Hi {me.name.split(" ")[0]}.
                       </p>
+                      {recentPurchases.length > 0 && (
+                        <div className="mt-8 w-full max-w-sm text-left">
+                          <p className="mb-1 text-xs font-medium text-muted-foreground">
+                            Your recent purchases
+                          </p>
+                          <ul className="divide-y divide-border border-y border-border">
+                            {recentPurchases.map((r) => (
+                              <li key={r.id}>
+                                <button
+                                  type="button"
+                                  className="group flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:text-primary"
+                                  onClick={() => {
+                                    setQuestion(`I need another ${r.title}`);
+                                    input.current?.focus();
+                                  }}
+                                >
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-medium">
+                                      {r.title}
+                                    </span>
+                                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                      {r.id} · {smartDate(r.createdAt)}
+                                    </span>
+                                  </span>
+                                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                   {messages.map((message) => (
@@ -772,8 +808,8 @@ export function ProcurementAgent() {
                       <Button
                         key={c.label}
                         size="sm"
-                        variant="outline"
-                        className="h-auto max-w-full whitespace-normal rounded-full px-3 py-1.5 text-left text-xs"
+                        variant="ghost"
+                        className="h-auto max-w-full whitespace-normal rounded-full border border-border bg-transparent px-3 py-1.5 text-left text-xs font-normal text-foreground shadow-none hover:border-primary/50 hover:bg-transparent hover:text-primary"
                         onClick={() => void send(c.message)}
                       >
                         {c.label}
@@ -788,8 +824,8 @@ export function ProcurementAgent() {
                         <Button
                           key={example}
                           size="sm"
-                          variant="outline"
-                          className="rounded-full text-xs"
+                          variant="ghost"
+                          className="rounded-full border border-border bg-transparent text-xs font-normal text-foreground shadow-none hover:border-primary/50 hover:bg-transparent hover:text-primary"
                           onClick={() => {
                             setQuestion(`I need ${example.toLowerCase()}`);
                             input.current?.focus();
