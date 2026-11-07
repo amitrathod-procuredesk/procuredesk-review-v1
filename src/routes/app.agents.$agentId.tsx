@@ -10,8 +10,8 @@ import {
   ThumbsUp,
   X,
 } from 'lucide-react';
-import { createFileRoute } from '@tanstack/react-router';
-import { PageBreadcrumb } from '@/components/pd/agents/AgentBreadcrumb';
+import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router';
+import { PageBreadcrumb, useAgentNavigation } from '@/components/pd/agents/AgentBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { TextArea as Textarea } from '@/components/pd/form';
@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import {
+  canEditCustomAgent,
+  isPreconfiguredAgent,
   reviewProgress,
   runSummary,
   type AgentRun,
@@ -47,6 +49,7 @@ import { toast } from 'sonner';
 type Tab = 'instructions' | 'team' | 'runs';
 
 export default function AgentDetailPage() {
+  const navigate = useAgentNavigation();
   const { agentId: id } = Route.useParams();
   const { agents, runs, modeHistory } = useAgents();
   const agent = agents.find((a) => a.id === id);
@@ -82,6 +85,8 @@ export default function AgentDetailPage() {
     <>
       <div className="mx-auto max-w-[1440px] p-3 sm:p-5">
         <PageBreadcrumb items={[{ label: 'AI agents', to: '/agents' }, { label: agent.name }]} />
+
+        {canEditCustomAgent(agent) && <div className="mt-3 flex justify-end"><Button variant="outline" size="sm" onClick={() => navigate(`/agents/${agent.id}/edit`)}><Pencil className="size-3.5" />Edit agent</Button></div>}
 
         <div className="grid min-[900px]:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-3 mt-4">
           {/* Left rail — identity, mode and controls */}
@@ -241,8 +246,12 @@ export default function AgentDetailPage() {
               ) : (
                 <div className="pd-panel mt-3 p-3.5">
                   <p className="text-sm text-foreground leading-relaxed">{agent.description}</p>
+                  {canEditCustomAgent(agent) && <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div><h2 className="text-xs font-semibold text-foreground">What it should do</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">{agent.dos?.map((rule, i) => <li key={i}>{rule}</li>)}</ul></div>
+                    <div><h2 className="text-xs font-semibold text-foreground">What it must not do</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">{agent.donts?.map((rule, i) => <li key={i}>{rule}</li>)}</ul></div>
+                  </div>}
                   <p className="text-xs text-muted-foreground mt-3">
-                    {agent.createdBy === 'ProcureDesk default'
+                    {isPreconfiguredAgent(agent)
                       ? "This agent's instructions are managed by ProcureDesk. Pause it or switch its mode from the panel on the left."
                       : 'These are the instructions you gave the agent. Pause it or switch its mode from the panel on the left.'}
                   </p>
@@ -574,5 +583,11 @@ function VerdictCard({
 
 export const Route = createFileRoute("/app/agents/$agentId")({
   head: () => ({ meta: [{ title: "AI agent details · ProcureDesk" }, { name: "description", content: "Review agent policy sections, team, run evidence and mode history." }, { property: "og:title", content: "AI agent details · ProcureDesk" }, { property: "og:description", content: "Review agent policy sections, team, run evidence and mode history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
-  component: AgentDetailPage,
+  component: AgentDetailRoute,
 });
+
+function AgentDetailRoute() {
+  const editing = useRouterState({ select: state => state.location.pathname.endsWith('/edit') });
+  // Child editing routes replace the detail view rather than rendering inside it.
+  return <>{!editing && <AgentDetailPage />}<Outlet /></>;
+}

@@ -27,6 +27,7 @@
 - AI agents reuse the reference domain and sample runs, with settings and reviews saved through workspace mutations; mode labels never execute automation or mutate procurement documents.
 - AI agent navigation uses the shared AgentNavIcon component across desktop and mobile so its identity stays consistent without duplicating icon markup.
 - The AI Hub directory uses AgentHubProfile for equal-profile agent cards; its portraits and motion remain presentation-only, leaving domain actions and detail flows unchanged.
+- Agent origin is derived through shared catalog-identity helpers, separately from policy configuration; custom creation and editing share AgentSetupForm and validated workspace mutations, preserving activity and mode on edits.
 - Policy document content and metadata use the shared workspace mutation path, with small embedded files matching the existing prototype session model; reference filenames without content are disclosed rather than fabricated.
 - Agent setup keeps mode and trigger selection as shared Radio controls and sizes long-form guardrails with textarea rows, preserving existing draft validation and creation actions.
 - Normal ProcureDesk sign-in establishes the server-validated session reused by Ask Insights; missing/expired preview cookies are restored by server-revalidating the existing prototype account credential, never by trusting browser user IDs. Caller-scoped conversations use route-derived thread IDs, and isolated sample ledgers retain explicit provenance.

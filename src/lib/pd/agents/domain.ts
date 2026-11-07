@@ -87,9 +87,18 @@ export interface AgentDef {
 
 export type AgentCategory = 'policy' | 'custom';
 
-/** The policy agent is the one with policy sections; every other agent (Penny, her team, the rest) is custom. */
+/** Configuration kind is independent of whether an agent is preconfigured or user-created. */
 export function agentCategory(agent: AgentDef): AgentCategory {
   return agent.sections ? 'policy' : 'custom';
+}
+
+/** Stable catalog identities keep shipped agents separate from user-created workflows. */
+export function isPreconfiguredAgent(agent: AgentDef): boolean {
+  return AGENT_CATALOG.some((configured) => configured.id === agent.id) || agent.createdBy === 'ProcureDesk default';
+}
+
+export function canEditCustomAgent(agent: AgentDef): boolean {
+  return !isPreconfiguredAgent(agent) && !agent.sections;
 }
 
 /** Only one policy agent may exist in the workspace. */
