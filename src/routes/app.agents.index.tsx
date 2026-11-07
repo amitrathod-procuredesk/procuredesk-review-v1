@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { TextInput as Input } from '@/components/pd/form';
 import { cn } from '@/lib/utils';
-import { filterAgents, statusCounts, type AgentDef, type StatusFilter } from '@/lib/pd/agents/domain';
+import { agentCategory, filterAgents, statusCounts, type AgentDef, type StatusFilter } from '@/lib/pd/agents/domain';
 import { togglePause, useAgents } from '@/lib/pd/agents/store';
 import { AgentStatusBadge } from '@/components/pd/agents/agentBits';
 import { AgentHubProfile } from '@/components/pd/agents/AgentHubProfile';
@@ -24,6 +24,9 @@ export default function AgentsPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const counts = useMemo(() => statusCounts(agents), [agents]);
   const visible = useMemo(() => filterAgents(agents, filter, query), [agents, filter, query]);
+  // The policy agent is created by the system and configured separately from the other agents.
+  const policyAgent = useMemo(() => visible.find((a) => agentCategory(a) === 'policy'), [visible]);
+  const others = useMemo(() => visible.filter((a) => agentCategory(a) !== 'policy'), [visible]);
 
   return <div className="pd-hub mx-auto max-w-[1440px] p-3 sm:p-5 lg:p-6">
     <div className="flex flex-wrap items-center justify-between gap-4 pb-5">
