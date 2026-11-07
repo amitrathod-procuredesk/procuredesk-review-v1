@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as ApiInsightsRouteImport } from './routes/api/insights'
+import { Route as ApiProcurementRouteImport } from './routes/api/procurement'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
@@ -48,6 +49,11 @@ const AppRoute = AppRouteImport.update({
 const ApiInsightsRoute = ApiInsightsRouteImport.update({
   id: '/api/insights',
   path: '/api/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProcurementRoute = ApiProcurementRouteImport.update({
+  id: '/api/procurement',
+  path: '/api/procurement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/api/insights': typeof ApiInsightsRoute
+  '/api/procurement': typeof ApiProcurementRoute
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/insights': typeof ApiInsightsRoute
+  '/api/procurement': typeof ApiProcurementRoute
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app': typeof AppIndexRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/api/insights': typeof ApiInsightsRoute
+  '/api/procurement': typeof ApiProcurementRoute
   '/app/admin': typeof AppAdminRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/': typeof AppIndexRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/api/insights'
+    | '/api/procurement'
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/insights'
+    | '/api/procurement'
     | '/app/admin'
     | '/app/approvals'
     | '/app'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/api/insights'
+    | '/api/procurement'
     | '/app/admin'
     | '/app/approvals'
     | '/app/'
@@ -331,6 +343,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   ApiInsightsRoute: typeof ApiInsightsRoute
+  ApiProcurementRoute: typeof ApiProcurementRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -354,6 +367,13 @@ declare module '@tanstack/react-router' {
       path: '/api/insights'
       fullPath: '/api/insights'
       preLoaderRoute: typeof ApiInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/procurement': {
+      id: '/api/procurement'
+      path: '/api/procurement'
+      fullPath: '/api/procurement'
+      preLoaderRoute: typeof ApiProcurementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -569,6 +589,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   ApiInsightsRoute: ApiInsightsRoute,
+  ApiProcurementRoute: ApiProcurementRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
