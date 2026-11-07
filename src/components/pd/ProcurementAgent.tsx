@@ -624,7 +624,7 @@ export function ProcurementAgent() {
                                   key={index}
                                   items={part.items}
                                   active={active && message === lastAssistant}
-                                  onChoose={(text) => void send(text)}
+                                  onChoose={(text, display) => void send(text, display)}
                                 />
                               );
                             if (part.type === "suppliers")
@@ -643,6 +643,7 @@ export function ProcurementAgent() {
                                           onClick={() =>
                                             void send(
                                               `Use ${supplier.name} [supplier ID ${supplier.id}] for the requested items whose categories they cover. Do not assume product stock or choose prices.`,
+                                              `Use ${supplier.name}`,
                                             )
                                           }
                                         >
