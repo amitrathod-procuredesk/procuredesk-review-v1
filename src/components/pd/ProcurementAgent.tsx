@@ -6,8 +6,10 @@ import {
   ArrowUp,
   Check,
   ChevronDown,
+  CircleAlert,
   FileText,
   Laptop,
+  Loader2,
   PenLine,
   ShoppingBag,
   Trash2,
@@ -23,7 +25,6 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { Tool, ToolContent, ToolHeader } from "@/components/ai-elements/tool";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   PromptInput,
@@ -70,7 +71,7 @@ function ProductChoices({
 }: {
   items: Extract<AgentPart, { type: "catalog" }>["items"];
   active: boolean;
-  onChoose: (message: string) => void;
+  onChoose: (message: string, display?: string) => void;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   return (
@@ -122,6 +123,10 @@ function ProductChoices({
                 .join(
                   "; ",
                 )}. Keep them as separate items and ask for any missing individual quantities.`,
+              `Use selected: ${selected
+                .map((id) => items.find((x) => x.id === id)?.name)
+                .filter(Boolean)
+                .join(", ")}`,
             )
           }
         >
