@@ -33,4 +33,6 @@
 - [x] Verify both roles, card/table layouts, decision dialogs and narrow-screen behavior.
 - [x] Default all users to Requests after login, hide Home, and verify navigation.
 - [x] Use a very subtle primary-family workspace background inspired by Ramp, keeping cards light and clear.
-- [x] Check key screens at phone, tablet, laptop and desktop widths and fix overflowing controls.
+- [x] Check key screens at phone, tablet, laptop and desktop widths and fix overflowing controls.# Roadmap
+- [ ] Verify minimal Procurement AI start screen (recent purchases + flat pills) in browser
+- [ ] Design new unique minimal AI icon (replace pd-ai-mark), explain rationale
