@@ -72,7 +72,7 @@ export default function AgentsPage() {
 
 function PolicyAgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
   const isPaused = agent.status === 'paused';
-  return <article className="pd-hub-card group flex flex-col sm:flex-row sm:items-center" aria-label={agent.name}>
+  return <article className="group flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:border-primary/35 hover:shadow-md sm:flex-row sm:items-stretch" aria-label={agent.name}>
     <Button variant="ghost" onClick={onOpen} aria-label={`Open ${agent.name}`} className="block h-auto min-w-0 flex-1 whitespace-normal rounded-none p-4 text-left font-normal hover:bg-transparent hover:text-foreground sm:p-5">
       <div className="flex items-start gap-3">
         <AgentIconTile icon="shield" />
