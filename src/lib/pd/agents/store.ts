@@ -1,5 +1,5 @@
 import { useDB, mutate } from '../store';
-import { AGENT_CATALOG, AGENT_RUNS, POLICY_SECTIONS, canCreatePolicyAgent, cleanRules, nextAgentId, validateNewAgent, type AgentDef, type AgentRun, type AgentStatus, type NewAgentDraft, type PolicyDoc } from './domain';
+import { AGENT_CATALOG, AGENT_RUNS, POLICY_SECTIONS, canCreatePolicyAgent, canEditCustomAgent, cleanRules, nextAgentId, validateNewAgent, type AgentDef, type AgentRun, type AgentStatus, type NewAgentDraft, type PolicyDoc } from './domain';
 
 export interface AgentsState {
   agents: AgentDef[];
@@ -71,4 +71,17 @@ export function createAgent(draft: NewAgentDraft & { triggerLabel?: string; icon
   update(s => { result = addAgent(s, draft); });
   if (!result) throw new Error('Could not create agent.');
   return result;
+}
+
+export function editCustomAgent(s: AgentsState, id: string, draft: NewAgentDraft & { triggerLabel: string }): AgentDef {
+  const agent = s.agents.find(a => a.id === id);
+  if (!agent || !canEditCustomAgent(agent)) throw new Error('Only custom agents can be edited here.');
+  if (Object.keys(validateNewAgent(draft)).length) throw new Error('Complete the agent setup.');
+  if (s.agents.some(a => a.id !== id && a.name.toLowerCase() === draft.name.trim().toLowerCase())) throw new Error('An agent with this name already exists.');
+  Object.assign(agent, { name: draft.name.trim(), area: draft.area, description: draft.instructions.trim(), triggerKind: draft.triggerKind, trigger: draft.triggerLabel.trim() || 'Manual only', dos: cleanRules(draft.dos), donts: cleanRules(draft.donts) });
+  return agent;
+}
+
+export function saveCustomAgent(id: string, draft: NewAgentDraft & { triggerLabel: string }) {
+  update(s => { editCustomAgent(s, id, draft); });
 }

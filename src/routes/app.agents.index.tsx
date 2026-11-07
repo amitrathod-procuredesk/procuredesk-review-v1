@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useAgentNavigation } from '@/components/pd/agents/AgentBreadcrumb';
-import { ArrowRight, Clock3, Pause, Play, Plus, Search, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Clock3, Pause, Pencil, Play, Plus, Search, Sparkles, Zap } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { TextInput as Input } from '@/components/pd/form';
 import { cn } from '@/lib/utils';
-import { agentCategory, filterAgents, statusCounts, type AgentDef, type StatusFilter } from '@/lib/pd/agents/domain';
+import { canEditCustomAgent, isPreconfiguredAgent, filterAgents, statusCounts, type AgentDef, type StatusFilter } from '@/lib/pd/agents/domain';
 import { togglePause, useAgents } from '@/lib/pd/agents/store';
-import { AgentIconTile, AgentStatusBadge } from '@/components/pd/agents/agentBits';
+import { AgentStatusBadge } from '@/components/pd/agents/agentBits';
 import { AgentHubProfile } from '@/components/pd/agents/AgentHubProfile';
 import { AgentNavIcon } from '@/components/pd/agents/AgentNavIcon';
 import { toast } from 'sonner';
@@ -24,9 +24,8 @@ export default function AgentsPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const counts = useMemo(() => statusCounts(agents), [agents]);
   const visible = useMemo(() => filterAgents(agents, filter, query), [agents, filter, query]);
-  // The policy agent is created by the system and configured separately from the other agents.
-  const policyAgent = useMemo(() => visible.find((a) => agentCategory(a) === 'policy'), [visible]);
-  const others = useMemo(() => visible.filter((a) => agentCategory(a) !== 'policy'), [visible]);
+  const preconfigured = visible.filter(isPreconfiguredAgent);
+  const custom = visible.filter(a => !isPreconfiguredAgent(a));
 
   return <div className="pd-hub mx-auto max-w-[1440px] p-3 sm:p-5 lg:p-6">
     <div className="flex flex-wrap items-center justify-between gap-4 pb-5">
@@ -49,19 +48,23 @@ export default function AgentsPage() {
       </div>
     </div>
 
-    {policyAgent && (
-      <section aria-label="Policy agent" className="mb-6">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">System agent</h2>
-        <PolicyAgentCard agent={policyAgent} onOpen={() => navigate(`/agents/${policyAgent.id}`)} />
+    {preconfigured.length > 0 && (
+      <section aria-label="Preconfigured agents" className="mb-7">
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Preconfigured agents <span className="ml-1 font-normal tabular-nums text-muted-foreground">{preconfigured.length}</span></h2>
+        <div className="pd-hub-grid">
+          {preconfigured.map(agent => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />)}
+        </div>
       </section>
     )}
-
-    {others.length > 0 && policyAgent && (
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your agents</h2>
-    )}
-    <div className="pd-hub-grid">
-      {others.map((agent) => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} />)}
-    </div>
+    {(custom.length > 0 || (filter === 'all' && !query)) && <section aria-label="Custom agents">
+      <h2 className="mb-3 text-sm font-semibold text-foreground">Custom agents <span className="ml-1 font-normal tabular-nums text-muted-foreground">{custom.length}</span></h2>
+      {custom.length > 0 ? <div className="pd-hub-grid">
+        {custom.map(agent => <AgentCard key={agent.id} agent={agent} onOpen={() => navigate(`/agents/${agent.id}`)} onEdit={() => navigate(`/agents/${agent.id}/edit`)} />)}
+      </div> : <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-5">
+        <p className="text-sm text-muted-foreground">No custom agents yet.</p>
+        <Button variant="outline" size="sm" onClick={() => navigate('/agents/new')}><Plus className="size-4" />Create agent</Button>
+      </div>}
+    </section>}
     {visible.length === 0 && <div className="py-16 text-center">
       <Search className="mx-auto mb-3 size-6 text-muted-foreground" />
       <p className="text-sm font-medium">No agents match</p>
@@ -102,9 +105,9 @@ function PolicyAgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => voi
   </article>;
 }
 
-function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
+function AgentCard({ agent, onOpen, onEdit }: { agent: AgentDef; onOpen: () => void; onEdit?: () => void }) {
   const isPaused = agent.status === 'paused';
-  const isDefault = agent.createdBy === 'ProcureDesk default';
+  const isDefault = isPreconfiguredAgent(agent);
   return <article className="pd-hub-card group" aria-label={agent.name}>
     <Button variant="ghost" onClick={onOpen} aria-label={`Open ${agent.name}`} className="pd-hub-card-open block h-auto w-full flex-1 whitespace-normal rounded-none p-4 text-left font-normal hover:bg-transparent hover:text-foreground sm:p-5">
       <div className="flex items-start justify-between gap-2">
@@ -112,7 +115,7 @@ function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
         <AgentStatusBadge status={agent.status} />
       </div>
       <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
-        <span>{agent.area}</span><span aria-hidden="true">·</span><span>{isDefault ? 'ProcureDesk agent' : 'Custom agent'}</span>
+        <span>{agent.area}</span>{agent.sections && <><span aria-hidden="true">·</span><span>Policy configuration</span></>}
       </div>
       <div className="mt-1 flex items-center justify-between gap-3">
         <h2 className="min-w-0 break-words text-base font-semibold text-foreground">{agent.name}</h2>
@@ -128,12 +131,15 @@ function AgentCard({ agent, onOpen }: { agent: AgentDef; onOpen: () => void }) {
         <span><strong className="font-semibold text-foreground tabular-nums">{agent.runs30d ?? '—'}</strong> runs · 30d</span>
         <span className="flex items-center gap-1"><Clock3 className="size-3" />{agent.lastRun ?? 'Not run yet'}</span>
       </div>
+      <div className="flex shrink-0 items-center gap-1">
+      {!isDefault && canEditCustomAgent(agent) && onEdit && <Button variant="ghost" size="icon" className="size-7 text-muted-foreground" onClick={onEdit} title="Edit agent" aria-label={`Edit ${agent.name}`}><Pencil className="size-3.5" /></Button>}
       <Button variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground" onClick={() => {
         togglePause(agent.id);
         toast.success(isPaused ? `${agent.name} is back on.` : `${agent.name} is paused. Its setup and history are kept.`);
       }} title={isPaused ? 'Resume agent' : 'Pause agent'} aria-label={`${isPaused ? 'Resume' : 'Pause'} ${agent.name}`}>
         {isPaused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
       </Button>
+      </div>
     </div>
   </article>;
 }
