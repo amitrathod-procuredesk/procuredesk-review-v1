@@ -57,7 +57,7 @@ type StreamEvent =
   | { type: "error"; message: string };
 const mark = (
   <span className="pd-ai-mark size-7 shrink-0">
-    <Package className="size-4" />
+    <PdAiIcon className="size-4" />
   </span>
 );
 
