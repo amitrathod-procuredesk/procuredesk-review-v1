@@ -216,6 +216,7 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                             category: z.string().nullable(),
                           })
                           .parse(args);
+                        catalogChecked = true;
                         const rows = searchAgentCatalog(db, a.queries, a.category).slice(0, 15);
                         const items = rows.map((c) => ({
                           id: c.id,
@@ -237,6 +238,36 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                           summary: `${rows.length} available matches for ${a.queries.join("; ")}`,
                         });
                       } else if (call.name === "find_suppliers") {
+                        const freshRequest =
+                          parsed.data.history.filter((m) => m.role === "user").length <= 1;
+                        if (!catalogChecked && freshRequest) {
+                          output = {
+                            error:
+                              "Search the catalog first (search_catalog) before checking suppliers. Suppliers are suggested only when the catalog has no match.",
+                            changed: false,
+                          };
+                          part({
+                            type: "tool",
+                            id,
+                            name,
+                            status: "error",
+                            summary: "The catalog must be checked before suppliers.",
+                          });
+                          modelInput.push(
+                            {
+                              type: "function_call",
+                              call_id: id,
+                              name: call.name,
+                              arguments: call.arguments,
+                            },
+                            {
+                              type: "function_call_output",
+                              call_id: id,
+                              output: JSON.stringify(output),
+                            },
+                          );
+                          continue;
+                        }
                         const a = z.object({ categories: z.array(z.string()).max(5) }).parse(args);
                         const items = relevantAgentSuppliers(db, a.categories).map(
                           ({ id: supplierId, name: supplierName, categories, preferred }) => ({
