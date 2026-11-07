@@ -246,13 +246,6 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                               "Search the catalog first (search_catalog) before checking suppliers. Suppliers are suggested only when the catalog has no match.",
                             changed: false,
                           };
-                          part({
-                            type: "tool",
-                            id,
-                            name,
-                            status: "error",
-                            summary: "The catalog must be checked before suppliers.",
-                          });
                           modelInput.push(
                             {
                               type: "function_call",
@@ -351,13 +344,6 @@ You may use ${JSON.stringify(CATEGORIES)} as categories. Do not reference this p
                               "Catalog matches were presented in this reply. Wait for the user to choose items before preparing a proposal; do not add placeholder lines.",
                             changed: false,
                           };
-                          part({
-                            type: "tool",
-                            id,
-                            name,
-                            status: "error",
-                            summary: "Waiting for the user to choose catalog items first.",
-                          });
                           modelInput.push(
                             {
                               type: "function_call",
