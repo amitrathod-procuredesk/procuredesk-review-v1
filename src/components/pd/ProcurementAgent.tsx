@@ -6,8 +6,10 @@ import {
   ArrowUp,
   Check,
   ChevronDown,
+  CircleAlert,
   FileText,
   Laptop,
+  Loader2,
   PenLine,
   ShoppingBag,
   Trash2,
@@ -23,7 +25,6 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { Tool, ToolContent, ToolHeader } from "@/components/ai-elements/tool";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   PromptInput,
@@ -70,7 +71,7 @@ function ProductChoices({
 }: {
   items: Extract<AgentPart, { type: "catalog" }>["items"];
   active: boolean;
-  onChoose: (message: string) => void;
+  onChoose: (message: string, display?: string) => void;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   return (
@@ -122,6 +123,10 @@ function ProductChoices({
                 .join(
                   "; ",
                 )}. Keep them as separate items and ask for any missing individual quantities.`,
+              `Use selected: ${selected
+                .map((id) => items.find((x) => x.id === id)?.name)
+                .filter(Boolean)
+                .join(", ")}`,
             )
           }
         >
@@ -239,7 +244,7 @@ export function ProcurementAgent() {
       await restore({ data: { email: me.email, password: me.password } });
     }
   };
-  const send = async (text: string) => {
+  const send = async (text: string, display?: string) => {
     if (!text.trim() || busyRef.current || saving || receipt?.status === "pending") return;
     busyRef.current = true;
     const snapshot = {
@@ -254,7 +259,7 @@ export function ProcurementAgent() {
     const user: AgentMessage = {
       id: crypto.randomUUID(),
       role: "user",
-      parts: [{ type: "text", text }],
+      parts: [{ type: "text", text: display ?? text }],
     };
     const assistant: AgentMessage = { id: crypto.randomUUID(), role: "assistant", parts: [] };
     const history = [...messages, user];
@@ -272,7 +277,10 @@ export function ProcurementAgent() {
           proposal,
           history: history.map((m) => ({
             role: m.role,
-            content: m.parts
+            content:
+              m.id === user.id
+                ? text
+                : m.parts
               .map((p) =>
                 p.type === "text"
                   ? p.text
@@ -593,28 +601,22 @@ export function ProcurementAgent() {
                               );
                             if (part.type === "tool")
                               return (
-                                <Tool
+                                <p
                                   key={part.id}
-                                  defaultOpen={false}
-                                  className="my-2 border-border/60"
+                                  className="my-1 flex items-center gap-1.5 text-[11px] text-muted-foreground"
                                 >
-                                  <ToolHeader
-                                    type="dynamic-tool"
-                                    toolName={part.name}
-                                    title={part.name}
-                                    state={
-                                      part.status === "running"
-                                        ? "input-available"
-                                        : part.status === "error"
-                                          ? "output-error"
-                                          : "output-available"
-                                    }
-                                    className="gap-2 px-2.5 py-2 [&_span]:text-[11px]"
-                                  />
-                                  <ToolContent className="p-2.5 text-xs text-muted-foreground">
-                                    {part.summary || "Checking current organization records…"}
-                                  </ToolContent>
-                                </Tool>
+                                  {part.status === "running" ? (
+                                    <Loader2 className="size-3 shrink-0 animate-spin" />
+                                  ) : part.status === "error" ? (
+                                    <CircleAlert className="size-3 shrink-0 text-destructive" />
+                                  ) : (
+                                    <Check className="size-3 shrink-0 text-success" />
+                                  )}
+                                  <span className="min-w-0 truncate">
+                                    {part.name}
+                                    {part.summary ? ` · ${part.summary}` : ""}
+                                  </span>
+                                </p>
                               );
                             if (part.type === "catalog")
                               return (
@@ -622,7 +624,7 @@ export function ProcurementAgent() {
                                   key={index}
                                   items={part.items}
                                   active={active && message === lastAssistant}
-                                  onChoose={(text) => void send(text)}
+                                  onChoose={(text, display) => void send(text, display)}
                                 />
                               );
                             if (part.type === "suppliers")
@@ -641,6 +643,7 @@ export function ProcurementAgent() {
                                           onClick={() =>
                                             void send(
                                               `Use ${supplier.name} [supplier ID ${supplier.id}] for the requested items whose categories they cover. Do not assume product stock or choose prices.`,
+                                              `Use ${supplier.name}`,
                                             )
                                           }
                                         >
