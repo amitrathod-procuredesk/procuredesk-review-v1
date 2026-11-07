@@ -6,6 +6,8 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => options,
   useNavigate: () => state.navigate,
 }));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/pd/insights.functions", () => ({ signInInsights: vi.fn().mockResolvedValue({}) }));
 vi.mock("@/lib/pd/store", () => ({
   login: state.login,
   useDB: () => ({ org: { name: "Test organization" }, users: [] }),
