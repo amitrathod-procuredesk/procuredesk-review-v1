@@ -321,7 +321,21 @@ export function ProcurementAgent() {
           history: history.map((m) => ({
             role: m.role,
             content: m.parts
-              .map((p) => p.type === "text" ? p.text : p.type === "proposal" ? JSON.stringify({ proposal: p.proposal, preview: { total: p.preview.total, approvers: p.preview.approvers, draftMissing: p.preview.draftMissing, approvalMissing: p.preview.approvalMissing } }) : JSON.stringify(p))
+              .map((p) =>
+                p.type === "text"
+                  ? p.text
+                  : p.type === "proposal"
+                    ? JSON.stringify({
+                        proposal: p.proposal,
+                        preview: {
+                          total: p.preview.total,
+                          approvers: p.preview.approvers,
+                          draftMissing: p.preview.draftMissing,
+                          approvalMissing: p.preview.approvalMissing,
+                        },
+                      })
+                    : JSON.stringify(p),
+              )
               .join("\n"),
           })),
         }),
@@ -908,7 +922,13 @@ export function ProcurementAgent() {
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="pd-section-title">{receipt?.status === "pending" ? "Sent for approval" : receipt ? "Your draft" : "Selected items"}</h3>
+                  <h3 className="pd-section-title">
+                    {receipt?.status === "pending"
+                      ? "Sent for approval"
+                      : receipt
+                        ? "Your draft"
+                        : "Selected items"}
+                  </h3>
                   <span className="text-[11px] text-muted-foreground">
                     {proposal.items.length} items
                   </span>
