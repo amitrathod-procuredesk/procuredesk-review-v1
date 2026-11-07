@@ -327,13 +327,12 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
 .pd-scroll-quiet:hover::-webkit-scrollbar-thumb, .pd-scroll-quiet:focus-within::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 18%, transparent); }
 
 @utility pd-ai-mark {
-  background-image: var(--ai-gradient);
-  color: var(--primary-foreground);
-  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 32%;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--primary) 45%, transparent);
 }
 
 /* Long values never break layouts: big numbers scale to their container, long words wrap. */

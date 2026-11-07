@@ -572,7 +572,9 @@ export function ProcurementAgent() {
                       )}
                     </div>
                   )}
-                  {messages.map((message) => (
+                  {messages
+                    .filter((message) => message.role === "user" || message.parts.length > 0)
+                    .map((message) => (
                     <Message key={message.id} from={message.role} className="max-w-full">
                       <div className="flex min-w-0 gap-2.5">
                         {message.role === "assistant" && mark}
