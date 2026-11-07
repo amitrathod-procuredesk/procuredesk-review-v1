@@ -5,8 +5,11 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
-  ChevronDown,
-  ChevronUp,
+  FileText,
+  Laptop,
+  PenLine,
+  ShoppingBag,
+  Trash2,
   Package,
   RotateCcw,
   Undo2,
@@ -27,7 +30,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import { Checkbox, Select, TextInput } from "./form";
+import { Checkbox } from "./form";
 import { useDB, useMe, waitForWorkspaceSave } from "@/lib/pd/store";
 import { money, smartDate } from "@/lib/pd/engine";
 import { signInInsights } from "@/lib/pd/insights.functions";
@@ -131,106 +134,52 @@ function ProductChoices({
 function ItemDetails({
   item,
   active,
-  onUpdate,
   onRemove,
 }: {
   item: AgentItem;
   active: boolean;
-  onUpdate: (message: string) => void;
   onRemove: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [quantity, setQuantity] = useState(item.quantity?.toString() ?? "");
-  const [unit, setUnit] = useState(item.unit ?? "");
-  useEffect(() => {
-    setQuantity(item.quantity?.toString() ?? "");
-    setUnit(item.unit ?? "");
-  }, [item.quantity, item.unit]);
+  const name = item.name.toLowerCase();
+  const ProductIcon = /\b(pen|pens|pencil|pencils|marker|markers)\b/.test(name)
+    ? PenLine
+    : /\b(paper|notebook|notebooks|ream|reams)\b/.test(name)
+      ? FileText
+      : /\b(laptop|computer|monitor|tablet)\b/.test(name)
+        ? Laptop
+        : /\b(license|software|subscription)\b/.test(name)
+          ? ShoppingBag
+          : Package;
   return (
-    <li className="py-3">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-auto w-full justify-between whitespace-normal px-0 text-left"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-      >
-        <span className="min-w-0">
-          <span className="block text-xs font-medium">{item.name}</span>
-          <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-            {item.quantity ?? "Qty needed"} {item.unit?.toLowerCase() ?? "· Unit needed"}
-          </span>
-        </span>
-        {expanded ? (
-          <ChevronUp className="size-3.5 shrink-0" />
-        ) : (
-          <ChevronDown className="size-3.5 shrink-0" />
+    <li className="flex items-start gap-2.5 py-3">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground" aria-hidden="true">
+        <ProductIcon className="size-5" strokeWidth={1.5} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="break-words text-xs font-medium">{item.name}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {item.quantity ?? "Qty needed"} {item.unit?.toLowerCase() ?? "· Unit needed"}
+        </p>
+        {item.description && (
+          <p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground">{item.description}</p>
         )}
+        {item.unitPrice !== null && (
+          <p className="mt-1 text-xs font-medium tabular-nums">
+            {money(item.unitPrice * (item.quantity ?? 0))}
+          </p>
+        )}
+      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        disabled={!active}
+        onClick={onRemove}
+        aria-label={`Remove ${item.name}`}
+        title={`Remove ${item.name}`}
+      >
+        <Trash2 className="size-3.5" />
       </Button>
-      {expanded && (
-        <div className="mt-2 space-y-2">
-          {item.description && (
-            <p className="text-[11px] text-muted-foreground">{item.description}</p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-[11px] text-muted-foreground">
-              Quantity
-              <TextInput
-                aria-label={`Quantity for ${item.name}`}
-                type="number"
-                min="0.001"
-                step="any"
-                disabled={!active}
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-              />
-            </label>
-            <label className="text-[11px] text-muted-foreground">
-              Unit
-              <Select
-                aria-label={`Unit for ${item.name}`}
-                disabled={!active || !!item.catalogId}
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-              >
-                <option value="">Choose</option>
-                {["EACH", "PACK", "BOX", "REAM", "HOUR", "MONTH", "LICENSE"].map((u) => (
-                  <option key={u}>{u}</option>
-                ))}
-              </Select>
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!active || !Number(quantity) || !unit}
-              onClick={() =>
-                onUpdate(
-                  `For item ${item.name} [${item.id}], set the quantity to ${quantity} ${unit}. Keep all other item details unchanged.`,
-                )
-              }
-            >
-              Update
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={!active}
-              onClick={() =>
-                onUpdate(
-                  `I want to change the specifications or supplier for ${item.name} [${item.id}] only. Keep the other items unchanged.`,
-                )
-              }
-            >
-              Change details
-            </Button>
-            <Button size="sm" variant="destructive-soft" disabled={!active} onClick={onRemove}>
-              Remove
-            </Button>
-          </div>
-        </div>
-      )}
     </li>
   );
 }
@@ -939,10 +888,6 @@ export function ProcurementAgent() {
                       key={i.id}
                       item={i}
                       active={active}
-                      onUpdate={(text) => {
-                        setMobileItems(false);
-                        void send(text);
-                      }}
                       onRemove={() => {
                         setMobileItems(false);
                         void send(
