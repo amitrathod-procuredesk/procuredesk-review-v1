@@ -6,6 +6,8 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => options,
   useNavigate: () => state.navigate,
 }));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/pd/insights.functions", () => ({ signInInsights: vi.fn().mockResolvedValue({}) }));
 vi.mock("@/lib/pd/store", () => ({
   login: state.login,
   useDB: () => ({ org: { name: "Test organization" }, users: [] }),
@@ -17,12 +19,14 @@ import { Route } from "@/routes/index";
 afterEach(() => { cleanup(); vi.clearAllMocks(); state.me = null; });
 describe("default login destination", () => {
   for (const role of ["requestor", "approver", "admin", "procurement", "finance"]) {
-    it(`opens Requests after ${role} signs in`, () => {
+    it(`opens Requests after ${role} signs in`, async () => {
       state.login.mockReturnValue({ id: "user", role });
       const Component = (Route as unknown as { component: () => React.ReactNode }).component;
       const screen = render(<Component />);
       fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
-      expect(state.navigate).toHaveBeenCalledWith({ to: "/app/requests", replace: true });
+      await waitFor(() =>
+        expect(state.navigate).toHaveBeenCalledWith({ to: "/app/requests", replace: true }),
+      );
     });
   }
   it("opens Requests when a signed-in user returns to the login page", async () => {
