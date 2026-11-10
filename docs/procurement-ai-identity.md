@@ -24,3 +24,7 @@ The entry button has a thin gradient outline, a neutral interior, readable text 
 ## Limitations
 
 The initial comparison directly inspected five official image/vector assets; other observations use published identity references. Versions change. Original generation does not establish trademark clearance or worldwide uniqueness.
+
+## Selection and visual checks
+
+Two concepts were generated. Connected choices was selected because the open P has a clearer silhouette than the alternate diagonal weave. The initial artwork had excessive surrounding space; it was cropped and centered before integration. Inspected at 16, 24 and 32 pixels on light and dark backgrounds, then in the dashboard button and assistant header at desktop and mobile sizes. No clipped text, broken images or page overflow appeared in the final checks. The separate corporate favicon remains unchanged because this is an assistant identity, not a replacement for the ProcureDesk brand.
