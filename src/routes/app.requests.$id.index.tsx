@@ -51,6 +51,7 @@ function Detail() {
   const mine = isPendingFor(r, me.id);
   const isOwner = r.requesterId === me.id;
   const requester = db.users.find((u) => u.id === r.requesterId);
+  const showRequesterInHeader = me.role === "approver" || mine;
   const dept = db.departments.find((d) => d.id === r.departmentId);
   const checks = runChecks(r, db);
   const needsConfirm = checks.some((c) => c.level !== "ok");
@@ -105,6 +106,13 @@ function Detail() {
             <RequestTitle text={r.title || "Untitled request"} />
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge r={r} />
+              {showRequesterInHeader && requester && (
+                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <User className="size-3.5 shrink-0" aria-hidden />
+                  <span className="shrink-0 text-xs">Requested by</span>
+                  <span className="truncate text-foreground">{requester.name}</span>
+                </span>
+              )}
               {r.urgent && <span className="pd-badge st-rejected">Urgent</span>}
               {r.tags?.map((t) => <span key={t} className="inline-flex h-5 items-center rounded-full bg-subtle px-2 text-[11px] font-medium text-foreground/70">{t}</span>)}
             </p>
@@ -143,7 +151,7 @@ function Detail() {
               type Fact = [typeof Building2, string, string | undefined, string?];
               const opts: Fact[] = ([[r.urgent, "Urgent", "text-destructive"], [r.delayed, "Delayed release", ""], [r.blanket, "Blanket order", ""]] as const).filter(([on]) => on).map(([, t, c]) => [Zap, "Option", t, c]);
               const facts: Fact[] = [[Building2, "Business unit", r.businessUnit], [Users, "Department", dept?.name], [FolderKanban, "Project", r.project], [FileText, "Type", r.requestType], [User, "Requester", requester?.name], [CalendarDays, "Needed by", r.requiredBy ? smartDate(r.requiredBy) : ""], [MapPin, "Ship to", r.shipTo], [Truck, "Shipment", r.shipmentType], [CreditCard, "Payment", r.paymentMethod], [Hash, "Quote", r.quoteNo], ...opts];
-              const shown = facts.filter(([, , v]) => v);
+              const shown = facts.filter(([, label, v]) => v && !(showRequesterInHeader && label === "Requester"));
               return (
                 <>
                   <ul className="flex flex-wrap items-center gap-1.5">
