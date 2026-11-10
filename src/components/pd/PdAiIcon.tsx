@@ -2,7 +2,7 @@ import { useId, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * A neural aperture: three reasoning loops surround one focused core.
+ * A compact four-point sparkle signals AI without a surrounding badge.
  * Vector geometry and semantic colors keep the identity crisp and theme-aware.
  */
 export function PdAiIcon({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
@@ -16,13 +16,7 @@ export function PdAiIcon({ className, ...props }: HTMLAttributes<HTMLSpanElement
             <stop offset="1" className="pd-ai-icon-end" />
           </linearGradient>
         </defs>
-        <g stroke={`url(#${gradientId})`} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-          {[0, 120, 240].map((rotation) => (
-            <path key={rotation} transform={`rotate(${rotation} 16 16)`}
-              d="M12 13.5V7.8a4 4 0 0 1 8 0v5.7l-4 2.3" />
-          ))}
-        </g>
-        <path d="m16 12.8 2.8 1.6v3.2L16 19.2l-2.8-1.6v-3.2Z" fill={`url(#${gradientId})`} />
+        <path d="M16 2.5C17.9 11.3 20.7 14.1 29.5 16C20.7 17.9 17.9 20.7 16 29.5C14.1 20.7 11.3 17.9 2.5 16C11.3 14.1 14.1 11.3 16 2.5Z" fill={`url(#${gradientId})`} />
       </svg>
     </span>
   );
