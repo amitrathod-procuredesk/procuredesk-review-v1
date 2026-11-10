@@ -7,3 +7,5 @@
 - [x] Research ten leading AI identities and redesign the Procurement AI icon
 - [x] Give the Procurement AI entry button a minimal gradient outline
 - [x] Verify the shared icon and entry button on desktop and mobile
+- [ ] Replace the purchasing-path icon with a minimal intelligence mark and primary-theme colors
+- [ ] Verify the updated AI identity on desktop and mobile
