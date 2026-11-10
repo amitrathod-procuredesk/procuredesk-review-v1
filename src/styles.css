@@ -98,7 +98,7 @@
   --ai-soft: oklch(0.97 0.025 75);
   /* AI identity stays within the product's primary family. */
   --ai-identity-start: var(--primary);
-  --ai-identity-end: color-mix(in oklab, var(--primary) 65%, var(--surface));
+  --ai-identity-end: oklch(0.64 0.23 305);
   --ai-gradient: linear-gradient(120deg, var(--ai-identity-start), var(--ai-identity-end));
   --ai-entry-surface: var(--surface);
   --ai-entry-hover: color-mix(in oklab, var(--surface) 97%, var(--ai-identity-start));
