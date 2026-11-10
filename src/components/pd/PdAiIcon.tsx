@@ -2,7 +2,8 @@ import { useId, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * A compact four-point sparkle signals AI without a surrounding badge.
+ * "Spark & Signal": an asymmetric three-arm spark (request → approve → purchase)
+ * with a detached signal dot — the next step the AI proposes and the user confirms.
  * Vector geometry and semantic colors keep the identity crisp and theme-aware.
  */
 export function PdAiIcon({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
@@ -16,7 +17,8 @@ export function PdAiIcon({ className, ...props }: HTMLAttributes<HTMLSpanElement
             <stop offset="1" className="pd-ai-icon-end" />
           </linearGradient>
         </defs>
-        <path d="M16 2.5C17.9 11.3 20.7 14.1 29.5 16C20.7 17.9 17.9 20.7 16 29.5C14.1 20.7 11.3 17.9 2.5 16C11.3 14.1 14.1 11.3 16 2.5Z" fill={`url(#${gradientId})`} />
+        <path d="M14.5 4.5C15.4 15.1 15.6 15.7 26.2 21.1C16 18.9 15.6 19.3 5.6 26.3C13.4 17.7 13.4 16.9 14.5 4.5Z" fill={`url(#${gradientId})`} />
+        <circle cx="24.4" cy="9.4" r="2.5" fill={`url(#${gradientId})`} />
       </svg>
     </span>
   );
