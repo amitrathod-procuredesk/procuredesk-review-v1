@@ -11,7 +11,7 @@
 
 - ProcureDesk state is one shared workspace document in Lovable Cloud (`workspace_state`, read/written only via `src/lib/pd/workspace.functions.ts` with optimistic versioning); `src/lib/pd/store.ts` keeps a local cache, replays edits on conflict and polls for others' changes. Only the signed-in user id stays per browser.
 - The request copilot remains deterministic; Procurement AI uses authenticated Gateway SDK read-only tools and full conversation history, while catalog prices, permissions, totals and approval eligibility remain validated domain logic.
-- Procurement AI identity uses the shared PdAiIcon asset and Button ai variant with global gradient tokens, keeping entry, header and conversation consistent without altering assistant behavior.
+- Procurement AI identity uses the shared vector PdAiIcon and Button ai variant with primary-derived global gradient tokens, keeping entry, header and conversation crisp and theme-consistent without altering assistant behavior.
 - Procurement AI proposals stay session-local until explicit confirmation; scoped server confirmation persists the shared workspace with optimistic versioning, content/routing fingerprints and replay-safe operation keys, so abandoned conversations never create requests.
 - Form controls use `src/components/pd/form.tsx` (TextInput, TextArea, Select, Checkbox, Radio) on top of the shared `.pd-input` / checkbox / radio styles in `src/styles.css`; never add per-field heights or radii — so one fix updates every screen.
 - Line items issued from internal stock (`fulfillment: "inventory"`, stock in `src/lib/pd/inventory.ts`) are excluded from totals, supplier spend and budget — they create no purchase.

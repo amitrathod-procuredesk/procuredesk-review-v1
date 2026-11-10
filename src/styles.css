@@ -96,9 +96,9 @@
   --warning-soft: oklch(0.965 0.04 85);
   --ai: oklch(0.6 0.14 62);
   --ai-soft: oklch(0.97 0.025 75);
-  /* Connected choices: teal inputs resolve into a cobalt decision path. */
-  --ai-identity-start: oklch(0.64 0.12 185);
-  --ai-identity-end: oklch(0.53 0.23 275);
+  /* AI identity stays within the product's primary family. */
+  --ai-identity-start: var(--primary);
+  --ai-identity-end: color-mix(in oklab, var(--primary) 65%, var(--surface));
   --ai-gradient: linear-gradient(120deg, var(--ai-identity-start), var(--ai-identity-end));
   --ai-entry-surface: var(--surface);
   --ai-entry-hover: color-mix(in oklab, var(--surface) 97%, var(--ai-identity-start));
@@ -346,6 +346,9 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
   background: linear-gradient(var(--ai-entry-hover), var(--ai-entry-hover)) padding-box,
     var(--ai-gradient) border-box;
 }
+
+.pd-ai-icon-start { stop-color: var(--ai-identity-start); }
+.pd-ai-icon-end { stop-color: var(--ai-identity-end); }
 
 /* Long values never break layouts: big numbers scale to their container, long words wrap. */
 @utility pd-fit {
