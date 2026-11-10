@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronDown, Info, RefreshCw } from "lucide-react";
+import { Check, ChevronDown, Download, Info, RefreshCw } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -119,7 +119,6 @@ export function InsightReport({
       : drill === ""
         ? report.rows
         : report.rows.filter((r) => groupKey(r, q.group) === drill);
-  const drillTotal = drillRows.reduce((s, r) => s + r.amount, 0);
   const max = Math.max(1, ...groups.map((g) => g.amount));
 
   return (
@@ -340,12 +339,9 @@ export function InsightReport({
             <SheetDescription className="text-xs">{budget ? "Current snapshot" : periodLabel(q)}</SheetDescription>
           </SheetHeader>
           <div className="space-y-3 p-4">
-            <div className="flex items-center gap-2 rounded-md border border-success/25 bg-success/10 px-3 py-2">
-              <Check className="h-3.5 w-3.5 shrink-0 text-success" />
-              <p className="min-w-0 flex-1 text-xs text-success">
-                These {drillRows.length} {recordNoun(q.topic, drillRows.length)} total {money(drillTotal)}, matching the figure in the report.
-              </p>
-              <Button variant="outline" size="sm" className="h-7 shrink-0 px-2.5 text-xs" onClick={() => exportCsv(drillRows, "procuredesk-records.csv")}>
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => exportCsv(drillRows, "procuredesk-records.csv")}>
+                <Download className="size-3.5" />
                 Download CSV
               </Button>
             </div>
