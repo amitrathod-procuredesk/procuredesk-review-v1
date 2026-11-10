@@ -60,7 +60,7 @@ type StreamEvent =
   | { type: "error"; message: string };
 const mark = (
   <span className="pd-ai-mark size-7 shrink-0">
-    <PdAiIcon className="size-[18px]" />
+    <PdAiIcon className="size-7" />
   </span>
 );
 
@@ -454,11 +454,10 @@ export function ProcurementAgent() {
     <>
       <Button
         size="sm"
-        variant="outline"
-        className="border-primary/25 bg-accent text-primary"
+        variant="ai"
         onClick={() => setOpen(true)}
       >
-        <Package className="size-4" />
+        <PdAiIcon className="size-5" />
         Procurement AI
       </Button>
       <Sheet

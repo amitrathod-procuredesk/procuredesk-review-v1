@@ -1,43 +1,22 @@
-import { useId, type SVGProps } from "react";
+import type { ImgHTMLAttributes } from "react";
+import procurementAiIcon from "@/assets/procurement-ai-icon.png";
+import { cn } from "@/lib/utils";
 
 /**
- * ProcureDesk AI mark: a four-point spark (intelligence) whose momentum
- * resolves into a checkmark (your confirmation) — AI prepares, you decide.
- * Rendered as a cyan-to-violet gradient glyph on a dark ink squircle.
+ * Connected choices: catalog and supplier paths resolve into an open P.
+ * One shared transparent identity for the entry, header and conversation.
  */
-export function PdAiIcon(props: SVGProps<SVGSVGElement>) {
-  const gradientId = useId();
+export function PdAiIcon({ className, ...props }: ImgHTMLAttributes<HTMLImageElement>) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={`url(#${gradientId})`}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <img
+      src={procurementAiIcon}
+      alt=""
+      width={877}
+      height={877}
+      loading="lazy"
       aria-hidden="true"
+      className={cn("shrink-0 object-contain", className)}
       {...props}
-    >
-      <defs>
-        <linearGradient
-          id={gradientId}
-          x1="5"
-          y1="3"
-          x2="20"
-          y2="21"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="oklch(0.82 0.13 195)" />
-          <stop offset="1" stopColor="oklch(0.68 0.2 305)" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M10.6 2.8c.6 3.6 2.1 5.1 5.7 5.7-3.6.6-5.1 2.1-5.7 5.7-.6-3.6-2.1-5.1-5.7-5.7 3.6-.6 5.1-2.1 5.7-5.7Z"
-        fill={`url(#${gradientId})`}
-        stroke="none"
-      />
-      <path d="m13.2 17.2 2.3 2.3 4.7-5.2" />
-    </svg>
+    />
   );
 }

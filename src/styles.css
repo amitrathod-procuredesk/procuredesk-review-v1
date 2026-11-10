@@ -96,8 +96,12 @@
   --warning-soft: oklch(0.965 0.04 85);
   --ai: oklch(0.6 0.14 62);
   --ai-soft: oklch(0.97 0.025 75);
-  /* Procurement AI identity: brand indigo into violet. */
-  --ai-gradient: linear-gradient(135deg, var(--primary) 0%, oklch(0.55 0.22 300) 60%, oklch(0.66 0.17 330) 100%);
+  /* Connected choices: teal inputs resolve into a cobalt decision path. */
+  --ai-identity-start: oklch(0.64 0.12 185);
+  --ai-identity-end: oklch(0.53 0.23 275);
+  --ai-gradient: linear-gradient(120deg, var(--ai-identity-start), var(--ai-identity-end));
+  --ai-entry-surface: var(--surface);
+  --ai-entry-hover: color-mix(in oklab, var(--surface) 97%, var(--ai-identity-start));
   --info-soft: oklch(0.955 0.03 277);
   --pending: oklch(0.58 0.14 62);
   --pending-soft: oklch(0.965 0.045 75);
@@ -327,12 +331,20 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .5; cur
 .pd-scroll-quiet:hover::-webkit-scrollbar-thumb, .pd-scroll-quiet:focus-within::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 18%, transparent); }
 
 @utility pd-ai-mark {
-  background: var(--foreground);
-  color: var(--background);
-  border-radius: 32%;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+/* A real gradient border, without a filled tile, glow or decorative badge. */
+.pd-ai-entry {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--ai-entry-surface), var(--ai-entry-surface)) padding-box,
+    var(--ai-gradient) border-box;
+}
+.pd-ai-entry:hover {
+  background: linear-gradient(var(--ai-entry-hover), var(--ai-entry-hover)) padding-box,
+    var(--ai-gradient) border-box;
 }
 
 /* Long values never break layouts: big numbers scale to their container, long words wrap. */
