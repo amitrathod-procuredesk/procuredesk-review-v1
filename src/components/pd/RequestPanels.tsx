@@ -11,6 +11,7 @@ import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AdHocApprover } from "./AdHocApprover";
+import { canRemindApprover } from "@/lib/pd/approvalReminders";
 
 const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15", "bg-muted-foreground/30"];
 
@@ -239,12 +240,18 @@ export function ChecksBlock({ r, onAction }: { r: PRequest; onAction?: (c: Check
 export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }) {
   const db = useDB();
   const me = useMe();
-  const canRemind = !preview && r.status === "pending" && !!me && (me.id === r.requesterId || me.role === "admin" || r.route.some((s) => s.approvals.some((a) => a.userId === me.id)));
   const COOLDOWN = 4 * 3600_000;
   const lastReminder = (uid2: string) => [...(r.reminders ?? [])].reverse().find((x) => x.userId === uid2);
   const remind = (uid2: string) => {
+    if (preview || !me || !canRemindApprover(r, me, uid2)) return;
     const name = db.users.find((x) => x.id === uid2)?.name ?? "approver";
-    updateRequest(r.id, (x) => { x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me!.id }]; log(x, `Reminder sent to ${name}`, "system", me?.id); });
+    updateRequest(r.id, (x) => {
+      if (!canRemindApprover(x, me, uid2)) return;
+      const previous = [...(x.reminders ?? [])].reverse().find((entry) => entry.userId === uid2);
+      if (previous && Date.now() - new Date(previous.at).getTime() < COOLDOWN) return;
+      x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me.id }];
+      log(x, `Reminder sent to ${name}`, "system", me.id);
+    });
     toast.success(`Reminder sent to ${name.split(" ")[0]}`, { description: "They'll get a notification about this request's pending approval." });
   };
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
@@ -276,16 +283,16 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
-              {canRemind && (st === "pending" || st === "next" || st === "waiting") && a.userId !== me?.id && (() => {
+              {!preview && canRemindApprover(r, me, a.userId) && (() => {
                 const lr = lastReminder(a.userId);
                 const cooling = !!lr && Date.now() - new Date(lr.at).getTime() < COOLDOWN;
                 return (
-                  <button type="button" onClick={() => remind(a.userId)} disabled={cooling}
-                    aria-label={cooling ? `Reminded ${smartTime(lr!.at)}` : `Send reminder to ${u?.name}`}
-                    title={cooling ? `Reminded ${smartTime(lr!.at)} · you can remind again in a few hours` : `Remind ${u?.name?.split(" ")[0]}`}
+                  <Button variant="ghost" size="icon" type="button" onClick={() => remind(a.userId)} disabled={cooling}
+                    aria-label={cooling && lr ? `Reminded ${smartTime(lr.at)}` : `Send reminder to ${u?.name}`}
+                    title={cooling && lr ? `Reminded ${smartTime(lr.at)} · you can remind again in a few hours` : `Remind ${u?.name?.split(" ")[0]}`}
                     className={cn("group/rem flex size-7 shrink-0 items-center justify-center rounded-full transition-colors", cooling ? "cursor-default text-success" : "text-muted-foreground hover:bg-pending-soft hover:text-pending focus-visible:bg-pending-soft focus-visible:text-pending")}>
                     {cooling ? <BellRing className="size-3.5" /> : <Bell className="size-3.5 transition-transform group-hover/rem:rotate-12" />}
-                  </button>
+                  </Button>
                 );
               })()}
               <ApprovalState status={st} at={a.at} />

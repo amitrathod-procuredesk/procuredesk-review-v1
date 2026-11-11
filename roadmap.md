@@ -16,3 +16,4 @@
 
 - [x] Ad hoc approver: choose any open position in route
 - [x] Approvers can notify other pending approvers (bell icon)
+- [x] Restrict reminders to awaiting recipients in the current step and verify sequential/group scenarios
