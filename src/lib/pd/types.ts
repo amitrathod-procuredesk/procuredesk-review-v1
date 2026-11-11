@@ -151,6 +151,8 @@ export interface Comment {
   userId: string;
   text: string;
   at: string;
+  /** Root comment id when this is a thread reply (replies never nest deeper). */
+  parentId?: string;
 }
 
 export interface Activity {

@@ -441,53 +441,123 @@ export function Attachments({ r, editable }: { r: PRequest; editable?: boolean }
   );
 }
 
+function CommentComposer({ value, onChange, onSubmit, onCancel, placeholder, autoFocus, compact }: { value: string; onChange: (v: string) => void; onSubmit: () => void; onCancel?: () => void; placeholder: string; autoFocus?: boolean; compact?: boolean }) {
+  const db = useDB();
+  const me = useMe();
+  const mentionable = db.users.filter((u) => u.id !== me?.id);
+  const mq = /@(\w*)$/.exec(value)?.[1] ?? null;
+  const matches = mq === null ? [] : mentionable.filter((u) => u.name.toLowerCase().startsWith(mq.toLowerCase()) || u.name.toLowerCase().includes(" " + mq.toLowerCase())).slice(0, 5);
+  return (
+    <form
+      className="rounded-[6px] border border-input bg-surface transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/12"
+      onSubmit={(e) => { e.preventDefault(); if (value.trim() && me) onSubmit(); }}
+    >
+      <textarea
+        rows={1}
+        autoFocus={autoFocus}
+        aria-label={placeholder}
+        className={cn("block max-h-32 w-full resize-none bg-transparent px-3 pt-2 text-sm outline-none placeholder:text-muted-foreground/70", compact ? "min-h-8" : "min-h-9")}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); }
+          if (e.key === "Escape" && onCancel) { e.preventDefault(); onCancel(); }
+        }}
+      />
+      {mq !== null && matches.length > 0 && (
+        <ul className="mx-1.5 mb-1 rounded-md border border-border bg-popover p-1 shadow-sm">
+          {matches.map((u) => (
+            <li key={u.id}><button type="button" onMouseDown={(e) => { e.preventDefault(); onChange(value.replace(/@(\w*)$/, `@${u.name} `)); }} className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-subtle"><UserAvatar user={u} /> {u.name}</button></li>
+          ))}
+        </ul>
+      )}
+      <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5">
+        <span className="truncate pl-1.5 text-[11px] text-muted-foreground/70">{compact ? "Esc to cancel · @ to mention" : "Type @ to mention"}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          {onCancel && <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>}
+          <Button type="submit" size="sm" className="h-7 shrink-0 px-2.5 text-xs" disabled={!value.trim()}>{compact ? "Reply" : "Send"}</Button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+const VISIBLE_REPLIES = 2;
+
 export function Comments({ r }: { r: PRequest }) {
   const db = useDB();
   const me = useMe();
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const render = (t: string) =>
     t.split(/(@[A-Z][a-z]+(?: [A-Z][a-z]+)?)/g).map((p, i) => (p.startsWith("@") ? <span key={i} className="font-medium text-primary">{p}</span> : p));
-  const mentionable = db.users.filter((u) => u.id !== me?.id);
-  const mq = /@(\w*)$/.exec(text)?.[1] ?? null;
-  const matches = mq === null ? [] : mentionable.filter((u) => u.name.toLowerCase().startsWith(mq.toLowerCase()) || u.name.toLowerCase().includes(" " + mq.toLowerCase())).slice(0, 5);
+  const ids = new Set(r.comments.map((c) => c.id));
+  // Orphaned replies (parent missing) are shown as top-level so nothing disappears.
+  const roots = r.comments.filter((c) => !c.parentId || !ids.has(c.parentId));
+  const repliesOf = (id: string) => r.comments.filter((c) => c.parentId === id).sort((a, b) => a.at.localeCompare(b.at));
+  const startReply = (rootId: string, toUserId?: string) => {
+    const u = db.users.find((x) => x.id === toUserId);
+    setReplyTo(rootId);
+    setExpanded((e) => ({ ...e, [rootId]: true }));
+    setReplyText(u && u.id !== me?.id ? `@${u.name} ` : "");
+  };
+  const cancelReply = () => { setReplyTo(null); setReplyText(""); };
+  const post = (body: string, parentId?: string) => {
+    if (!me || !body.trim()) return;
+    updateRequest(r.id, (x) => { x.comments.push({ id: uid("c"), userId: me.id, text: body.trim(), at: new Date().toISOString(), ...(parentId ? { parentId } : {}) }); });
+  };
+  const Row = ({ c, rootId, reply }: { c: PRequest["comments"][number]; rootId: string; reply?: boolean }) => {
+    const u = db.users.find((x) => x.id === c.userId);
+    return (
+      <div className={cn("flex gap-2.5", reply && "gap-2")}>
+        <span className={cn("shrink-0", reply && "origin-top-left scale-[0.85]")}><UserAvatar user={u} /></span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs"><span className="font-medium">{u?.name ?? "Former user"}</span>{u?.id === me?.id && <span className="text-muted-foreground"> (You)</span>} <span className="text-muted-foreground">· {smartTime(c.at)}</span></p>
+          <p className="whitespace-pre-wrap break-words text-sm">{render(c.text)}</p>
+          {me && <button type="button" className="text-[11px] font-medium text-muted-foreground hover:text-foreground" onClick={() => startReply(rootId, c.userId)}>Reply</button>}
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="space-y-3">
       {r.comments.length === 0 && <p className="text-xs text-muted-foreground">No comments yet. Mention a teammate to loop them in.</p>}
-      {r.comments.map((c) => {
-        const u = db.users.find((x) => x.id === c.userId);
+      {roots.map((c) => {
+        const replies = repliesOf(c.id);
+        const open = expanded[c.id];
+        const hidden = open ? 0 : Math.max(0, replies.length - VISIBLE_REPLIES);
+        const shown = replies.slice(hidden);
+        const people = [...new Set(replies.map((x) => x.userId))].slice(0, 3).map((id) => db.users.find((u) => u.id === id));
         return (
-          <div key={c.id} className="flex gap-2.5">
-            <UserAvatar user={u} />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs"><span className="font-medium">{u?.name}</span> <span className="text-muted-foreground">· {smartTime(c.at)}</span></p>
-              <p className="text-sm">{render(c.text)}</p>
-              <button className="text-[11px] text-muted-foreground hover:text-foreground" onClick={() => setText(`@${u?.name} `)}>Reply</button>
-            </div>
+          <div key={c.id}>
+            <Row c={c} rootId={c.id} />
+            {(replies.length > 0 || replyTo === c.id) && (
+              <div className="ml-3 mt-1.5 space-y-2 border-l border-border pl-[19px]">
+                {hidden > 0 && (
+                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [c.id]: true }))} className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:underline">
+                    <span className="flex -space-x-1.5">{people.map((u, i) => <span key={i} className="origin-left scale-75 rounded-full ring-2 ring-surface"><UserAvatar user={u} /></span>)}</span>
+                    Show {hidden} earlier {hidden === 1 ? "reply" : "replies"}
+                  </button>
+                )}
+                {shown.map((x) => <Row key={x.id} c={x} rootId={c.id} reply />)}
+                {open && replies.length > VISIBLE_REPLIES && replyTo !== c.id && (
+                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [c.id]: false }))} className="text-[11px] font-medium text-muted-foreground hover:text-foreground">Hide earlier replies</button>
+                )}
+                {replyTo === c.id && (
+                  <CommentComposer compact autoFocus value={replyText} onChange={setReplyText} onCancel={cancelReply}
+                    placeholder={`Reply to ${db.users.find((u) => u.id === c.userId)?.name ?? "thread"}…`}
+                    onSubmit={() => { post(replyText, c.id); cancelReply(); }} />
+                )}
+              </div>
+            )}
           </div>
         );
       })}
-      <form
-        className="rounded-[6px] border border-input bg-surface transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/12"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!text.trim() || !me) return;
-          updateRequest(r.id, (x) => { x.comments.push({ id: uid("c"), userId: me.id, text, at: new Date().toISOString() }); });
-          setText("");
-        }}
-      >
-        <textarea rows={1} className="block max-h-32 min-h-9 w-full resize-none bg-transparent px-3 pt-2 text-sm outline-none placeholder:text-muted-foreground/70" placeholder="Add a comment…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); } }} />
-        {mq !== null && matches.length > 0 && (
-          <ul className="mx-1.5 mb-1 rounded-md border border-border bg-popover p-1 shadow-sm">
-            {matches.map((u) => (
-              <li key={u.id}><button type="button" onMouseDown={(e) => { e.preventDefault(); setText(text.replace(/@(\w*)$/, `@${u.name} `)); }} className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-subtle"><UserAvatar user={u} /> {u.name}</button></li>
-            ))}
-          </ul>
-        )}
-        <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5">
-          <span className="pl-1.5 text-[11px] text-muted-foreground/70">Type @ to mention</span>
-          <Button type="submit" size="sm" className="h-7 shrink-0 px-2.5 text-xs" disabled={!text.trim()}>Send</Button>
-        </div>
-      </form>
+      <CommentComposer value={text} onChange={setText} placeholder="Add a comment…" onSubmit={() => { post(text); setText(""); }} />
     </div>
   );
 }
