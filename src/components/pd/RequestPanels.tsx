@@ -279,7 +279,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium leading-5">{u?.name}{a.userId === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}</p>
                 <p className="truncate text-xs leading-4 text-muted-foreground">{u?.title}</p>
-                {s.adHoc && <span className="mt-1 inline-flex rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] font-medium leading-3 text-muted-foreground" title={s.reason}>Ad hoc approver</span>}
+                {s.adHoc && <span className="mt-1 inline-flex max-w-full items-center gap-1 rounded-sm border border-primary/20 bg-accent px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-accent-foreground" title={s.reason}><Users aria-hidden="true" className="size-3 shrink-0" /><span>Ad hoc approver</span></span>}
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
