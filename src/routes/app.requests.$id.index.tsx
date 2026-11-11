@@ -110,9 +110,9 @@ function Detail() {
                 <>
                   <span aria-hidden className="h-4 w-px bg-border" />
                   <span className="inline-flex min-w-0 max-w-full items-center gap-2">
-                    <UserAvatar user={requester} />
-                    <span className="flex min-w-0 items-baseline gap-1.5">
-                      <span className="shrink-0 text-xs text-muted-foreground">Requested by</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">Requested by</span>
+                    <span className="inline-flex min-w-0 items-center gap-1.5" title={requester.name}>
+                      <span aria-hidden="true"><UserAvatar user={requester} /></span>
                       <span className="truncate font-medium text-foreground">{requester.name}</span>
                     </span>
                   </span>
