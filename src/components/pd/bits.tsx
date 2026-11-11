@@ -47,10 +47,10 @@ export function AiGlyph({ className }: { className?: string }) {
   );
 }
 
-export function UserAvatar({ user, size = "sm" }: { user?: User; size?: "sm" | "md" }) {
+export function UserAvatar({ user, size = "sm" }: { user?: User; size?: "xs" | "sm" | "md" }) {
   const initials = (user?.name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("");
   return (
-    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-secondary font-medium text-secondary-foreground ring-1 ring-border", size === "sm" ? "size-6 text-[10px]" : "size-8 text-xs")}>
+    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-secondary font-medium text-secondary-foreground ring-1 ring-border", size === "xs" ? "size-5 text-[9px]" : size === "sm" ? "size-6 text-[10px]" : "size-8 text-xs")}>
       {initials}
     </span>
   );

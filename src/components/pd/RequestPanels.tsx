@@ -484,8 +484,6 @@ function CommentComposer({ value, onChange, onSubmit, onCancel, placeholder, aut
   );
 }
 
-const VISIBLE_REPLIES = 2;
-
 export function Comments({ r }: { r: PRequest }) {
   const db = useDB();
   const me = useMe();
@@ -499,8 +497,9 @@ export function Comments({ r }: { r: PRequest }) {
   // Orphaned replies (parent missing) are shown as top-level so nothing disappears.
   const roots = r.comments.filter((c) => !c.parentId || !ids.has(c.parentId));
   const repliesOf = (id: string) => r.comments.filter((c) => c.parentId === id).sort((a, b) => a.at.localeCompare(b.at));
+  const userOf = (id?: string) => db.users.find((x) => x.id === id);
   const startReply = (rootId: string, toUserId?: string) => {
-    const u = db.users.find((x) => x.id === toUserId);
+    const u = userOf(toUserId);
     setReplyTo(rootId);
     setExpanded((e) => ({ ...e, [rootId]: true }));
     setReplyText(u && u.id !== me?.id ? `@${u.name} ` : "");
@@ -510,47 +509,78 @@ export function Comments({ r }: { r: PRequest }) {
     if (!me || !body.trim()) return;
     updateRequest(r.id, (x) => { x.comments.push({ id: uid("c"), userId: me.id, text: body.trim(), at: new Date().toISOString(), ...(parentId ? { parentId } : {}) }); });
   };
-  const Row = ({ c, rootId, reply }: { c: PRequest["comments"][number]; rootId: string; reply?: boolean }) => {
-    const u = db.users.find((x) => x.id === c.userId);
+  const Head = ({ c }: { c: PRequest["comments"][number] }) => {
+    const u = userOf(c.userId);
     return (
-      <div className={cn("flex gap-2.5", reply && "gap-2")}>
-        <span className={cn("shrink-0", reply && "origin-top-left scale-[0.85]")}><UserAvatar user={u} /></span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs"><span className="font-medium">{u?.name ?? "Former user"}</span>{u?.id === me?.id && <span className="text-muted-foreground"> (You)</span>} <span className="text-muted-foreground">· {smartTime(c.at)}</span></p>
-          <p className="whitespace-pre-wrap break-words text-sm">{render(c.text)}</p>
-          {me && <button type="button" className="text-[11px] font-medium text-muted-foreground hover:text-foreground" onClick={() => startReply(rootId, c.userId)}>Reply</button>}
-        </div>
-      </div>
+      <p className="truncate text-xs leading-5"><span className="font-medium">{u?.name ?? "Former user"}</span>{u && u.id === me?.id && <span className="text-muted-foreground"> (You)</span>} <span className="text-muted-foreground">· {smartTime(c.at)}</span></p>
     );
   };
+  // Thread geometry: root avatar is 24px (centre 12px); replies indent 34px with 20px avatars.
+  // Each reply draws an elbow from the thread rail into its avatar centre.
+  const Elbow = ({ last }: { last: boolean }) => (
+    <>
+      {!last && <span aria-hidden className="absolute -left-[22.5px] top-0 bottom-0 w-px bg-border" />}
+      <span aria-hidden className="absolute -left-[22.5px] top-0 h-[18px] w-[19px] rounded-bl-[8px] border-b border-l border-border" />
+    </>
+  );
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {r.comments.length === 0 && <p className="text-xs text-muted-foreground">No comments yet. Mention a teammate to loop them in.</p>}
       {roots.map((c) => {
         const replies = repliesOf(c.id);
-        const open = expanded[c.id];
-        const hidden = open ? 0 : Math.max(0, replies.length - VISIBLE_REPLIES);
-        const shown = replies.slice(hidden);
-        const people = [...new Set(replies.map((x) => x.userId))].slice(0, 3).map((id) => db.users.find((u) => u.id === id));
+        const composing = replyTo === c.id;
+        const open = (expanded[c.id] ?? false) || composing;
+        const people = [...new Set(replies.map((x) => x.userId))].slice(0, 3).map(userOf);
+        const showRail = open && (replies.length > 0 || composing);
         return (
           <div key={c.id}>
-            <Row c={c} rootId={c.id} />
-            {(replies.length > 0 || replyTo === c.id) && (
-              <div className="ml-3 mt-1.5 space-y-2 border-l border-border pl-[19px]">
-                {hidden > 0 && (
-                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [c.id]: true }))} className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:underline">
-                    <span className="flex -space-x-1.5">{people.map((u, i) => <span key={i} className="origin-left scale-75 rounded-full ring-2 ring-surface"><UserAvatar user={u} /></span>)}</span>
-                    Show {hidden} earlier {hidden === 1 ? "reply" : "replies"}
-                  </button>
-                )}
-                {shown.map((x) => <Row key={x.id} c={x} rootId={c.id} reply />)}
-                {open && replies.length > VISIBLE_REPLIES && replyTo !== c.id && (
-                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [c.id]: false }))} className="text-[11px] font-medium text-muted-foreground hover:text-foreground">Hide earlier replies</button>
-                )}
-                {replyTo === c.id && (
-                  <CommentComposer compact autoFocus value={replyText} onChange={setReplyText} onCancel={cancelReply}
-                    placeholder={`Reply to ${db.users.find((u) => u.id === c.userId)?.name ?? "thread"}…`}
-                    onSubmit={() => { post(replyText, c.id); cancelReply(); }} />
+            <div className="relative flex gap-2.5">
+              {showRail && <span aria-hidden className="absolute left-[11.5px] top-7 bottom-0 w-px bg-border" />}
+              <UserAvatar user={userOf(c.userId)} />
+              <div className="min-w-0 flex-1">
+                <Head c={c} />
+                <p className="whitespace-pre-wrap break-words text-sm">{render(c.text)}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 pb-0.5">
+                  {me && <button type="button" className="text-[11px] font-medium text-muted-foreground hover:text-foreground" onClick={() => startReply(c.id, c.userId)}>Reply</button>}
+                  {replies.length > 0 && (
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => { if (open) cancelReply(); setExpanded((e) => ({ ...e, [c.id]: !open })); }}
+                      className="group inline-flex items-center gap-1.5 rounded-md text-[11px] font-medium text-primary"
+                    >
+                      {!open && <span className="flex -space-x-1">{people.map((u, i) => <span key={i} className="rounded-full ring-2 ring-surface"><UserAvatar user={u} size="xs" /></span>)}</span>}
+                      <span className="group-hover:underline">{open ? "Hide replies" : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}</span>
+                      {!open && <span className="font-normal text-muted-foreground">· Last {smartTime(replies[replies.length - 1].at)}</span>}
+                      <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            {showRail && (
+              <div className="animate-in fade-in slide-in-from-top-1 pl-[34px]">
+                {replies.map((x, i) => (
+                  <div key={x.id} className="relative flex gap-2 pt-2">
+                    <Elbow last={i === replies.length - 1 && !composing} />
+                    <UserAvatar user={userOf(x.userId)} size="xs" />
+                    <div className="min-w-0 flex-1 -mt-px">
+                      <Head c={x} />
+                      <p className="whitespace-pre-wrap break-words text-sm">{render(x.text)}</p>
+                      {me && <button type="button" className="text-[11px] font-medium text-muted-foreground hover:text-foreground" onClick={() => startReply(c.id, x.userId)}>Reply</button>}
+                    </div>
+                  </div>
+                ))}
+                {composing && (
+                  <div className="relative flex gap-2 pt-2">
+                    <Elbow last />
+                    <UserAvatar user={me ?? undefined} size="xs" />
+                    <div className="min-w-0 flex-1">
+                      <CommentComposer compact autoFocus value={replyText} onChange={setReplyText} onCancel={cancelReply}
+                        placeholder={`Reply to ${userOf(c.userId)?.name ?? "thread"}…`}
+                        onSubmit={() => { post(replyText, c.id); cancelReply(); setExpanded((e) => ({ ...e, [c.id]: true })); }} />
+                    </div>
+                  </div>
                 )}
               </div>
             )}
