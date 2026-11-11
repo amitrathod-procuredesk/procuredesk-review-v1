@@ -239,13 +239,13 @@ export function ChecksBlock({ r, onAction }: { r: PRequest; onAction?: (c: Check
 export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }) {
   const db = useDB();
   const me = useMe();
-  const canRemind = !preview && r.status === "pending" && !!me && (me.id === r.requesterId || r.route.some((s) => s.approvals.some((a) => a.userId === me.id)));
+  const canRemind = !preview && r.status === "pending" && !!me && (me.id === r.requesterId || me.role === "admin" || r.route.some((s) => s.approvals.some((a) => a.userId === me.id)));
   const COOLDOWN = 4 * 3600_000;
   const lastReminder = (uid2: string) => [...(r.reminders ?? [])].reverse().find((x) => x.userId === uid2);
   const remind = (uid2: string) => {
     const name = db.users.find((x) => x.id === uid2)?.name ?? "approver";
     updateRequest(r.id, (x) => { x.reminders = [...(x.reminders ?? []), { userId: uid2, at: new Date().toISOString(), by: me!.id }]; log(x, `Reminder sent to ${name}`, "system", me?.id); });
-    toast.success(`Reminder sent to ${name.split(" ")[0]}`, { description: "They'll get a notification about this pending approval." });
+    toast.success(`Reminder sent to ${name.split(" ")[0]}`, { description: "They'll get a notification about this request's pending approval." });
   };
   const stages: Stage[] = preview ? computeRoute(r, db) : r.route;
   const cur = currentStageIndex(r);
@@ -270,13 +270,13 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                 {st === "pending" && <span className="absolute -right-0.5 -top-0.5 size-2 animate-pulse rounded-full bg-pending ring-2 ring-surface" />}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
+                <p className="truncate text-[13px] font-medium leading-5">{u?.name}{a.userId === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}</p>
                 <p className="truncate text-xs leading-4 text-muted-foreground">{u?.title}</p>
                 {s.adHoc && <span className="mt-1 inline-flex rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] font-medium leading-3 text-muted-foreground" title={s.reason}>Ad hoc approver</span>}
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
-              {canRemind && st === "pending" && a.userId !== me?.id && (() => {
+              {canRemind && (st === "pending" || st === "next" || st === "waiting") && a.userId !== me?.id && (() => {
                 const lr = lastReminder(a.userId);
                 const cooling = !!lr && Date.now() - new Date(lr.at).getTime() < COOLDOWN;
                 return (
@@ -524,6 +524,7 @@ function MiniSuppliers({ r }: { r: PRequest }) {
 /** Approval route folded under the total: one line answers "who's next?", the full route expands on demand. */
 function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
   const db = useDB();
+  const me = useMe();
   const [open, setOpen] = useState(false);
   const route = editable ? computeRoute(r, db) : r.route;
   const count = route.reduce((t, s) => t + s.approvals.length, 0);
@@ -542,7 +543,7 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
         {first ? <UserAvatar user={first} /> : <span className={cn("grid size-6 shrink-0 place-items-center rounded-full bg-success-soft", tone)}><Check className="size-3.5" /></span>}
         <span className="min-w-0 flex-1">
           <span className={cn("block truncate text-[11px] leading-4", first ? "text-muted-foreground" : tone)} title={note}>{label}{first && route.length > 1 && label !== "Rejected by" && <> · Step {Math.max(0, i) + 1} of {route.length}</>}</span>
-          <span className="block truncate text-[13px] font-medium leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? `${first.name}${ids.length > 1 ? ` +${ids.length - 1}` : ""}` : note}</span>
+          <span className="block truncate text-[13px] font-medium leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? <>{first.name}{first.id === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}{ids.length > 1 ? ` +${ids.length - 1}` : ""}</> : note}</span>
         </span>
       </div>
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 rounded-md py-0.5 pl-[34px] text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground">
