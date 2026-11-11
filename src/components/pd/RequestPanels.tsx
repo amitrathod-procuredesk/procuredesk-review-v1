@@ -239,7 +239,7 @@ export function ChecksBlock({ r, onAction }: { r: PRequest; onAction?: (c: Check
 export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }) {
   const db = useDB();
   const me = useMe();
-  const canRemind = !preview && r.status === "pending" && me?.id === r.requesterId;
+  const canRemind = !preview && r.status === "pending" && !!me && (me.id === r.requesterId || r.route.some((s) => s.approvals.some((a) => a.userId === me.id)));
   const COOLDOWN = 4 * 3600_000;
   const lastReminder = (uid2: string) => [...(r.reminders ?? [])].reverse().find((x) => x.userId === uid2);
   const remind = (uid2: string) => {
@@ -276,7 +276,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
-              {canRemind && st === "pending" && (() => {
+              {canRemind && st === "pending" && a.userId !== me?.id && (() => {
                 const lr = lastReminder(a.userId);
                 const cooling = !!lr && Date.now() - new Date(lr.at).getTime() < COOLDOWN;
                 return (

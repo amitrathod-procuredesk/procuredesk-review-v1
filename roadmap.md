@@ -13,3 +13,6 @@
 - [x] Verify approval sequencing, saved changes, and desktop/mobile controls
 - [x] Keep repeated ad hoc insertion available and add a distinct compact approver tag
 - [x] Verify repeated insertion permissions, persisted UI flow and narrow-screen layout
+
+- [x] Ad hoc approver: choose any open position in route
+- [x] Approvers can notify other pending approvers (bell icon)
