@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Empty, Section, StatusBadge } from "@/components/pd/bits";
+import { Empty, Section, StatusBadge, UserAvatar } from "@/components/pd/bits";
 import { LineItems } from "@/components/pd/LineItems";
 import { AuditTrailButton, POST_APPROVAL, RequestActionsButton } from "@/components/pd/RequestActions";
 import { Attachments, ChecksBlock, Comments, SummaryRail } from "@/components/pd/RequestPanels";
@@ -107,11 +107,16 @@ function Detail() {
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="num">{r.id}</span><StatusBadge r={r} />
               {showRequesterInHeader && requester && (
-                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                  <User className="size-3.5 shrink-0" aria-hidden />
-                  <span className="shrink-0 text-xs">Requested by</span>
-                  <span className="truncate text-foreground">{requester.name}</span>
-                </span>
+                <>
+                  <span aria-hidden className="h-4 w-px bg-border" />
+                  <span className="inline-flex min-w-0 max-w-full items-center gap-2">
+                    <UserAvatar user={requester} />
+                    <span className="flex min-w-0 items-baseline gap-1.5">
+                      <span className="shrink-0 text-xs text-muted-foreground">Requested by</span>
+                      <span className="truncate font-medium text-foreground">{requester.name}</span>
+                    </span>
+                  </span>
+                </>
               )}
               {r.urgent && <span className="pd-badge st-rejected">Urgent</span>}
               {r.tags?.map((t) => <span key={t} className="inline-flex h-5 items-center rounded-full bg-subtle px-2 text-[11px] font-medium text-foreground/70">{t}</span>)}
