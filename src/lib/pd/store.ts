@@ -171,6 +171,17 @@ function migrate(d: DB): DB {
 
 export const isHydrated = () => hydrated;
 export const getDB = () => state;
+export const workspaceVersion = () => version;
+
+/** Accept a scoped server save only after existing local edits have finished saving. */
+export function acceptWorkspaceSnapshot(snapshot: { data: DB; version: number }) {
+  version = snapshot.version;
+  const base = withSession(migrate(snapshot.data), state.session.userId);
+  pending.forEach((fn) => fn(base));
+  state = base;
+  saveLocal();
+  emit();
+}
 
 export function mutate(fn: (d: DB) => void) {
   const draft: DB = structuredClone(state);

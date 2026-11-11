@@ -10,6 +10,7 @@ import type { Attachment, PRequest, Stage } from "@/lib/pd/types";
 import { CheckIcon, Money, Section, SourceMark, StatusBadge, UserAvatar } from "./bits";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AdHocApprover } from "./AdHocApprover";
 
 const SHADES = ["bg-primary", "bg-primary/60", "bg-primary/30", "bg-primary/15", "bg-muted-foreground/30"];
 
@@ -271,6 +272,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
                 <p className="truncate text-xs leading-4 text-muted-foreground">{u?.title}</p>
+                {s.adHoc && <p className="text-[11px] text-muted-foreground" title={s.reason}>Ad hoc</p>}
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
@@ -287,6 +289,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
                 );
               })()}
               <ApprovalState status={st} at={a.at} />
+              {!preview && s.adHoc && <AdHocApprover r={r} remove={s} />}
             </div>
           );
         };
@@ -547,6 +550,7 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
         <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="mt-3 animate-in fade-in slide-in-from-top-1"><RouteTimeline r={r} preview={editable} /></div>}
+      {!editable && <AdHocApprover r={r} />}
     </div>
   );
 }

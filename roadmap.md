@@ -9,3 +9,5 @@
 - [x] Verify the shared icon and entry button on desktop and mobile
 - [x] Replace the purchasing-path icon with a minimal intelligence mark and primary-theme colors
 - [x] Verify the updated AI identity on desktop and mobile
+- [x] Add scoped ad hoc approval insertion and removal with completed-step protection
+- [x] Verify approval sequencing, saved changes, and desktop/mobile controls

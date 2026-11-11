@@ -131,6 +131,7 @@ export interface Approval {
 
 export interface Stage {
   id: string;
+  adHoc?: { addedBy: string; addedAt: string };
   name: string;
   reason: string;
   mode: "all" | "any";
