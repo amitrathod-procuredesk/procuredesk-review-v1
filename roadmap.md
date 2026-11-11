@@ -11,3 +11,5 @@
 - [x] Verify the updated AI identity on desktop and mobile
 - [x] Add scoped ad hoc approval insertion and removal with completed-step protection
 - [x] Verify approval sequencing, saved changes, and desktop/mobile controls
+- [x] Keep repeated ad hoc insertion available and add a distinct compact approver tag
+- [x] Verify repeated insertion permissions, persisted UI flow and narrow-screen layout

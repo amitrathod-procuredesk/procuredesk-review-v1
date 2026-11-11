@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seedDB } from "../seed";
-import { applyAdHocChange, canRemoveApprover } from "../adHocApprovals";
+import { applyAdHocChange, canAddApprover, canRemoveApprover } from "../adHocApprovals";
 import { isPendingFor } from "../engine";
 
 function setup() {
@@ -16,6 +16,39 @@ function setup() {
 }
 const add = (requestId: string, placement: "before" | "after", stepId = "priya") => ({ requestId, action: "add" as const, key: "one", approverId: "u_daniel", stepId, placement });
 describe("ad hoc approval route", () => {
+  it("lets Priya add another ad hoc approver after inserting before herself", () => {
+    const { db, r } = setup();
+    applyAdHocChange(db, "u_priya", add(r.id, "before"));
+    expect(canAddApprover(r, "u_priya")).toBe(true);
+    applyAdHocChange(db, "u_priya", { ...add(r.id, "after", "adhoc-one"), key: "two", approverId: "u_jordan" });
+    expect(r.route.map((s) => s.id)).toEqual(["done", "adhoc-one", "adhoc-two", "priya", "rachel"]);
+    expect(isPendingFor(r, "u_daniel")).toBe(true);
+    expect(r.route[2].adHoc?.addedBy).toBe("u_priya");
+    expect(r.route[2].approvals[0].status).toBe("waiting");
+  });
+  it("lets Priya add repeatedly after her step while she remains current", () => {
+    const { db, r } = setup();
+    applyAdHocChange(db, "u_priya", add(r.id, "after"));
+    applyAdHocChange(db, "u_priya", { ...add(r.id, "before", "adhoc-one"), key: "two", approverId: "u_jordan" });
+    expect(r.route.map((s) => s.id)).toEqual(["done", "priya", "adhoc-two", "adhoc-one", "rachel"]);
+    expect(isPendingFor(r, "u_priya")).toBe(true);
+  });
+  it("lets the current ad hoc approver insert a further approver", () => {
+    const { db, r } = setup();
+    applyAdHocChange(db, "u_priya", add(r.id, "before"));
+    applyAdHocChange(db, "u_daniel", { ...add(r.id, "before", "adhoc-one"), key: "two", approverId: "u_jordan" });
+    expect(isPendingFor(r, "u_jordan")).toBe(true);
+    expect(r.route[1].adHoc?.addedBy).toBe("u_daniel");
+  });
+  it("does not extend add permission to unrelated waiting or completed approvers", () => {
+    const { db, r } = setup();
+    applyAdHocChange(db, "u_priya", add(r.id, "before"));
+    expect(canAddApprover(r, "u_rachel")).toBe(false);
+    r.route.find((s) => s.id === "priya")?.approvals.forEach((a) => { a.status = "approved"; a.at = "2026-11-11"; });
+    expect(canAddApprover(r, "u_priya")).toBe(false);
+    r.status = "approved";
+    expect(canAddApprover(r, "u_daniel")).toBe(false);
+  });
   it("Priya inserts before her step and waits for Daniel", () => {
     const { db, r } = setup(); applyAdHocChange(db, "u_priya", add(r.id, "before"));
     expect(r.route.map((s) => s.id)).toEqual(["done", "adhoc-one", "priya", "rachel"]);

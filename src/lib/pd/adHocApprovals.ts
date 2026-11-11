@@ -2,7 +2,12 @@ import { currentStageIndex, isPendingFor, stageComplete } from "./engine";
 import type { DB, PRequest, Stage } from "./types";
 
 export function canAddApprover(r: PRequest, actorId: string) {
-  return actorId !== r.requesterId && isPendingFor(r, actorId);
+  if (r.status !== "pending" || actorId === r.requesterId) return false;
+  if (isPendingFor(r, actorId)) return true;
+  // Inserting before one's own step must not remove the ability to finish arranging it.
+  const remaining = r.route.slice(currentStageIndex(r));
+  return remaining.some((s) => s.approvals.some((a) => a.userId === actorId && ["waiting", "pending"].includes(a.status))) &&
+    remaining.some((s) => s.adHoc?.addedBy === actorId && !stageComplete(s));
 }
 
 export function canRemoveApprover(r: PRequest, stage: Stage, actorId: string) {
@@ -30,7 +35,7 @@ export function applyAdHocChange(db: DB, actorId: string, change: AdHocChange, a
   if (!step || current < 0 || index < current) throw new Error("This approval step can no longer be changed.");
   let text: string;
   if (change.action === "add") {
-    if (!canAddApprover(r, actorId)) throw new Error("Only a current approver can add an approver.");
+    if (!canAddApprover(r, actorId)) throw new Error("Only a current approver or an approver arranging their unfinished ad hoc steps can add an approver.");
     const user = db.users.find((u) => u.id === change.approverId && u.active && u.role === "approver");
     if (!user || user.id === r.requesterId || r.route.some((s) => s.approvals.some((a) => a.userId === user.id)))
       throw new Error("Choose an active approver who is not the requester or already in this route.");

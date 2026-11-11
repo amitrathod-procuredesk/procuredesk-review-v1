@@ -272,7 +272,7 @@ export function RouteTimeline({ r, preview }: { r: PRequest; preview?: boolean }
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium leading-5">{u?.name}</p>
                 <p className="truncate text-xs leading-4 text-muted-foreground">{u?.title}</p>
-                {s.adHoc && <p className="text-[11px] text-muted-foreground" title={s.reason}>Ad hoc</p>}
+                {s.adHoc && <span className="mt-1 inline-flex rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] font-medium leading-3 text-muted-foreground" title={s.reason}>Ad hoc approver</span>}
                 {a.comment && <p className="mt-0.5 text-xs text-muted-foreground">“{a.comment}”</p>}
                 {a.delegatedFrom && <p className="text-[11px] text-muted-foreground">Delegated by {db.users.find((x) => x.id === a.delegatedFrom)?.name}</p>}
               </div>
