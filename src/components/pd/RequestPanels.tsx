@@ -549,8 +549,8 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
       <div className="flex items-center gap-2.5">
         {first ? <UserAvatar user={first} /> : <span className={cn("grid size-6 shrink-0 place-items-center rounded-full bg-success-soft", tone)}><Check className="size-3.5" /></span>}
         <span className="min-w-0 flex-1">
-          <span className={cn("block truncate text-[11px] leading-4", first ? "text-muted-foreground" : tone)} title={note}>{label}{first && route.length > 1 && label !== "Rejected by" && <> · Step {Math.max(0, i) + 1} of {route.length}</>}</span>
-          <span className="block truncate text-[13px] font-medium leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? <>{first.name}{first.id === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}{ids.length > 1 ? ` +${ids.length - 1}` : ""}</> : note}</span>
+          <span className={cn("flex items-center gap-1.5 truncate text-[11px] font-medium leading-4", tone === "text-foreground" ? "text-muted-foreground" : tone)} title={note}>{label === "Waiting on" && <span aria-hidden className="relative flex size-1.5 shrink-0"><span className="absolute inline-flex size-full animate-ping rounded-full bg-pending opacity-60" /><span className="relative inline-flex size-1.5 rounded-full bg-pending" /></span>}{label}{first && route.length > 1 && label !== "Rejected by" && <> · Step {Math.max(0, i) + 1} of {route.length}</>}</span>
+          <span className="block truncate text-[14px] font-semibold leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? <>{first.name}{first.id === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}{ids.length > 1 ? ` +${ids.length - 1}` : ""}</> : note}</span>
         </span>
       </div>
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 rounded-md py-0.5 pl-[34px] text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground">
