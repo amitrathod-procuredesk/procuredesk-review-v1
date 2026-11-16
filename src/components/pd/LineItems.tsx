@@ -10,6 +10,7 @@ import { log, updateRequest, useDB, useMe } from "@/lib/pd/store";
 import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/pd/types";
 import { Money } from "./bits";
 import { TextArea } from "./form";
+import { TableDescriptionEditor } from "./TableDescriptionEditor";
 import { SplitAccountButton, accountLabel } from "./AccountSplit";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
@@ -225,7 +226,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                     {ro && <button type="button" aria-label={inspect === l.id ? "Hide item details" : "Show item details"} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))} className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground"><ChevronDown className={cn("size-3.5 transition-transform", inspect !== l.id && "-rotate-90")} /></button>}
                     <div className="min-w-0 flex-1">
                   {ro ? <Button variant="link" className={cn("h-auto w-full min-w-0 justify-start whitespace-normal px-1.5 py-0 text-left text-[12.5px] leading-snug text-foreground", l.declined && "text-muted-foreground line-through")} title={l.description} aria-expanded={inspect === l.id} aria-controls={`line-details-${l.id}`} onClick={() => setInspect((x) => (x === l.id ? null : l.id))}><ClampText id={l.id} text={l.description || "No description"} onClip={markClip} /></Button>
-                    : <textarea rows={3} aria-label="Description" title={l.description} className={cn(cell, "block h-[59px] resize-none overflow-hidden py-[3px] font-medium leading-[17px] focus:overflow-auto", !l.description && "border-destructive/60")} value={l.description} placeholder="Add a description" onChange={(e) => patch(l.id, { description: e.target.value })} />}
+                    : <TableDescriptionEditor className={cell} value={l.description} onChange={(description) => patch(l.id, { description })} />}
                   {(fromStock(l) || l.declined) && <p className="px-1.5 text-[10.5px] text-muted-foreground">{l.declined ? "Declined by approver" : "From stock · no cost"}</p>}
                   {l.approved && !l.declined && r.status === "pending" && <p className="px-1.5 text-[10.5px] font-medium text-success">Approved</p>}
                     </div>
