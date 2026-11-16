@@ -187,7 +187,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
     <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
       <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
         <colgroup>
-          {editable && <col className="w-7" />}
+          {editable && <col className="w-10" />}
           <col />
           <col className="w-[76px]" />
           <col className="w-[112px]" />
@@ -200,7 +200,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
         </colgroup>
         <thead className="bg-subtle text-left text-[10.5px] tracking-[0.05em] text-muted-foreground">
           <tr className="whitespace-nowrap [&>th]:h-9 [&>th]:px-2 [&>th]:font-semibold">
-            {editable && <th className="px-0!"><input type="checkbox" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
+            {editable && <th className="px-3! align-middle"><input type="checkbox" className="align-middle" aria-label="Select all lines" checked={items.length > 0 && items.every((l) => sel.includes(l.id))} onChange={() => { const all = items.every((l) => sel.includes(l.id)); setSel((s) => all ? s.filter((x) => !items.some((l) => l.id === x)) : [...new Set([...s, ...items.map((l) => l.id)])]); }} /></th>}
             <th className="pl-3!">Description</th>
             <th className="pl-3.5!">Item #</th>
             <th>Account</th>
@@ -218,7 +218,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
               <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground", pick && !l.declined && pick.selected.includes(l.id) && "bg-primary/[0.03]")}>
-                {editable && <td className="px-0!"><input type="checkbox" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
+                {editable && <td className="px-3!"><input type="checkbox" className="align-middle" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
                     {pick && !l.declined && !l.approved && <input type="checkbox" className="shrink-0" aria-label="Approve line" checked={pick.selected.includes(l.id)} onChange={() => pick.toggle(l.id)} />}
