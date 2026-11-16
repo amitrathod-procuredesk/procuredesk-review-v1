@@ -114,6 +114,7 @@ function EditRequest() {
 
           <Section title="Essentials">
             <EssentialsBar r={r} set={set} />
+            <MoreDetails r={r} set={set} />
           </Section>
 
           {wide ? (
@@ -140,8 +141,6 @@ function EditRequest() {
           </Section>
           )}
 
-          <MoreDetails r={r} set={set} />
-
         </div>
 
         <aside id="rail-budget" className="pd-scroll border-t border-border bg-subtle/50 p-4 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l">
@@ -157,16 +156,13 @@ function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?
   const db = useDB();
   const [open, setOpen] = useState(false);
   return (
-    <section className="pd-panel">
-      <button className="flex h-12 w-full items-center justify-between px-5 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className="pd-section-title">More details</span>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          {!open && "Notes, attention, quote # and website"}
-          <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
-        </span>
-      </button>
+    <div className="mt-3 border-t border-border pt-2">
+      <Button type="button" variant="ghost" size="sm" className="w-full justify-between whitespace-normal px-0 text-left hover:bg-transparent" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="request-more-details">
+        <span>More details</span>
+        <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+      </Button>
       {open && (
-        <div className="px-5 pb-5 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div id="request-more-details" className="pt-3 animate-in fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Note to buyer"><TextArea placeholder="Anything procurement should know" value={r.noteBuyer} onChange={(e) => set({ noteBuyer: e.target.value })} /></Field>
             <Field label="Note to supplier"><TextArea placeholder="Shown on the purchase order" value={r.noteSupplier} onChange={(e) => set({ noteSupplier: e.target.value })} /></Field>
@@ -176,7 +172,7 @@ function MoreDetails({ r, set }: { r: PRequest; set: (p: Partial<PRequest>, key?
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 

@@ -14,6 +14,7 @@
 - Procurement AI identity uses the shared vector PdAiIcon and Button ai variant with primary-derived global gradient tokens, keeping entry, header and conversation crisp and theme-consistent without altering assistant behavior.
 - Procurement AI proposals stay session-local until explicit confirmation; scoped server confirmation persists the shared workspace with optimistic versioning, content/routing fingerprints and replay-safe operation keys, so abandoned conversations never create requests.
 - Form controls use `src/components/pd/form.tsx` (TextInput, TextArea, Select, Checkbox, Radio) on top of the shared `.pd-input` / checkbox / radio styles in `src/styles.css`; never add per-field heights or radii — so one fix updates every screen.
+- Request editor optional details render as an inline disclosure inside Essentials, keeping creation and editing aligned without nesting panels.
 - Line items issued from internal stock (`fulfillment: "inventory"`, stock in `src/lib/pd/inventory.ts`) are excluded from totals, supplier spend and budget — they create no purchase.
 - Admin portal is /app/admin?section=…; its sidebar and section list come from `src/lib/pd/adminNav.ts` so menu and pages never drift.
 - Budget control (header vs line) is resolved only through engine helpers (`budgetLevelOf`, `lineBudgetId`, `budgetAllocation`, `budgetStatuses`); drafts follow the org setting, submitted requests keep a snapshot so history never shifts.
