@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Keep line-item headings and bottom scroll controls visible, separate fixed actions, and verify long tables on desktop/mobile.
 - [x] Make request editor headers white and reduce spacing across creation/editing; verify desktop and mobile
 - [x] Verify minimal Procurement AI start screen (recent purchases + flat pills) in browser
 - [x] Design new unique minimal AI icon (replace pd-ai-mark), explain rationale

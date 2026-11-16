@@ -11,6 +11,7 @@ import { ACCOUNTS, CATEGORIES, UOMS, type LineItem, type PRequest } from "@/lib/
 import { Money } from "./bits";
 import { TextArea } from "./form";
 import { TableDescriptionEditor } from "./TableDescriptionEditor";
+import { LineItemsTableFrame } from "./LineItemsTableFrame";
 import { SplitAccountButton, accountLabel } from "./AccountSplit";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
@@ -185,8 +186,8 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
   const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-primary/50 hover:bg-surface focus:border-primary/60 focus:bg-card";
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
-    <div className="pd-scroll overflow-x-auto rounded-xl border border-border/60 bg-surface [container-type:inline-size]">
-      <table className="table-fixed border-collapse text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
+    <LineItemsTableFrame>
+      <table className="table-fixed border-separate border-spacing-0 text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
         <colgroup>
           {editable && <col className="w-10" />}
           <col />
@@ -210,7 +211,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
             <th className="text-right">Unit price</th>
             <th className="text-right" title="Tax + shipping">Other</th>
             <th className="text-right">Total</th>
-            {editable && <th className="sticky right-0 bg-subtle" aria-label="Actions" />}
+            {editable && <th className="pd-line-actions bg-subtle" aria-label="Actions" />}
           </tr>
         </thead>
         <tbody>
@@ -218,7 +219,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
             const ro = !editable || !!l.declined;
             const other = (l.tax || 0) + (l.shipping || 0);
             return [
-              <tr key={l.id} className={cn("group border-t border-border align-middle transition-colors hover:bg-subtle/40 [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground", pick && !l.declined && pick.selected.includes(l.id) && "bg-primary/[0.03]")}>
+              <tr key={l.id} className={cn("group align-middle transition-colors hover:bg-subtle/40 [&>td]:border-t [&>td]:border-border [&>td]:px-2 [&>td]:py-2", sel.includes(l.id) && "bg-primary/[0.03]", l.declined && "text-muted-foreground", pick && !l.declined && pick.selected.includes(l.id) && "bg-primary/[0.03]")}>
                 {editable && <td className="px-3!"><input type="checkbox" className="align-middle" aria-label="Select line" checked={sel.includes(l.id)} onChange={() => setSel((s) => (s.includes(l.id) ? s.filter((x) => x !== l.id) : [...s, l.id]))} /></td>}
                 <td>
                   <div className="flex min-w-0 items-center gap-1">
@@ -244,14 +245,14 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                   <label className={cn(cell, "num flex cursor-text items-center justify-end focus-within:border-primary/60 focus-within:bg-card")}><span className="text-muted-foreground">$</span><input key={l.unitPrice} inputMode="decimal" aria-label="Unit price" className="num min-w-[3ch] bg-transparent text-right outline-none [field-sizing:content]" defaultValue={l.unitPrice.toFixed(2)} onBlur={(e) => { const v = Math.max(0, Number(e.target.value.replace(/[^\d.]/g, "")) || 0); if (v !== l.unitPrice) patch(l.id, { unitPrice: v }); else e.target.value = v.toFixed(2); }} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} /></label>)}</td>
                 <td className="num text-right text-muted-foreground" title={`Tax ${money(l.tax || 0)} · Shipping ${money(l.shipping || 0)}`}>{other ? money(other) : "—"}</td>
                 <td className="num whitespace-nowrap text-right font-semibold">{fromStock(l) ? <span className="font-normal text-muted-foreground">No cost</span> : <span className={cn(l.declined && "line-through")}>{money(lineTotal(l))}</span>}</td>
-                {editable && <td className="sticky right-0 bg-surface shadow-[-1px_0_0_var(--border)] group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>}
+                {editable && <td className="pd-line-actions bg-surface group-hover:bg-subtle"><div className="flex justify-end gap-0.5">{actions(l)}</div></td>}
               </tr>,
               ro && inspect === l.id && <tr key={`${l.id}-d`} className="bg-subtle/30"><td colSpan={hideSupplier ? 7 : 8} className="px-3 py-3">{detail(l, "")}</td></tr>,
             ];
           })}
         </tbody>
       </table>
-    </div>
+    </LineItemsTableFrame>
   );
   const LIMIT = 8;
   const q = filter.trim().toLowerCase();
