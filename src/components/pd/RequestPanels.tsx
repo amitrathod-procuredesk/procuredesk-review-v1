@@ -653,10 +653,10 @@ function RouteSummary({ r, editable }: { r: PRequest; editable?: boolean }) {
           <span className="block truncate text-[14px] font-semibold leading-5" title={first && note ? `${first.name} · ${note}` : undefined}>{first ? <>{first.name}{first.id === me?.id && <span className="font-normal text-muted-foreground"> (You)</span>}{ids.length > 1 ? ` +${ids.length - 1}` : ""}</> : note}</span>
         </span>
       </div>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 rounded-md py-0.5 pl-[34px] text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+      <Button type="button" variant="ghost" size="xs" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-2 ml-[34px] max-w-[calc(100%-34px)] gap-1 border border-primary/20 bg-accent text-[12px] font-semibold text-accent-foreground hover:border-primary/40 hover:bg-primary/10 [&_svg]:size-3.5">
         {open ? "Hide approvers" : count > 1 ? `Show all ${count} approvers` : "Show approval details"}
         <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
-      </button>
+      </Button>
       {open && <div className="mt-3 animate-in fade-in slide-in-from-top-1"><RouteTimeline r={r} preview={editable} /></div>}
       {!editable && <AdHocApprover r={r} />}
     </div>
