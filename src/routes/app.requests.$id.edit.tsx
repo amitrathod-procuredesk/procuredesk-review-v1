@@ -76,8 +76,8 @@ function EditRequest() {
   };
 
   return (
-    <div className={cn("flex min-h-[calc(100vh)] flex-col lg:h-[calc(100dvh-60px)] lg:min-h-0 lg:overflow-hidden", tried && "pd-validate")}>
-      <header className="sticky top-0 z-20 flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur md:px-6">
+    <div className={cn("pd-request-editor flex min-h-[calc(100vh)] flex-col lg:h-[calc(100dvh-60px)] lg:min-h-0 lg:overflow-hidden", tried && "pd-validate")}>
+      <header className="sticky top-0 z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2">
         <Link to="/app/requests" aria-label="Back" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ function EditRequest() {
 
       <div className={"grid flex-1 gap-0 lg:min-h-0 lg:grid-cols-[1fr_360px]"}>
 
-        <div className="pd-scroll min-w-0 space-y-4 p-4 pb-64 md:p-6 md:pb-64 lg:overflow-y-auto lg:overscroll-contain">
+        <div className="pd-scroll min-w-0 space-y-2 p-2 lg:overflow-y-auto lg:overscroll-contain">
           {asApprover && (
             <div className="rounded-md border border-border bg-subtle/60 p-3 text-sm">
               <p className="font-medium">Editing as approver</p>
@@ -119,7 +119,7 @@ function EditRequest() {
 
           {wide ? (
             <div className="fixed inset-0 z-40 flex flex-col bg-background animate-in fade-in duration-150">
-              <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-surface/85 px-4 backdrop-blur md:px-8">
+              <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-surface px-3">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-sm font-semibold">Line items<span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-medium text-accent-foreground">{r.items.length}</span></p>
                   <p className="truncate text-xs text-muted-foreground">{r.title || "Untitled request"} · <span className="num">{r.id}</span></p>
@@ -127,8 +127,8 @@ function EditRequest() {
                 <div className="hidden text-right sm:block"><p className="text-[11px] text-muted-foreground">Request total</p><Money v={totals(r).total} className="text-sm font-semibold" /></div>
                 <Button size="sm" variant="outline" onClick={() => setWide(false)} title="Back to request (Esc)"><Minimize2 className="size-3.5" /> Done</Button>
               </header>
-              <div className="pd-scroll flex-1 overflow-y-auto p-4 md:p-8">
-                <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_3px_rgba(16,24,40,0.06),0_8px_24px_-12px_rgba(16,24,40,0.12)] md:p-6">
+              <div className="pd-scroll flex-1 overflow-y-auto p-2">
+                <div className="pd-panel p-3">
                   <LineItems r={r} editable />
                 </div>
               </div>
@@ -143,7 +143,7 @@ function EditRequest() {
 
         </div>
 
-        <aside id="rail-budget" className="pd-scroll border-t border-border bg-subtle/50 p-4 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l">
+        <aside id="rail-budget" className="pd-scroll border-t border-border bg-subtle/50 p-2 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l">
           <div><SummaryRail r={r} editable hideChecks onCheckAction={onCheck} extra={<><div id="attachments"><Section title="Attachments"><Attachments r={r} editable /></Section></div></>} after={<Section title="Comments"><Comments r={r} /></Section>} /></div>
         </aside>
       </div>

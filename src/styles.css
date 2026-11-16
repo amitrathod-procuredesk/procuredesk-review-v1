@@ -235,6 +235,38 @@
   animation: pd-pulse 1.2s ease-in-out infinite;
 }
 
+/* Shared creation/editing layout: tight gutters without shrinking controls. */
+.pd-request-editor section.pd-panel > header {
+  padding: 0.625rem 0.75rem 0;
+}
+.pd-request-editor section.pd-panel > header + div {
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+.pd-request-editor #rail-budget > div > div {
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+.pd-request-editor #rail-budget > div > div > .pd-panel {
+  padding: 0.75rem;
+}
+.pd-request-editor #rail-budget > div > div > * {
+  margin-block: 0;
+}
+.pd-request-editor > .grid > .pd-scroll,
+.pd-request-editor #rail-budget {
+  padding-bottom: 5rem;
+}
+@media (min-width: 1024px) {
+  .pd-request-editor > .grid > .pd-scroll,
+  .pd-request-editor #rail-budget {
+    padding-bottom: 0.5rem;
+  }
+}
+.pd-request-editor #rail-budget > div > div > section.pd-panel:has(> header) {
+  padding: 0;
+}
+
 .pd-float {
   box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent), 0 12px 32px -8px color-mix(in oklab, var(--foreground) 18%, transparent);
 }
