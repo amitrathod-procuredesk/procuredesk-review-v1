@@ -361,7 +361,6 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
               </SheetHeader>
               <div className="flex-1 overflow-y-auto px-5 py-4">
                 <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                  <p className="pd-drawer-sec sm:col-span-2">Item</p>
                   <DField label="Item name" className="sm:col-span-2"><NameSearch l={editing} vendorName={vendorName} onText={(v) => patch(editing.id, { name: v })} onPick={(c) => { const { id: _id, ...rest } = fromCatalog(c, editing.qty || 1); patch(editing.id, rest, `“${c.name}” selected from catalog`); }} /></DField>
                   <DField label="Description" req className="sm:col-span-2"><TextArea rows={3} className={cn("text-sm", !editing.description && "border-destructive")} invalid={!editing.description} value={editing.description} onChange={(e) => patch(editing.id, { description: e.target.value })} /></DField>
                   <DField label="Account" req className="sm:col-span-2">
