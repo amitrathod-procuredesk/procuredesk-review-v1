@@ -12,6 +12,7 @@ import { Money } from "./bits";
 import { TextArea } from "./form";
 import { TableDescriptionEditor } from "./TableDescriptionEditor";
 import { LineItemsTableFrame } from "./LineItemsTableFrame";
+import { LineItemsPager } from "./LineItemsPager";
 import { SplitAccountButton, accountLabel } from "./AccountSplit";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemToolbar, fromCatalog } from "./ItemToolbar";
@@ -84,7 +85,6 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
   const [layout, setLayoutState] = useState<"cards" | "table">("cards");
   const setLayout = (v: "cards" | "table") => setLayoutState(v);
   const [collapsed, setCollapsed] = useState<string[]>([]);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState("");
   const groups = Object.values(r.items.reduce<Record<string, { id: string; name: string; items: LineItem[] }>>((acc, l) => {
     const k = l.vendorId || "_none";
@@ -254,15 +254,8 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
       </table>
     </LineItemsTableFrame>
   );
-  const LIMIT = 8;
   const q = filter.trim().toLowerCase();
   const visibleItems = q ? r.items.filter((l) => [l.name ?? "", l.description, l.partNumber, vendorName(l.vendorId), l.account].join(" ").toLowerCase().includes(q)) : r.items;
-  const more = (n: number, k: string) => n > LIMIT && (
-    <button onClick={() => setExpanded((s) => ({ ...s, [k]: !s[k] }))} className="mt-1.5 w-full rounded-md border border-dashed border-border py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-      {expanded[k] ? "Show less" : `Show ${n - LIMIT} more item${n - LIMIT === 1 ? "" : "s"}`}
-    </button>
-  );
-  const cap = (arr: LineItem[], k: string) => (expanded[k] || q ? arr : arr.slice(0, LIMIT));
 
   return (
     <div id="line-items">
@@ -314,8 +307,9 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
 
       {view === "list" ? (
         <div>
-          {visibleItems.length === 0 ? null : layout === "table" ? table(cap(visibleItems, "_list")) : <ul className="space-y-2">{cap(visibleItems, "_list").map((l) => card(l, r.items.indexOf(l)))}</ul>}
-          {!q && more(visibleItems.length, "_list")}
+          <LineItemsPager key={`${r.id}-${q}`} items={visibleItems}>
+            {(items) => items.length === 0 ? null : layout === "table" ? table(items) : <ul className="space-y-2">{items.map((l) => card(l, r.items.indexOf(l)))}</ul>}
+          </LineItemsPager>
         </div>
       ) : (
         <div className="space-y-3">
@@ -333,8 +327,9 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
                 </button>
                 {!isCol && (
                   <div className="animate-in fade-in px-2 pb-2">
-                    {layout === "table" ? table(cap(items, g.id), true) : <ul className="space-y-2">{cap(items, g.id).map((l) => card(l, r.items.indexOf(l), true))}</ul>}
-                    {!q && more(items.length, g.id)}
+                    <LineItemsPager key={`${r.id}-${g.id}-${q}`} items={items} label={g.name || "No supplier"}>
+                      {(pageItems) => layout === "table" ? table(pageItems, true) : <ul className="space-y-2">{pageItems.map((l) => card(l, r.items.indexOf(l), true))}</ul>}
+                    </LineItemsPager>
                   </div>
                 )}
               </section>
