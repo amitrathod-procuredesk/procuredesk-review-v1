@@ -306,14 +306,16 @@
 .pd-scroll::-webkit-scrollbar-thumb { background: var(--input); border-radius: 999px; }
 .pd-scroll::-webkit-scrollbar-track { background: transparent; }
 
-/* Keep long line-item tables within one screen; scrollbars stay at its edges. */
+/* Up to ten visible items grow naturally; longer pages scroll internally. */
 .pd-line-table-viewport {
-  max-height: min(34rem, max(15rem, calc(100dvh - 15rem)));
   padding-bottom: 10px;
-  padding-right: 10px;
-  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   container-type: inline-size;
+}
+.pd-line-table-viewport.pd-line-table-bounded {
+  max-height: min(34rem, max(15rem, calc(100dvh - 15rem)));
+  padding-right: 10px;
+  scrollbar-gutter: stable;
 }
 .pd-line-table thead th {
   position: sticky;
@@ -332,7 +334,7 @@
   z-index: 20;
 }
 @media print {
-  .pd-line-table-viewport { max-height: none; overflow: visible !important; padding: 0; }
+  .pd-line-table-viewport.pd-line-table-viewport { max-height: none; overflow: visible !important; padding: 0; }
   .pd-line-table [data-orientation] { display: none; }
 }
 

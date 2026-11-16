@@ -186,7 +186,7 @@ export function LineItems({ r, editable, heading, canSplit, pick }: { r: PReques
   const cell = "h-7 w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-[12.5px] outline-none transition-colors hover:border-primary/50 hover:bg-surface focus:border-primary/60 focus:bg-card";
   const noSpin = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const table = (items: LineItem[], hideSupplier = false) => (
-    <LineItemsTableFrame>
+    <LineItemsTableFrame rowCount={items.length}>
       <table className="table-fixed border-separate border-spacing-0 text-[12.5px]" style={{ width: "100%", minWidth: hideSupplier ? 880 : 980 }}>
         <colgroup>
           {editable && <col className="w-10" />}
