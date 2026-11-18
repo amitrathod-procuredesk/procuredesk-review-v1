@@ -320,6 +320,7 @@
 .pd-line-table thead th {
   position: sticky;
   top: 0;
+  transform: translateY(var(--pd-line-header-offset, 0px));
   z-index: 10;
   background: var(--subtle);
   box-shadow: inset 0 -1px 0 var(--border);
@@ -334,6 +335,7 @@
   z-index: 20;
 }
 @media print {
+  .pd-line-table thead th { transform: none; }
   .pd-line-table-viewport.pd-line-table-viewport { max-height: none; overflow: visible !important; padding: 0; }
   .pd-line-table [data-orientation] { display: none; }
 }
