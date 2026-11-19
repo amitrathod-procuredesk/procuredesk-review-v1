@@ -329,7 +329,10 @@
   position: sticky;
   right: 0;
   z-index: 1;
-  box-shadow: inset 1px 0 0 var(--input), -8px 0 12px -10px color-mix(in oklab, var(--foreground) 25%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in oklab, var(--border) 65%, transparent), -3px 0 5px -4px color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+.pd-line-horizontal-scrollbar {
+  transform: translateY(var(--pd-line-scrollbar-offset, 0px));
 }
 .pd-line-table thead .pd-line-actions {
   z-index: 20;

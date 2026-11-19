@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Soften sticky actions and keep the horizontal scrollbar at the visible table bottom; verify desktop/mobile dragging.
 - [x] Replace line-item show more/less with configurable pagination and verify desktop/mobile and page boundaries.
 - [x] Keep line-item headings and bottom scroll controls visible, separate fixed actions, and verify long tables on desktop/mobile.
 - [x] Make request editor headers white and reduce spacing across creation/editing; verify desktop and mobile
